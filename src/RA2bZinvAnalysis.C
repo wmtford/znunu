@@ -607,8 +607,6 @@ RA2bZinvAnalysis::makeCChist(const char* sample) {
   cout << "MaxBins = " << MaxBins << endl;
 
   TH1F* hCCbins = new TH1F("hCCbins", "Zinv background estimate", MaxBins, 0.5, MaxBins+0.5);
-  hCCbins->SetOption("HIST");
-  hCCbins->SetMarkerSize(0);
 
   TObjArray* forNotify = new TObjArray;  // Allow for more than one TObject to notify of a new file
   
