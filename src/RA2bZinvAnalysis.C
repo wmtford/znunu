@@ -34,18 +34,19 @@ ClassImp(RA2bZinvAnalysis)
 
 // ======================================================================================
 
-RA2bZinvAnalysis::RA2bZinvAnalysis() : isMC_(false), ntupleVersion_("V12"), isSkim_(true) {
+// RA2bZinvAnalysis::RA2bZinvAnalysis() : isMC_(false), ntupleVersion_("V12"), isSkim_(true) {
+RA2bZinvAnalysis::RA2bZinvAnalysis() {
   Init();
 }
 
-RA2bZinvAnalysis::RA2bZinvAnalysis(dataStatus datastat, TString ntupleVersion, skimStatus skimstat) {
-  if (datastat == dataStatus::MC) isMC_ = true;
-  else isMC_ = false;
-  ntupleVersion_ = ntupleVersion;
-  if (skimstat == skimStatus::skimmed) isSkim_ = true;
-  else isSkim_ = false;
-  Init();
-}
+// RA2bZinvAnalysis::RA2bZinvAnalysis(dataStatus datastat, TString ntupleVersion, skimStatus skimstat) {
+//   if (datastat == dataStatus::MC) isMC_ = true;
+//   else isMC_ = false;
+//   ntupleVersion_ = ntupleVersion;
+//   if (skimstat == skimStatus::skimmed) isSkim_ = true;
+//   else isSkim_ = false;
+//   Init();
+// }
 
 void
 RA2bZinvAnalysis::Init() {

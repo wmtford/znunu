@@ -26,9 +26,7 @@
   bool doMakeClass = false;
   bool doListTrigPrescales = false;
 
-  // RA2bZinvAnalysis analyzer(dataStatus::data, "V12");
-  RA2bZinvAnalysis analyzer(dataStatus::MC, "V12");
-  // RA2bZinvAnalysis analyzer(dataStatus::data, "V15", skimStatus::unskimmed);
+  RA2bZinvAnalysis analyzer;
 
   if (doCCzvv || doCCttzvv) {
     // Output file

@@ -41,7 +41,7 @@ class RA2bZinvAnalysis {
 
 public:
   RA2bZinvAnalysis();
-  RA2bZinvAnalysis(dataStatus datastat, TString ntupleVersion, skimStatus skimstat = skimStatus::skimmed);
+  /* RA2bZinvAnalysis(dataStatus datastat, TString ntupleVersion, skimStatus skimstat = skimStatus::skimmed); */
   virtual ~RA2bZinvAnalysis() {};
 
   TChain* getChain(const char* sample, Int_t* fCurrent = nullptr, bool setBrAddr = true);
@@ -90,12 +90,24 @@ public:
   };
 
 private:
+#ifdef ISV12
+  const TString ntupleVersion_ = "V12";
+#else
+  const TString ntupleVersion_ = "V15";
+#endif
+#ifdef ISMC
+  const bool isMC_ = true;
+#else
+  const bool isMC_ = false;
+#endif
+#ifdef ISSKIM
+  const bool isSkim_ = true;
+#else
+  const bool isSkim_ = false;
+#endif
   const char* treeLoc_;
   const char* treeName_;
   TString era_;  // "2016", ...
-  TString ntupleVersion_; // "V12", "V15", ...
-  bool isMC_;
-  bool isSkim_;
   TString deltaPhi_;  // "nominal", "hdp", "ldp"
   bool applyMassCut_;
   bool applyPtCut_;
