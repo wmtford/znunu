@@ -19,6 +19,7 @@ ratioMin = None
 ratioMax = None
 
 hists = []
+
 muhists = {}
 ehists = {}
 
@@ -55,14 +56,20 @@ legList = ['2016 DY data', '2016 DY MC']
 #   fScale = 13.5/35.9
 # legList = ['2018 data','2016 data, scaled']
 
-for histsByLep in hists:
-  for i in range(len(histsByLep['N'])):
-    nhName = histsByLep['N'][i]
-  # for hName in histsByLep:
+# zhists = {}
+# Dfile = ROOT.TFile('~/cms/src/root/zinvData_2017Feb24/ZinvMCttzMC174binV12.root')
+# Nfile = ROOT.TFile('~/cms/src/root/zinvData_2017Feb24/ZinvHistos.root')
+# zhists['D'] = ["hCCzinv"]
+# zhists['N'] = ["ZinvBGpred"]
+# hists.append(zhists)
+
+for NDpairs in hists:
+  for i in range(len(NDpairs['N'])):
+    nhName = NDpairs['N'][i]
     print str(nhName)
     hNumer = Nfile.Get(nhName)
     hNumer.SetName(str(nhName)+"N")
-    dhName = histsByLep['D'][i]
+    dhName = NDpairs['D'][i]
     print str(dhName)
     hDen   = Dfile.Get(dhName)
     hDen.SetName(str(dhName)+"D")
@@ -82,6 +89,28 @@ for histsByLep in hists:
       ratioMin=ratioMin, ratioMax=ratioMax,
       legList = legList
       )
+    # For 174-bin plot
+    # canvas = RA2b.getPlotAndRatio(
+    #   numHists=hNumer, denomHists=hDen, doRatio=True,
+    #   doLogy=doLogy, doCMSlumi=True, iPeriod=8, drawHorizontalLine=True,
+    #   ratioMin=ratioMin, ratioMax=ratioMax, ratioTitle="#frac{Direct}{Prediction} ",
+    #   # legList = legList
+    #   # doClosureStyle=True
+    #   errorBandFillStyle=3144,
+    #   # errorBandColor = ROOT.kRed-10
+    #   errorBandColor = 632-10,
+    #   ratioTitle = "#frac{Expectation}{Prediction} ",
+    #   extraText = "Preliminary",
+    #   xTitle = "Search region bin number",
+    #   yTitle = "Events",
+    #   #legCoords = [.65, .95, .54, .79],
+    #   legHeader = "Z #rightarrow #nu#bar{#nu} background",
+    #   ratioMax=2.15,
+    #   ratioMin=0.001,
+    #   nDivRatio=505,
+    #   markerSize=1.1,
+    #   legList = ['Expectation from simulation','Prediction from data']
+    #   )
     canvas.SaveAs(str(nhName)+".pdf")
 
 # def getPlotAndRatio(numHists, denomHists=None, bottomPlots=None, doStack=None, Title=None, xTitle=None, yTitle=None, doCMSlumi=None, iPos=None, iPeriod=None, extraText=None, ratioTitle=None, ratioMin=None, ratioMax=None, doLogy=None, doFlip=None, doDiff=None, doPull=None, makeLeg=None, legList=None, legCoords=None, textCoords=None, canvasSize=None, canvasName=None, numColors=None, denomColor=None, numMarkers=None, denomMarker=None, markerSize=None, lineWidth=None, numDrawStyles=None, denomDrawStyle=None, drawErrorBand=None, stackColors=None, axisTitleSize=None, drawVerticalLines=None, drawHorizontalLine=None, statBox=None, drawText=None, text=None, setMax=None, setMin=None, doClosureStyle=None,errorBandColor=None,errorBandFillStyle=None,legHeader=None,nDivRatio=None,doNumFill=None, hLineVal=None, hLineColors=None,nDivX=None,ratioGridx=None,ratioGridy=None,topGridx=None,topGridy=None,doRatio=None,numFillStyles=None,numFillColors=None)
