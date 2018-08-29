@@ -30,45 +30,68 @@ using std::stringstream;
 
 #include <string>
 
+#include <boost/program_options.hpp>
+namespace po = boost::program_options;
+
 ClassImp(RA2bZinvAnalysis)
 
 // ======================================================================================
 
-// RA2bZinvAnalysis::RA2bZinvAnalysis() : isMC_(false), ntupleVersion_("V12"), isSkim_(true) {
 RA2bZinvAnalysis::RA2bZinvAnalysis() {
   Init();
 }
 
-// RA2bZinvAnalysis::RA2bZinvAnalysis(dataStatus datastat, TString ntupleVersion, skimStatus skimstat) {
-//   if (datastat == dataStatus::MC) isMC_ = true;
-//   else isMC_ = false;
-//   ntupleVersion_ = ntupleVersion;
-//   if (skimstat == skimStatus::skimmed) isSkim_ = true;
-//   else isSkim_ = false;
-//   Init();
-// }
+RA2bZinvAnalysis::RA2bZinvAnalysis(const std::string& cfg_filename) {
+  Init(cfg_filename);
+}
 
 void
-RA2bZinvAnalysis::Init() {
-  era_ = "2016";
-  intLumi_ = 1;
-  treeLoc_ = "";
-  treeName_ = "tree";
-  deltaPhi_ = "nominal";
-  // deltaPhi_ = "hdp";
-  applyMassCut_ = true;
-  applyPtCut_ = true;
-  applyMinDeltaRCut_ = true;
-  // applySF_ = false;
-  // njSplit_ = false;
-  useTreeCCbin_ = true;  // only in skims
-  applyBTagSF_ = false;  // overridden false if !isMC_
-  applyPuWeight_ = true;  // overridden false if !isMC_
-  customPuWeight_ = true;  // Substitute Kevin P recipe for the PuWeight in the tree
+RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
+
+  // Set up configuration, using boost/program_options.
+  po::options_description desc("Config");
+  desc.add_options()
+    ("era", po::value<std::string>(&era_))
+    ("tree path", po::value<std::string>(&treeLoc_))
+    ("delta phi sample", po::value<std::string>(&deltaPhi_), "nominal, hdp, ldp")
+    ("integrated luminosity", po::value<double>(&intLumi_))
+    ("apply Z mass cut", po::value<bool>(&applyMassCut_))
+    ("apply Z Pt cut", po::value<bool>(&applyPtCut_))
+    ("apply photon min Delta R cut", po::value<bool>(&applyMinDeltaRCut_))
+    ("use analysis bin from tree", po::value<bool>(&useTreeCCbin_))
+    ("apply b-tag SF", po::value<bool>(&applyBTagSF_))
+    ("apply pileup weight", po::value<bool>(&applyPuWeight_))
+    ("use custom pileup weight", po::value<bool>(&customPuWeight_))
+    ;
+  po::variables_map vm;
+  std::ifstream cfi_file("RA2bZinvAnalysis.cfi");
+  po::store(po::parse_config_file(cfi_file , desc), vm);
+  po::notify(vm);
+  if (!cfg_filename.empty()) {
+    std::ifstream cfg_file(cfg_filename);
+    vm = po::variables_map();  // Clear the map.
+    po::store(po::parse_config_file(cfg_file , desc), vm);
+    po::notify(vm);
+  }
+
+  // era_ = "2016";
+  // intLumi_ = 1;
+  // treeLoc_ = "";
+  // treeName_ = "tree";
+  // deltaPhi_ = "nominal";
+  // applyMassCut_ = true;
+  // applyPtCut_ = true;
+  // applyMinDeltaRCut_ = true;
+  // // applySF_ = false;
+  // // njSplit_ = false;
+  // useTreeCCbin_ = true;  // only in skims
+  // applyBTagSF_ = false;  // overridden false if !isMC_
+  // applyPuWeight_ = true;  // overridden false if !isMC_
+  // customPuWeight_ = true;  // Substitute Kevin P recipe for the PuWeight in the tree
   puWeight = 1;  // overridden from tree if isMC_
   Weight = 1;  // overridden from tree if isMC_
   TrueNumInteractions = 20;  // overridden from tree if isMC_
-  RA2bin = 0;  // overridden from tree if isSkim
+  RA2bin = 0;  // overridden from tree if isSkim_
   NElectrons = 0;  // overridden from tree if >=V15
   NMuons = 0;  // overridden from tree if >=V15
 
@@ -82,18 +105,74 @@ RA2bZinvAnalysis::Init() {
   } else {
     treeName_ = "tree";  // For skims
   }
-  if (ntupleVersion_ == "V12") {
-    // treeLoc_ = "/nfs/data38/cms/wtford/lpcTrees/Skims/Run2ProductionV12";  // Colorado, owned by wtford (Zjets only)
-    treeLoc_ = "/nfs/data38/cms/mulholland/lpcTrees/Skims/Run2ProductionV12";  // Colorado, owned by mulholland
-    // treeLoc_ = "root://cmseos.fnal.gov//store/user/lpcsusyhad/SusyRA2Analysis2015/Skims/Run2ProductionV12";  // xrootd
-    // treeLoc_ = "/eos/uscms/store/user/lpcsusyhad/SusyRA2Analysis2015/Skims/Run2ProductionV12";  // from cmslpc
-  } else if (ntupleVersion_ == "V15") {
-    treeLoc_ = "root://cmseos.fnal.gov//store/user/lpcsusyhad/SusyRA2Analysis2015/Run2ProductionV15";  // ntuples, xrootd
-    // treeLoc_ = "root://cmseos.fnal.gov//store/user/lpcsusyhad/SusyRA2Analysis2015/Skims/Run2ProductionV15";  // xrootd
-    // treeLoc_ = "/eos/uscms/store/user/lpcsusyhad/SusyRA2Analysis2015/Skims/Run2ProductionV15";  // from cmslpc
+
+  // Needed branches
+  activeBranches_.push_back("NJets");
+  activeBranches_.push_back("BTags");
+  activeBranches_.push_back("HT");
+  activeBranches_.push_back("MHT");
+  activeBranches_.push_back("JetID");
+  activeBranches_.push_back("Jets");
+  activeBranches_.push_back("Jets_hadronFlavor");
+  activeBranches_.push_back("Jets_HTMask");
+  activeBranches_.push_back("isoElectronTracks");
+  activeBranches_.push_back("isoMuonTracks");
+  activeBranches_.push_back("isoPionTracks");
+  activeBranches_.push_back("DeltaPhi1");
+  activeBranches_.push_back("DeltaPhi2");
+  activeBranches_.push_back("DeltaPhi3");
+  activeBranches_.push_back("DeltaPhi4");
+  if (isSkim_) {
+    activeBranches_.push_back("RA2bin");
+  } else {
+    activeBranches_.push_back("NJetsclean");
+    activeBranches_.push_back("BTagsclean");
+    activeBranches_.push_back("HTclean");
+    activeBranches_.push_back("MHTclean");
+    activeBranches_.push_back("JetIDclean");
+    activeBranches_.push_back("Jetsclean");
+    activeBranches_.push_back("Jetsclean_hadronFlavor");
+    activeBranches_.push_back("Jetsclean_HTMask");
+    activeBranches_.push_back("isoElectronTracksclean");
+    activeBranches_.push_back("isoMuonTracksclean");
+    activeBranches_.push_back("isoPionTracksclean");
+    activeBranches_.push_back("DeltaPhi1clean");
+    activeBranches_.push_back("DeltaPhi2clean");
+    activeBranches_.push_back("DeltaPhi3clean");
+    activeBranches_.push_back("DeltaPhi4clean");
   }
+  if (ntupleVersion_ != "V12") {
+    activeBranches_.push_back("NMuons");
+    activeBranches_.push_back("NElectrons");
+  }
+  activeBranches_.push_back("Muons");
+  activeBranches_.push_back("Electrons");
+  activeBranches_.push_back("ZCandidates");
+  activeBranches_.push_back("Photons");
+  activeBranches_.push_back("Photons_nonPrompt");
+  activeBranches_.push_back("Photons_fullID");
+  activeBranches_.push_back("NVtx");
+  activeBranches_.push_back("TriggerPass");
+  activeBranches_.push_back("TriggerPrescales");
+  activeBranches_.push_back("HBHENoiseFilter");
+  activeBranches_.push_back("HBHEIsoNoiseFilter");
+  activeBranches_.push_back("eeBadScFilter");
+  activeBranches_.push_back("EcalDeadCellTriggerPrimitiveFilter");
+  activeBranches_.push_back("globalTightHalo2016Filter");
+  activeBranches_.push_back("BadChargedCandidateFilter");
+  activeBranches_.push_back("BadPFMuonFilter");
+  activeBranches_.push_back("nAllVertices");
+  if (isMC_) {
+    activeBranches_.push_back("puWeight");
+    activeBranches_.push_back("Weight");
+    activeBranches_.push_back("TrueNumInteractions");
+    activeBranches_.push_back("madMinPhotonDeltaR");
+    activeBranches_.push_back("GenMuons");
+    activeBranches_.push_back("GenElectrons");
+    activeBranches_.push_back("GenTaus");
+  }
+
   if (era_ == TString("2016")) {
-    intLumi_ = 35.9;
 
     if (applyPuWeight_ && customPuWeight_) {
       TFile* pufile = TFile::Open("../../Analysis/corrections/PileupHistograms_0121_69p2mb_pm4p6.root","READ");
@@ -101,72 +180,6 @@ RA2bZinvAnalysis::Init() {
     }
 
     if (isMC_) BTagSFfile_ = "../../Analysis/btag/CSVv2_Moriond17_B_H_mod.csv";
-
-    // Needed branches
-    activeBranches_.push_back("NJets");
-    activeBranches_.push_back("BTags");
-    activeBranches_.push_back("HT");
-    activeBranches_.push_back("MHT");
-    activeBranches_.push_back("JetID");
-    activeBranches_.push_back("Jets");
-    activeBranches_.push_back("Jets_hadronFlavor");
-    activeBranches_.push_back("Jets_HTMask");
-    activeBranches_.push_back("isoElectronTracks");
-    activeBranches_.push_back("isoMuonTracks");
-    activeBranches_.push_back("isoPionTracks");
-    activeBranches_.push_back("DeltaPhi1");
-    activeBranches_.push_back("DeltaPhi2");
-    activeBranches_.push_back("DeltaPhi3");
-    activeBranches_.push_back("DeltaPhi4");
-    if (isSkim_) {
-      activeBranches_.push_back("RA2bin");
-    } else {
-      activeBranches_.push_back("NJetsclean");
-      activeBranches_.push_back("BTagsclean");
-      activeBranches_.push_back("HTclean");
-      activeBranches_.push_back("MHTclean");
-      activeBranches_.push_back("JetIDclean");
-      activeBranches_.push_back("Jetsclean");
-      activeBranches_.push_back("Jetsclean_hadronFlavor");
-      activeBranches_.push_back("Jetsclean_HTMask");
-      activeBranches_.push_back("isoElectronTracksclean");
-      activeBranches_.push_back("isoMuonTracksclean");
-      activeBranches_.push_back("isoPionTracksclean");
-      activeBranches_.push_back("DeltaPhi1clean");
-      activeBranches_.push_back("DeltaPhi2clean");
-      activeBranches_.push_back("DeltaPhi3clean");
-      activeBranches_.push_back("DeltaPhi4clean");
-    }
-    if (ntupleVersion_ != "V12") {
-      activeBranches_.push_back("NMuons");
-      activeBranches_.push_back("NElectrons");
-    }
-    activeBranches_.push_back("Muons");
-    activeBranches_.push_back("Electrons");
-    activeBranches_.push_back("ZCandidates");
-    activeBranches_.push_back("Photons");
-    activeBranches_.push_back("Photons_nonPrompt");
-    activeBranches_.push_back("Photons_fullID");
-    activeBranches_.push_back("NVtx");
-    activeBranches_.push_back("TriggerPass");
-    activeBranches_.push_back("TriggerPrescales");
-    activeBranches_.push_back("HBHENoiseFilter");
-    activeBranches_.push_back("HBHEIsoNoiseFilter");
-    activeBranches_.push_back("eeBadScFilter");
-    activeBranches_.push_back("EcalDeadCellTriggerPrimitiveFilter");
-    activeBranches_.push_back("globalTightHalo2016Filter");
-    activeBranches_.push_back("BadChargedCandidateFilter");
-    activeBranches_.push_back("BadPFMuonFilter");
-    activeBranches_.push_back("nAllVertices");
-    if (isMC_) {
-      activeBranches_.push_back("puWeight");
-      activeBranches_.push_back("Weight");
-      activeBranches_.push_back("TrueNumInteractions");
-      activeBranches_.push_back("madMinPhotonDeltaR");
-      activeBranches_.push_back("GenMuons");
-      activeBranches_.push_back("GenElectrons");
-      activeBranches_.push_back("GenTaus");
-    }
 
     kinThresholds_.push_back({300, 300, 500, 1000});  // mht threshold, {ht thresholds}
     kinThresholds_.push_back({350, 350, 500, 1000});
@@ -205,11 +218,12 @@ RA2bZinvAnalysis::Init() {
   fillCutMaps();
 
   cout << "After initialization," << endl;
-  cout << "The MC flag is " << isMC_ << endl;
   cout << "The ntuple version is " << ntupleVersion_ << endl;
+  cout << "The MC flag is " << isMC_ << endl;
   cout << "The input-files-are-skims flag is " << isSkim_ << endl;
   cout << "The era is " << era_ << endl;
   cout << "The integrated luminosity = " << intLumi_ << endl;
+  cout << "The path to input files is " << treeLoc_ << endl;
   cout << "The minDeltaPhi cuts are " << deltaPhi_ << endl;
   cout << "The apply b-tag scale factors flag is " << applyBTagSF_ << endl;
   cout << "The apply pileup weight flag is " << applyPuWeight_ << endl;
@@ -235,7 +249,7 @@ RA2bZinvAnalysis::getChain(const char* sample, Int_t* fCurrent, bool setBrAddr) 
   else if (theSample.Contains("zmm")) key = TString("zmm");
   else if (theSample.Contains("zee")) key = TString("zee");
 
-  TChain* chain = new TChain(treeName_);
+  TChain* chain = new TChain(treeName_.data());
   std::vector<TString> files;
   try {files = fileMap_.at(key);}
   catch (const std::out_of_range& oor) {

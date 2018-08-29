@@ -1,0 +1,23 @@
+# The following configuration options are set by compiler directives in
+# RA2bZinvAnalysis.h; comment out to reverse.
+# #define ISSKIM
+# #define ISV12  # So far the alternative is V15
+# #define ISMC
+#
+era = 2016
+tree path = /nfs/data38/cms/mulholland/lpcTrees/Skims/Run2ProductionV12 # Colorado, owned by mulholland
+# tree path = /nfs/data38/cms/wtford/lpcTrees/Skims/Run2ProductionV12";  # Colorado, owned by wtford (Zjets only)
+# tree path = root://cmseos.fnal.gov//store/user/lpcsusyhad/SusyRA2Analysis2015/Skims/Run2ProductionV12";  # xrootd
+# tree path = /eos/uscms/store/user/lpcsusyhad/SusyRA2Analysis2015/Skims/Run2ProductionV12";  # from cmslpc
+# tree path = root://cmseos.fnal.gov//store/user/lpcsusyhad/SusyRA2Analysis2015/Run2ProductionV15";  # ntuples, xrootd
+# tree path = root://cmseos.fnal.gov//store/user/lpcsusyhad/SusyRA2Analysis2015/Skims/Run2ProductionV15";  # xrootd
+# tree path = /eos/uscms/store/user/lpcsusyhad/SusyRA2Analysis2015/Skims/Run2ProductionV15";  # from cmslpc
+delta phi sample = nominal  # ldp, hdp
+integrated luminosity = 35.9
+apply Z mass cut = true
+apply Z Pt cut = true
+apply photon min Delta R cut = true
+use analysis bin from tree = true
+apply b-tag SF = false
+apply pileup weight = true
+use custom pileup weight = true

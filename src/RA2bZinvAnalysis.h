@@ -10,7 +10,7 @@
 
 #define ISSKIM
 #define ISV12
-#define ISMC
+/* #define ISMC */
 
 #include <TString.h>
 #include <TChain.h>
@@ -21,9 +21,6 @@
 #include <TTreeFormula.h>
 #include <TChainElement.h>
 #include "../../Analysis/btag/BTagCorrector.h"
-
-enum class dataStatus {data, MC};
-enum class skimStatus {skimmed, unskimmed};
 
 // members needed by nested class cutHistos
 static TString HTcut_;
@@ -41,7 +38,7 @@ class RA2bZinvAnalysis {
 
 public:
   RA2bZinvAnalysis();
-  /* RA2bZinvAnalysis(dataStatus datastat, TString ntupleVersion, skimStatus skimstat = skimStatus::skimmed); */
+  RA2bZinvAnalysis(const std::string& cfg_filename);
   virtual ~RA2bZinvAnalysis() {};
 
   TChain* getChain(const char* sample, Int_t* fCurrent = nullptr, bool setBrAddr = true);
@@ -105,10 +102,11 @@ private:
 #else
   const bool isSkim_ = false;
 #endif
-  const char* treeLoc_;
-  const char* treeName_;
-  TString era_;  // "2016", ...
-  TString deltaPhi_;  // "nominal", "hdp", "ldp"
+  std::string treeName_;
+  std::string treeLoc_;
+  std::string era_;  // "2016", ...
+  double intLumi_;
+  std::string deltaPhi_;  // "nominal", "hdp", "ldp"
   bool applyMassCut_;
   bool applyPtCut_;
   bool applyMinDeltaRCut_;
@@ -124,7 +122,6 @@ private:
   std::vector<int> nJetThresholds_;
   std::vector<int> nbThresholds_;
   unsigned kinSize_;
-  double intLumi_;
 
 #ifdef ISMC
 
@@ -170,7 +167,7 @@ private:
   ivector_map toCCbin_;
   std::vector<const char*> activeBranches_;
 
-  void Init();
+  void Init(const std::string& cfg_filename="");
   void fillFileMap();
   void fillCutMaps();
   void bookAndFillHistograms(const char* sample, std::vector<hist1D*>& histograms);

@@ -9,11 +9,13 @@
 
   gEnv->SetValue("TFile.AsyncPrefetching", 1);
 
-  bool doCCzvv = true;
-  bool doCCttzvv = true;
+  bool doCCzvv = false;
+  bool doCCttzvv = false;
+  bool doCCzmm = false;
+  bool doCCzee = false;
   bool do1Dzvv = false;
   bool do1Dttzvv = false;
-  bool do1Dzmm = false;
+  bool do1Dzmm = true;
   bool do1Dzee = false;
   bool do1Ddymm = false;
   bool do1Ddyee = false;
@@ -26,7 +28,8 @@
   bool doMakeClass = false;
   bool doListTrigPrescales = false;
 
-  RA2bZinvAnalysis analyzer;
+  RA2bZinvAnalysis analyzer;  // Default configuration
+  // RA2bZinvAnalysis analyzer("lowDphi.cfg");
 
   if (doCCzvv || doCCttzvv) {
     // Output file
@@ -44,6 +47,21 @@
       TH1F* hCCzinv = (TH1F*) hCCzvv->Clone();
       hCCzinv->Add(hCCttzvv);
       hCCzinv->SetName("hCCzinv");  hCCzinv->Draw();
+    }
+    CChistos->Write();
+  }
+
+  if (doCCzmm || doCCzee) {
+    // Output file
+    TFile *CChistos = TFile::Open("hCCzll.root", "RECREATE");
+
+    if (doCCzmm) {
+      TH1F* hCCzmm = analyzer.makeCChist("zmm");
+      hCCzmm->Draw();
+    }
+    if (doCCzee) {
+      TH1F* hCCzee = analyzer.makeCChist("zee");
+      hCCzee->Draw();
     }
     CChistos->Write();
   }
