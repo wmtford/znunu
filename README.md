@@ -14,8 +14,8 @@ skim/ntuple
 TreeMaker version
 
 The corresponding configuration of the RA2bZinvAnalysis instance is
-controlled via consructor arguments in RA2bZinvDriver.C.  Here also
-choose which samples to analyze.
+controlled via config files RA2bZinvAnalysis.cfi (for default initialization), 
+plus <something>.cfg for specialization.
 
 Run the code with
 
