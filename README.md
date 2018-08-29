@@ -15,7 +15,7 @@ TreeMaker version
 
 The corresponding configuration of the RA2bZinvAnalysis instance is
 controlled via config files RA2bZinvAnalysis.cfi (for default initialization), 
-plus <something>.cfg for specialization.
+plus (filename).cfg for specialization.
 
 Run the code with
 
