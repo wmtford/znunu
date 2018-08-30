@@ -42,6 +42,7 @@ public:
   virtual ~RA2bZinvAnalysis() {};
 
   TChain* getChain(const char* sample, Int_t* fCurrent = nullptr, bool setBrAddr = true);
+  std::vector<TString> fileList(TString sampleKey);
   std::vector<TH1F*> makeHistograms(const char* sample);
   TH1F* makeCChist(const char* sample);
   TCut getCuts(const TString sampleKey);
@@ -104,6 +105,7 @@ private:
 #endif
   std::string treeName_;
   std::string treeLoc_;
+  std::string fileListsFile_;
   std::string era_;  // "2016", ...
   double intLumi_;
   std::string deltaPhi_;  // "nominal", "hdp", "ldp"
@@ -158,7 +160,6 @@ private:
   typedef std::map<TString, std::vector<TString> > vstring_map;
   typedef std::map<TString, TString> string_map;
   typedef std::map<std::vector<int>, Int_t> ivector_map;
-  vstring_map fileMap_;
   vstring_map triggerMap_;
   string_map objCutMap_;
   string_map minDphiCutMap_;
@@ -168,7 +169,6 @@ private:
   std::vector<const char*> activeBranches_;
 
   void Init(const std::string& cfg_filename="");
-  void fillFileMap();
   void fillCutMaps();
   void bookAndFillHistograms(const char* sample, std::vector<hist1D*>& histograms);
   void fillCutFlow(TH1F* hcf, Double_t wt);

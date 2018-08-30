@@ -1,0 +1,86 @@
+zinv 10   # Z->vv MC
+tree_signal/tree_ZJetsToNuNu_HT-100to200.root
+tree_signal/tree_ZJetsToNuNu_HT-200to400.root
+tree_signal/tree_ZJetsToNuNu_HT-400to600.root
+tree_signal/tree_ZJetsToNuNu_HT-600to800.root
+tree_signal/tree_ZJetsToNuNu_HT-800to1200.root
+tree_signal/tree_ZJetsToNuNu_HT-1200to2500.root
+tree_signal/tree_ZJetsToNuNu_HT-2500toInf.root
+##
+
+ttzvv    # Z->ttzvv MC
+tree_signal/tree_TTZToLLNuNu.root
+##
+
+dymm 10   # DY->mumu MC
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-100to200.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-200to400.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-400to600.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-600to800.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf.root
+##
+
+dyee 10   #DY->ee MC
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-100to200.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-200to400.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-400to600.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-600to800.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf.root
+##
+
+ttzmm    # ttz->mumu MC
+tree_DYm_CleanVars/tree_TTZToLLNuNu.root
+##
+
+ttzee    # ttz->ee MC
+tree_DYe_CleanVars/tree_TTZToLLNuNu.root
+##
+
+VVmm    # VV->mumu MC
+tree_DYm_CleanVars/tree_ZZTo2L2Q.root
+tree_DYm_CleanVars/tree_WWTo2L2Nu.root
+##
+
+VVee    # VV->ee MC
+tree_DYe_CleanVars/tree_ZZTo2L2Q.root
+tree_DYe_CleanVars/tree_WWTo2L2Nu.root
+##
+
+ttmm    # ttbar->mumu MC
+tree_DYm_CleanVars/tree_TTJets_DiLept.root
+tree_DYm_CleanVars/tree_TTJets_SingleLeptFromTbar.root
+tree_DYm_CleanVars/tree_TTJets_SingleLeptFromT.root
+##
+
+ttee    # ttbar->ee MC
+tree_DYe_CleanVars/tree_TTJets_DiLept.root
+tree_DYe_CleanVars/tree_TTJets_SingleLeptFromTbar.root
+tree_DYe_CleanVars/tree_TTJets_SingleLeptFromT.root
+##
+
+zmm 10   # DY->mumu data
+tree_DYm_CleanVars/tree_SingleMuon_re2016B.root
+tree_DYm_CleanVars/tree_SingleMuon_re2016C.root
+tree_DYm_CleanVars/tree_SingleMuon_re2016D.root
+tree_DYm_CleanVars/tree_SingleMuon_re2016E.root
+tree_DYm_CleanVars/tree_SingleMuon_re2016F.root
+tree_DYm_CleanVars/tree_SingleMuon_re2016G.root
+tree_DYm_CleanVars/tree_SingleMuon_re2016H2.root
+tree_DYm_CleanVars/tree_SingleMuon_re2016H3.root
+##
+
+zee 10   # DY->ee data
+tree_DYe_CleanVars/tree_SingleElectron_re2016B.root
+tree_DYe_CleanVars/tree_SingleElectron_re2016C.root
+tree_DYe_CleanVars/tree_SingleElectron_re2016D.root
+tree_DYe_CleanVars/tree_SingleElectron_re2016E.root
+tree_DYe_CleanVars/tree_SingleElectron_re2016F.root
+tree_DYe_CleanVars/tree_SingleElectron_re2016G.root
+tree_DYe_CleanVars/tree_SingleElectron_re2016H2.root
+tree_DYe_CleanVars/tree_SingleElectron_re2016H3.root
+##
+

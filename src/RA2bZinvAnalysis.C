@@ -4,7 +4,6 @@
 //
 
 #include "RA2bZinvAnalysis.h"
-#include "fillFileMap.h"
 #include <TStyle.h>
 #include <TROOT.h>
 #include <TCanvas.h>
@@ -53,6 +52,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   desc.add_options()
     ("era", po::value<std::string>(&era_))
     ("tree path", po::value<std::string>(&treeLoc_))
+    ("root file index", po::value<std::string>(&fileListsFile_))
     ("delta phi sample", po::value<std::string>(&deltaPhi_), "nominal, hdp, ldp")
     ("integrated luminosity", po::value<double>(&intLumi_))
     ("apply Z mass cut", po::value<bool>(&applyMassCut_))
@@ -74,20 +74,10 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
     po::notify(vm);
   }
 
-  // era_ = "2016";
-  // intLumi_ = 1;
-  // treeLoc_ = "";
-  // treeName_ = "tree";
-  // deltaPhi_ = "nominal";
-  // applyMassCut_ = true;
-  // applyPtCut_ = true;
-  // applyMinDeltaRCut_ = true;
-  // // applySF_ = false;
-  // // njSplit_ = false;
-  // useTreeCCbin_ = true;  // only in skims
-  // applyBTagSF_ = false;  // overridden false if !isMC_
-  // applyPuWeight_ = true;  // overridden false if !isMC_
-  // customPuWeight_ = true;  // Substitute Kevin P recipe for the PuWeight in the tree
+  // useTreeCCbin_  only in skims
+  // applyBTagSF_  overridden false if !isMC_
+  // applyPuWeight_  overridden false if !isMC_
+  // customPuWeight_  Substitute Kevin P recipe for the PuWeight in the tree
   puWeight = 1;  // overridden from tree if isMC_
   Weight = 1;  // overridden from tree if isMC_
   TrueNumInteractions = 20;  // overridden from tree if isMC_
@@ -214,7 +204,6 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   for (int i = 0; i < mmax; ++i)
     kinSize_ += kinThresholds_[i].size();
 
-  fillFileMap();
   fillCutMaps();
 
   cout << "After initialization," << endl;
@@ -250,12 +239,7 @@ RA2bZinvAnalysis::getChain(const char* sample, Int_t* fCurrent, bool setBrAddr) 
   else if (theSample.Contains("zee")) key = TString("zee");
 
   TChain* chain = new TChain(treeName_.data());
-  std::vector<TString> files;
-  try {files = fileMap_.at(key);}
-  catch (const std::out_of_range& oor) {
-    std::cerr << oor.what() << " getChain: sample key (" << key << ") not found in fileMap" << endl;
-    exit(2);
-  }
+  std::vector<TString> files = fileList(key);
   for (auto file : files) {
     cout << file << endl;
     chain->Add(file);
@@ -277,6 +261,68 @@ RA2bZinvAnalysis::getChain(const char* sample, Int_t* fCurrent, bool setBrAddr) 
   for (auto theBranch : activeBranches_) chain->SetBranchStatus(theBranch, 1);
 
   return chain;
+
+}  // ======================================================================================
+
+std::vector<TString>
+RA2bZinvAnalysis::fileList(TString sampleKey) {
+
+  std::vector<TString> files;
+  TString dir(treeLoc_);
+  TString key, toReserve;
+  const char* fileName = fileListsFile_.data();
+  ifstream dataStream;
+  cout << "Getting root file list from " << fileName << endl;
+  dataStream.open(fileName); // open the data file
+  if (!dataStream.good()) {
+  cout << "Open failed for file " << fileName << endl;
+    return files; // exit if file not found
+  }
+
+  TString buf;
+  Ssiz_t from;
+  do {  // Look for matching sample key
+    buf.ReadLine(dataStream);
+    if (dataStream.eof()) {
+      cout << "EOF found prematurely while searching for key " << sampleKey << endl;
+      return files;
+    }
+    Ssiz_t pos = buf.First('#');
+    if (pos <= 0) continue;  // Ignore comment lines
+    buf = buf.Remove(pos, buf.Length()-pos);  // Remove comment following the tokens
+    from = 0;
+    buf.Tokenize(key, from);  // First token is the key
+  }
+  while (key != sampleKey);
+
+  int nReserve = 0;  // Second token is the optional size to reserve in the file list vector
+  bool next = buf.Tokenize(toReserve, from);
+  if (next && toReserve.IsDec()) sscanf(toReserve.Data(), "%d", &nReserve);
+
+  do {  // Read the file names for this sample
+    buf.ReadLine(dataStream);
+    if (dataStream.eof()) {
+      cout << "EOF found prematurely while searching for end of file list" << sampleKey << endl;
+      return files;
+    }
+    if (buf.Contains("#*")) {  // Ignore #* ... *# comment block
+      do {
+	buf.ReadLine(dataStream);
+	if (dataStream.eof()) {
+	  cout << "EOF found prematurely while searching for comment block terminator" << sampleKey << endl;
+	  return files;
+	}
+      }
+      while (!buf.Contains("*#"));
+    }
+    if (buf.Contains("#")) continue;
+    files.push_back(dir+buf);
+    buf = buf.Strip();  // Remove any trailing whitespace
+  }
+  while (!buf.Contains("##"));  // Dataset terminator is ##
+
+  return files;
+
 }  // ======================================================================================
 
 TCut
