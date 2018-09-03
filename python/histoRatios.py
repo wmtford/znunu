@@ -9,67 +9,103 @@ ROOT.gROOT.Reset()
 ROOT.gROOT.SetBatch(1)
 
 doMumu = True
-doEe = True
+doEe = False
+iPeriod = 5
 fScale = 1
 MZmmMax = 0
-MZeeMax = 2000
-# MZmmMax = 700
-# MZeeMax = 600
+MZeeMax = 0
 ratioMin = None
 ratioMax = None
 
 hists = []
+filehists = {}
 
-muhists = {}
-ehists = {}
+# legList = ['2016 DY data', '2016 DY MC']
+# Nfile = ROOT.TFile('../outputs/histsDY_2016v12.root')
+# Dfile = ROOT.TFile('../outputs/histsDYMC_2016v12_puWt.root')
+# if (doMumu):
+#   filehists['N'] = (Nfile, ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm", "hCutFlow_zmm", "hCuts_zmm", "hVertices_zmm"])
+#   filehists['D'] = (Dfile, ["hHT_dymm", "hMHT_dymm", "hNJets_dymm", "hBTags_dymm", "hZmass_dymm", "hZpt_dymm", "hCutFlow_dymm", "hCuts_dymm", "hVertices_dymm"])
+#   hists.append(filehists)
+# if (doEe):
+#   filehists['N'] = (Nfile, ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee", "hCutFlow_zee", "hCuts_zee", "hVertices_zee"])
+#   filehists['D'] = (Dfile, ["hHT_dyee", "hMHT_dyee", "hNJets_dyee", "hBTags_dyee", "hZmass_dyee", "hZpt_dyee", "hCutFlow_dyee", "hCuts_dyee", "hVertices_dyee"])
+#   hists.append(filehists)
 
-Dfile = ROOT.TFile('../outputs/histsDYMC_2016v12_puWt.root')
-Nfile = ROOT.TFile('../outputs/histsDY_2016v12.root')
-if (doMumu):
-  muhists['N'] = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm", "hCutFlow_zmm", "hCuts_zmm", "hVertices_zmm"]
-  muhists['D'] = ["hHT_dymm", "hMHT_dymm", "hNJets_dymm", "hBTags_dymm", "hZmass_dymm", "hZpt_dymm", "hCutFlow_dymm", "hCuts_dymm", "hVertices_dymm"]
-  hists.append(muhists)
-if (doEe):
-  ehists['N'] = ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee", "hCutFlow_zee", "hCuts_zee", "hVertices_zee"]
-  ehists['D'] = ["hHT_dyee", "hMHT_dyee", "hNJets_dyee", "hBTags_dyee", "hZmass_dyee", "hZpt_dyee", "hCutFlow_dyee", "hCuts_dyee", "hVertices_dyee"]
-  hists.append(ehists)
-legList = ['2016 DY data', '2016 DY MC']
-
-# Dfile = ROOT.TFile('../outputs/histsDYMC_2016v12.root')
+# legList = ['2016 DY MC, pileup wt','2016 DY MC']
 # Nfile = ROOT.TFile('../outputs/histsDYMC_2016v12_puWt.root')
+# Dfile = ROOT.TFile('../outputs/histsDYMC_2016v12.root')
 # ratioMin = 0.85
 # ratioMax = 1.15
 # if (doMumu):
-#   hists.append(["hHT_dymm", "hMHT_dymm", "hNJets_dymm", "hBTags_dymm", "hZmass_dymm", "hZpt_dymm", "hCutFlow_dymm", "hCuts_dymm"])
+#   histnames = ["hHT_dymm", "hMHT_dymm", "hNJets_dymm", "hBTags_dymm", "hZmass_dymm", "hZpt_dymm", "hCutFlow_dymm", "hCuts_dymm"]
+#   filehists['N'] = (Nfile, histnames)
+#   filehists['D'] = (Dfile, histnames)
+#   hists.append(filehists)
 # if (doEe):
-#   hists.append(["hHT_dyee", "hMHT_dyee", "hNJets_dyee", "hBTags_dyee", "hZmass_dyee", "hZpt_dyee", "hCutFlow_dyee", "hCuts_dyee"])
-# legList = ['2016 DY MC, pileup wt','2016 DY MC']
+#   histnames = ["hHT_dyee", "hMHT_dyee", "hNJets_dyee", "hBTags_dyee", "hZmass_dyee", "hZpt_dyee", "hCutFlow_dyee", "hCuts_dyee"]
+#   filehists['N'] = (Nfile, histnames)
+#   filehists['D'] = (Dfile, histnames)
+#   hists.append(filehists)
 
-# Dfile = ROOT.TFile('../outputs/histsDY_2016v12.root')
+iPeriod = 6
+legList = ['2017 data','2016 data, scaled']
+# legList = ['2017 data, no trigger 50','2017 data']
+if (doMumu):
+  # Nfile = ROOT.TFile('../outputs/histsDYmm_2017v15_noTrig50.root')
+  Nfile = ROOT.TFile('../outputs/histsDYmm_2017v15.root')
+  Dfile = ROOT.TFile('../outputs/histsDY_2016v12.root')
+  histnames = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm"]
+  filehists['N'] = (Nfile, histnames)
+  filehists['D'] = (Dfile, histnames)
+  hists.append(filehists)
+  fScale = 41.5/35.9
+if (doEe):
+  Nfile = ROOT.TFile('../outputs/histsDYee_2017v15.root')
+  Dfile = ROOT.TFile('../outputs/histsDY_2016v12.root')
+  histnames = ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee"]
+  filehists['N'] = (Nfile, histnames)
+  filehists['D'] = (Dfile, histnames)
+  hists.append(filehists)
+  fScale = 41.5/35.9
+
+# iPeriod = 8
+# legList = ['2018 data','2016 data, scaled']
 # if (doMumu):
 #   Nfile = ROOT.TFile('../outputs/histsDYmm_2018v15.root')
-#   hists.append("hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm"])
+#   Dfile = ROOT.TFile('../outputs/histsDY_2016v12.root')
+#   histnames = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm"]
+#   filehists['N'] = (Nfile, histnames)
+#   filehists['D'] = (Dfile, histnames)
+#   hists.append(filehists)
 #   fScale = 14.0/35.9
+#   MZmmMax = 700
 # if (doEe):
 #   Nfile = ROOT.TFile('../outputs/histsDYee_2018v15.root')
-#   hists.append(["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee"])
+#   Dfile = ROOT.TFile('../outputs/histsDY_2016v12.root')
+#   histnames = ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee"]
+#   filehists['N'] = (Nfile, histnames)
+#   filehists['D'] = (Dfile, histnames)
+#   hists.append(filehists)
 #   fScale = 13.5/35.9
-# legList = ['2018 data','2016 data, scaled']
+#   MZeeMax = 600
 
 # zhists = {}
 # Dfile = ROOT.TFile('~/cms/src/root/zinvData_2017Feb24/ZinvMCttzMC174binV12.root')
 # Nfile = ROOT.TFile('~/cms/src/root/zinvData_2017Feb24/ZinvHistos.root')
-# zhists['D'] = ["hCCzinv"]
-# zhists['N'] = ["ZinvBGpred"]
+# zhists['D'] = (Dfile, ["hCCzinv"])
+# zhists['N'] = (Nfile, ["ZinvBGpred"])
 # hists.append(zhists)
 
-for NDpairs in hists:
-  for i in range(len(NDpairs['N'])):
-    nhName = NDpairs['N'][i]
+for samples in hists:
+  Nfile = samples['N'][0]
+  Dfile = samples['D'][0]
+  for i in range(len(samples['N'][1])):
+    nhName = samples['N'][1][i]
     print str(nhName)
     hNumer = Nfile.Get(nhName)
     hNumer.SetName(str(nhName)+"N")
-    dhName = NDpairs['D'][i]
+    dhName = samples['D'][1][i]
     print str(dhName)
     hDen   = Dfile.Get(dhName)
     hDen.SetName(str(dhName)+"D")
@@ -84,7 +120,7 @@ for NDpairs in hists:
       doLogy = True
     canvas = RA2b.getPlotAndRatio(
       numHists=hNumer, denomHists=hDen, doRatio=True,
-      doLogy=doLogy, doCMSlumi=True, iPeriod=8, drawHorizontalLine=True,
+      doLogy=doLogy, doCMSlumi=True, iPeriod=iPeriod, drawHorizontalLine=True,
       xTitle=hNumer.GetXaxis().GetTitle(), yTitle=hNumer.GetYaxis().GetTitle(),
       ratioMin=ratioMin, ratioMax=ratioMax,
       legList = legList
@@ -92,7 +128,7 @@ for NDpairs in hists:
     # For 174-bin plot
     # canvas = RA2b.getPlotAndRatio(
     #   numHists=hNumer, denomHists=hDen, doRatio=True,
-    #   doLogy=doLogy, doCMSlumi=True, iPeriod=8, drawHorizontalLine=True,
+    #   doLogy=doLogy, doCMSlumi=True, iPeriod=iPeriod, drawHorizontalLine=True,
     #   ratioMin=ratioMin, ratioMax=ratioMax, ratioTitle="#frac{Direct}{Prediction} ",
     #   # legList = legList
     #   # doClosureStyle=True

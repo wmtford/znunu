@@ -25,7 +25,7 @@ def cmsLumi(pad,  iPeriod=None,  iPosX=None, extraText=None ):
     if(extraText==None):
         extraText   = "Preliminary"
     if(iPeriod==None):
-        iPeriod = 6
+        iPeriod = 5
     if(iPosX==None):
         iPosX=0
 
@@ -44,10 +44,10 @@ def cmsLumi(pad,  iPeriod=None,  iPosX=None, extraText=None ):
     extraOverCmsTextSize  = 0.76
     
     lumi_13TeV = "2.3 fb^{-1}"
-    lumi_13TeV_2016 = "20 fb^{-1}"
     lumi_13TeV_V8 = "4.0 fb^{-1}"
-    lumi_13TeV_V12 = "35.9 fb^{-1}"
-    lumi_13TeV_V15 = "14.0 fb^{-1}"
+    lumi_13TeV_2016 = "35.9 fb^{-1}"
+    lumi_13TeV_2017 = "41.5 fb^{-1}"
+    lumi_13TeV_2018 = "14.0 fb^{-1}"
     lumi_8TeV  = "19.7 fb^{-1}" 
     lumi_7TeV  = "5.1 fb^{-1}"
     lumi_sqrtS = ""
@@ -96,7 +96,7 @@ def cmsLumi(pad,  iPeriod=None,  iPosX=None, extraText=None ):
         lumiText += lumi_13TeV_2016
         lumiText += " (13 TeV)"
     elif ( iPeriod==6 ):
-        lumiText += lumi_13TeV_V12
+        lumiText += lumi_13TeV_2017
         lumiText += " (13 TeV)"
     elif ( iPeriod==7 ):
         if( outOfFrame ):lumiText += "#scale[0.85]{"
@@ -110,7 +110,7 @@ def cmsLumi(pad,  iPeriod=None,  iPosX=None, extraText=None ):
         lumiText += " (7 TeV)"
         if( outOfFrame): lumiText += "}"
     elif ( iPeriod==8 ):
-        lumiText += lumi_13TeV_V15
+        lumiText += lumi_13TeV_2018
         lumiText += " (13 TeV)"
     elif ( iPeriod==12 ):
         lumiText += "8 TeV"
@@ -4426,7 +4426,7 @@ def getZmassFitPlot(fitFunc=None, dataSet=None, mcSet=None, plotMC=None, doDiMu=
     if(textCoords2==None):
         textCoords2 = [0.20,0.77,.40,.82]
     if(iPeriod==None):
-        iPeriod=6
+        iPeriod=5
     if(doCMSlumi==None):
         doCMSlumi=True
     if(iPos==None):

@@ -50,6 +50,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   // Set up configuration, using boost/program_options.
   po::options_description desc("Config");
   desc.add_options()
+    ("verbosity", po::value<int>(&verbosity_))
     ("era", po::value<std::string>(&era_))
     ("tree path", po::value<std::string>(&treeLoc_))
     ("root file index", po::value<std::string>(&fileListsFile_))
@@ -151,6 +152,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   activeBranches_.push_back("globalTightHalo2016Filter");
   activeBranches_.push_back("BadChargedCandidateFilter");
   activeBranches_.push_back("BadPFMuonFilter");
+  activeBranches_.push_back("PFCaloMETRatio");
   activeBranches_.push_back("nAllVertices");
   if (isMC_) {
     activeBranches_.push_back("puWeight");
@@ -207,6 +209,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   fillCutMaps();
 
   cout << "After initialization," << endl;
+  cout << "The verbosity level is " << verbosity_ << endl;
   cout << "The ntuple version is " << ntupleVersion_ << endl;
   cout << "The MC flag is " << isMC_ << endl;
   cout << "The input-files-are-skims flag is " << isSkim_ << endl;
@@ -241,7 +244,7 @@ RA2bZinvAnalysis::getChain(const char* sample, Int_t* fCurrent, bool setBrAddr) 
   TChain* chain = new TChain(treeName_.data());
   std::vector<TString> files = fileList(key);
   for (auto file : files) {
-    cout << file << endl;
+    if (verbosity_ >= 2) cout << file << endl;
     chain->Add(file);
   }
   cout << "Initial size of cache for chain = " << chain->GetCacheSize() << endl;
@@ -275,7 +278,7 @@ RA2bZinvAnalysis::fileList(TString sampleKey) {
   cout << "Getting root file list from " << fileName << endl;
   dataStream.open(fileName); // open the data file
   if (!dataStream.good()) {
-  cout << "Open failed for file " << fileName << endl;
+    cout << "Open failed for file " << fileName << endl;
     return files; // exit if file not found
   }
 
@@ -355,7 +358,11 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
   } else {
     commonCuts_ = "JetID==1 && globalTightHalo2016Filter==1 && HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && eeBadScFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && BadChargedCandidateFilter && BadPFMuonFilter && NVtx > 0";  // Troy revision-
   }
-  if (!isSkim_) commonCuts_ += " && PFCaloMETRatio < 5 && noMuonJet && noFakeJet";
+  // if (!isSkim_) {
+  //   commonCuts_ += " && PFCaloMETRatio < 5";  // Applied in skimming
+  //   commonCuts_ += " && noMuonJet";  // Defined in loop, applied in skimming
+  //   commonCuts_ += " && noFakeJet";  // Defined in loop, applied in skimming FastSim
+  // }
 
   massCut_ = "1";
   if ((sampleKey == "zmm" || sampleKey == "zee" || sampleKey == "zll") && applyMassCut_)
@@ -414,7 +421,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<hist1D*>
   // Define N - 1 (or N - multiple) cuts, book histograms.  Traverse the chain and fill.
   //
   TCut baselineCuts = getCuts(sample);
-  cout << endl << "baseline = " << endl << baselineCuts << endl << endl;
+  if(verbosity_ >= 1) cout << endl << "baseline = " << endl << baselineCuts << endl << endl;
   Int_t fCurrent;  // current Tree number in a TChain
   TChain* chain = getChain(sample, &fCurrent);
   TObjArray* forNotify = new TObjArray;
@@ -433,38 +440,40 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<hist1D*>
       for (auto cutToOmit : hg->omitCuts) hg->NminusOneCuts(*cutToOmit) = "1";
       if (strlen(hg->addCuts) != 0) hg->NminusOneCuts += TString(" && ") + hg->addCuts;
     }
-    cout << "\n For sample " << sample << ", histo " << hg->name  << ", hg->omitCuts = ";
-    for (auto cutToOmit : hg->omitCuts) cout << *cutToOmit << " ";
-    cout << ", cuts = " << endl << hg->NminusOneCuts << endl;
+    if (verbosity_ >= 1) {
+      cout << "\n For sample " << sample << ", histo " << hg->name  << ", hg->omitCuts = ";
+      for (auto cutToOmit : hg->omitCuts) cout << *cutToOmit << " ";
+      cout << ", cuts = " << endl << hg->NminusOneCuts << endl;
+    }
     hg->NminusOneFormula = new TTreeFormula(hg->name, hg->NminusOneCuts, chain);
     forNotify->Add(hg->NminusOneFormula);
   }
   chain->SetNotify(forNotify);
 
   Long64_t Nentries = chain->GetEntries();
-  cout << "Nentries in tree = " << Nentries << endl;
+  if (verbosity_ >= 1) cout << "Nentries in tree = " << Nentries << endl;
   int count = 0;
   int countInFile = 0;
   for (Long64_t entry = 0; entry < Nentries; ++entry) {
     count++;
-    if (count % 100000 == 0) cout << "Entry number " << count << endl;
+    if (verbosity_ >= 1 && count % 100000 == 0) cout << "Entry number " << count << endl;
 
     chain->LoadTree(entry);
     if (chain->GetTreeNumber() != fCurrent) {
       fCurrent = chain->GetTreeNumber();
       TFile* thisFile = chain->GetCurrentFile();
-      if (thisFile) cout << "Current file in chain: " << thisFile->GetName() << endl;
+      if (thisFile && verbosity_ >= 1) cout << "Current file in chain: " << thisFile->GetName() << endl;
       countInFile = 0;
     }
     chain->GetEntry(entry);
     countInFile++;
     if (countInFile == 1) {
       checkActiveTrigPrescales(sample);
-      if (isMC_) cout << "MC weight for this file is " << Weight << endl;
+      if (isMC_ && verbosity_ >= 1) cout << "MC weight for this file is " << Weight << endl;
     }
     cleanVars();  // If unskimmed input, copy <var>clean to <var>
 
-    if (ZCandidates->size() > 1) cout << ZCandidates->size() << " Z candidates found" << endl;
+    if (ZCandidates->size() > 1 && verbosity_ >= 2) cout << ZCandidates->size() << " Z candidates found" << endl;
 
     // Compute event weight factors
     Double_t eventWt = 1;
@@ -549,6 +558,13 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hBTags.ivalue = &BTags;
   histograms.push_back(&hBTags);
 
+  hist1D hnZcand;
+  hnZcand.name = TString("hnZcand_") + TString(sample);  hnZcand.title = "Number of Z candidates";
+  hnZcand.Nbins = 10;  hnZcand.lowEdge = 0;  hnZcand.highEdge = 10;
+  hnZcand.axisTitles.first = "N(Z candidates)";  hnZcand.axisTitles.second = "Events / bin";
+  hnZcand.filler = &RA2bZinvAnalysis::fillnZcand;  hnZcand.omitCuts.push_back(&massCut_);
+  histograms.push_back(&hnZcand);
+
   hist1D hZmass;
   hZmass.name = TString("hZmass_") + TString(sample);  hZmass.title = "Z mass";
   hZmass.Nbins = 30;  hZmass.lowEdge = 60;  hZmass.highEdge = 120;
@@ -592,47 +608,47 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   // Z mass in Njet, Nb bins
   hist1D hZmass_2j0b(hZmass);
   hZmass_2j0b.name = TString("hZmass_2j0b_") + TString(sample);  hZmass_2j0b.title = "Z mass, 2 jets & 0 b jets";
-  hZmass_2j0b.addCuts = "NJets==2 && BTags==0";
+  hZmass_2j0b.addCuts = isSkim_ ? "NJets==2 && BTags==0" : "NJetsclean==2 && BTagsclean==0";
   histograms.push_back(&hZmass_2j0b);
 
   hist1D hZmass_2j1b(hZmass);
   hZmass_2j1b.name = TString("hZmass_2j1b_") + TString(sample);  hZmass_2j1b.title = "Z mass, 2 jets & 1 b jet";
-  hZmass_2j1b.addCuts = "NJets==2 && BTags==1";
+  hZmass_2j1b.addCuts = isSkim_ ? "NJets==2 && BTags==1" : "NJetsclean==2 && BTagsclean==1";
   histograms.push_back(&hZmass_2j1b);
 
   hist1D hZmass_2j2b(hZmass);
   hZmass_2j2b.name = TString("hZmass_2j2b_") + TString(sample);  hZmass_2j2b.title = "Z mass, 2 jets & >=2 b jets";
-  hZmass_2j2b.addCuts = "NJets==2 && BTags>=2";
+  hZmass_2j2b.addCuts = isSkim_ ? "NJets==2 && BTags>=2" : "NJetsclean==2 && BTagsclean>=2";
   histograms.push_back(&hZmass_2j2b);
   //
   hist1D hZmass_3j0b(hZmass);
   hZmass_3j0b.name = TString("hZmass_3j0b_") + TString(sample);  hZmass_3j0b.title = "Z mass, 3-4 jets & 0 b jets";
-  hZmass_3j0b.addCuts = "NJets>=3 && NJets <=4 && BTags==0";
+  hZmass_3j0b.addCuts = isSkim_ ? "NJets>=3 && NJets<=4 && BTags==0" : "NJetsclean>=3 && NJetsclean<=4 && BTagsclean==0";
   histograms.push_back(&hZmass_3j0b);
 
   hist1D hZmass_3j1b(hZmass);
   hZmass_3j1b.name = TString("hZmass_3j1b_") + TString(sample);  hZmass_3j1b.title = "Z mass, 3-4 jets & 1 b jet";
-  hZmass_3j1b.addCuts = "NJets>=3 && NJets <=4 && BTags==1";
+  hZmass_3j1b.addCuts = isSkim_ ? "NJets>=3 && NJets<=4 && BTags==1" : "NJetsclean>=3 && NJetsclean<=4 && BTagsclean==1";
   histograms.push_back(&hZmass_3j1b);
 
   hist1D hZmass_3j2b(hZmass);
   hZmass_3j2b.name = TString("hZmass_3j2b_") + TString(sample);  hZmass_3j2b.title = "Z mass, 3-4 jets & >=2 b jets";
-  hZmass_3j2b.addCuts = "NJets>=3 && NJets <=4 && BTags>=2";
+  hZmass_3j2b.addCuts = isSkim_ ? "NJets>=3 && NJets<=4 && BTags>=2" : "NJetsclean>=3 && NJetsclean<=4 && BTagsclean>=2";
   histograms.push_back(&hZmass_3j2b);
   //
   hist1D hZmass_5j0b(hZmass);
   hZmass_5j0b.name = TString("hZmass_5j0b_") + TString(sample);  hZmass_5j0b.title = "Z mass, >=5 jets & 0 B jets";
-  hZmass_5j0b.addCuts = "NJets >=5 && BTags==0";
+  hZmass_5j0b.addCuts = isSkim_ ? "NJets>=5 && BTags==0" : "NJetsclean>=5 && BTagsclean==0";
   histograms.push_back(&hZmass_5j0b);
 
   hist1D hZmass_5j1b(hZmass);
   hZmass_5j1b.name = TString("hZmass_5j1b_") + TString(sample);  hZmass_5j1b.title = "Z mass, >=5 jets & 1 B jet";
-  hZmass_5j1b.addCuts = "NJets >=5 && BTags==1";
+  hZmass_5j1b.addCuts = isSkim_ ? "NJets>=5 && BTags==1" : "NJetsclean>=5 && BTagsclean==1";
   histograms.push_back(&hZmass_5j1b);
 
   hist1D hZmass_5j2b(hZmass);
   hZmass_5j2b.name = TString("hZmass_5j2b_") + TString(sample);  hZmass_5j2b.title = "Z mass, >=5 jets & >=2 B jets";
-  hZmass_5j2b.addCuts = "NJets >=5 && BTags>=2";
+  hZmass_5j2b.addCuts = isSkim_ ? "NJets>=5 && BTags>=2" : "NJetsclean>=5 && BTagsclean>=2";
   histograms.push_back(&hZmass_5j2b);
   bookAndFillHistograms(sample, histograms);
 
@@ -641,6 +657,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   theHists.push_back(hMHT.hist);
   theHists.push_back(hNJets.hist);
   theHists.push_back(hBTags.hist);
+  theHists.push_back(hnZcand.hist);
   theHists.push_back(hZmass.hist);
   theHists.push_back(hZpt.hist);
   theHists.push_back(hVertices.hist);
@@ -685,7 +702,7 @@ RA2bZinvAnalysis::makeCChist(const char* sample) {
   // Get the baseline cuts, make a TreeFormula, and add it to the list
   // of objects to be notified as new files in the chain are encountered
   TCut baselineCuts = getCuts(sample);
-  cout << "baseline = " << baselineCuts << endl;
+  if (verbosity_ >= 1) cout << "baseline = " << baselineCuts << endl;
   // See https://root-forum.cern.ch/t/how-to-evaluate-a-formula-for-a-single-tree-event/12283
   TTreeFormula* baselineTF = new TTreeFormula("baselineTF", baselineCuts, chain);
   forNotify->Add(baselineTF);
@@ -693,17 +710,17 @@ RA2bZinvAnalysis::makeCChist(const char* sample) {
 
   // Traverse the events in the chain
   Long64_t Nentries = chain->GetEntries();
-  cout << "Nentries in tree = " << Nentries << endl;
+  if (verbosity_ >= 1) cout << "Nentries in tree = " << Nentries << endl;
   int count = 0, outCount = 0, countInFile = 0;
   for (Long64_t entry = 0; entry < Nentries; ++entry) {
     count++;
-    if (count < 20 || count % 100000 == 0) cout << "Entry number " << count << endl;
+    if (verbosity_ >= 1 && (count % 100000 == 0)) cout << "Entry number " << count << endl;
     chain->LoadTree(entry);
     if (chain->GetTreeNumber() != fCurrent) {
       fCurrent = chain->GetTreeNumber();
       TFile* thisFile = chain->GetCurrentFile();
       if (thisFile) {
-    	cout << "Current file in chain: " << thisFile->GetName() << endl;
+    	if (verbosity_ >= 1) cout << "Current file in chain: " << thisFile->GetName() << endl;
     	if (btagcorr) btagcorr->SetEffs(thisFile);
       }
       countInFile = 0;
@@ -712,7 +729,7 @@ RA2bZinvAnalysis::makeCChist(const char* sample) {
     countInFile++;
     if (countInFile == 1) {
       checkActiveTrigPrescales(sample);
-      if (isMC_) cout << "MC weight for this file is " << Weight << endl;
+      if (isMC_ && verbosity_ >= 1) cout << "MC weight for this file is " << Weight << endl;
     }
     cleanVars();  // If unskimmed input, copy <var>clean to <var>
 
@@ -769,7 +786,7 @@ RA2bZinvAnalysis::makeCChist(const char* sample) {
 	  jbk = {binNjets, binNb, binKin};
 	  try {binCC = toCCbin_.at(jbk);}
 	  catch (const std::out_of_range& oor) {continue;}
-	  if (count % 100000 == 0) cout << "j = " << binNjets << ", NbTags = " << BTags << ", b = " << binNb << ", b wt = " << probNb[binNb] << ", k = " << binKin << ", binCC = " << binCC << endl;
+	  if (verbosity_ >= 2 && count % 100000 == 0) cout << "j = " << binNjets << ", NbTags = " << BTags << ", b = " << binNb << ", b wt = " << probNb[binNb] << ", k = " << binKin << ", binCC = " << binCC << endl;
 	  hCCbins->Fill(Double_t(binCC), eventWt*probNb[binNb]);
 	}
       }  // if apply BTagSF
@@ -919,7 +936,7 @@ RA2bZinvAnalysis::fillCutMaps() {
     triggerMap_["photon"] = {"52"};  // re-miniAOD; 51 for ReReco/PromptReco
     triggerMap_["sig"] = {"42", "43", "44", "46", "47", "48"};
   } else if (ntupleVersion_ == "V15") {
-    triggerMap_["zmm"] = {"48", "52", "53", "55", "63"};  // 48 prescaled in late 2017 --Owen
+    triggerMap_["zmm"] = {"48", "50", "52", "53", "55", "63"};  // 48 prescaled in late 2017 --Owen; add 50
     triggerMap_["zee"] = {"21", "23", "28", "35", "40", "41"};
     triggerMap_["photon"] = {"141"};
     triggerMap_["sig"] = {"108", "112", "124", "128"};
@@ -1060,7 +1077,7 @@ RA2bZinvAnalysis::checkActiveTrigPrescales(const char* sample) {
       ss >> temp;
       if (stringstream(temp) >> trgIndex) {
 	Int_t prescale = TriggerPrescales->at(trgIndex);
-	if (prescale != 1) cout << "Trigger " << trgIndex << " prescaled to " << prescale << endl;
+	if (verbosity_ >= 1 && prescale != 1) cout << "Trigger " << trgIndex << " prescaled to " << prescale << endl;
       }
       temp = "";
     }

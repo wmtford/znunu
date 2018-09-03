@@ -28,7 +28,8 @@
   bool doMakeClass = false;
   bool doListTrigPrescales = false;
 
-  RA2bZinvAnalysis analyzer;  // Default configuration
+  // RA2bZinvAnalysis analyzer;  // Default configuration
+  RA2bZinvAnalysis analyzer("data2017.cfg");
   // RA2bZinvAnalysis analyzer("lowDphi.cfg");
 
   if (doCCzvv || doCCttzvv) {
@@ -80,12 +81,15 @@
   }
 
   if (do1Dzmm || do1Dzee) {
-    TFile *histos1D = TFile::Open("histsDY.root", "RECREATE");
+    TFile *histos1D;
+    if (do1Dzmm && do1Dzee) histos1D = TFile::Open("histsZll.root", "RECREATE");
     if (do1Dzmm) {
+      if (!do1Dzee) histos1D = TFile::Open("histsZmm.root", "RECREATE");
       std::vector<TH1F*> h_zmm = analyzer.makeHistograms("zmm");
       for (auto& theHist : h_zmm) theHist->Draw();
     }
     if (do1Dzee) {
+      if (!do1Dzmm) histos1D = TFile::Open("histsZee.root", "RECREATE");
       std::vector<TH1F*> h_zee = analyzer.makeHistograms("zee");
       for (auto& theHist : h_zee) theHist->Draw();
     }

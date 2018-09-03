@@ -8,8 +8,8 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
-#define ISSKIM
-#define ISV12
+#define VERSION 15
+/* #define ISSKIM */
 /* #define ISMC */
 
 #include <TString.h>
@@ -88,9 +88,9 @@ public:
   };
 
 private:
-#ifdef ISV12
+#if VERSION == 12
   const TString ntupleVersion_ = "V12";
-#else
+#elif  VERSION == 15
   const TString ntupleVersion_ = "V15";
 #endif
 #ifdef ISMC
@@ -103,6 +103,7 @@ private:
 #else
   const bool isSkim_ = false;
 #endif
+  int verbosity_;
   std::string treeName_;
   std::string treeLoc_;
   std::string fileListsFile_;
@@ -127,32 +128,34 @@ private:
 
 #ifdef ISMC
 
-#ifdef ISV12
-#include "LeafDeclaration_MC_V12.h"
-#endif
+  #if VERSION == 12
+  #include "LeafDeclaration_MC_V12.h"
+  #endif
 
 #else  // ISMC
 
-#ifdef ISV12
-#include "LeafDeclaration_data_V12.h"
-#else
-  // V15
-#ifndef ISSKIM
-#include "LeafDeclaration_unskimmed_data_V15.h"
-#endif
+  #if VERSION == 12
+    #include "LeafDeclaration_data_V12.h"
+  #elif VERSION == 15
+    #ifndef ISSKIM
+      #include "LeafDeclaration_unskimmed_data_V15.h"
+    #endif
+
+  #endif  // VERSION
 
   // Declare dummy tree variables missing in some versions
-#endif  // !ISMC
+
   Double_t        puWeight;
   Double_t        Weight;
   Double_t        TrueNumInteractions;
-#endif
+
+#endif  // !ISMC
 
 #ifndef ISSKIM
   UInt_t          RA2bin;
 #endif
 
-#ifdef ISV12
+#if VERSION == 12
   Int_t           NElectrons;
   Int_t           NMuons;
 #endif
@@ -194,6 +197,7 @@ private:
   };
 
   // Functions to fill histograms with non-double, non-int types
+  void fillnZcand(TH1F* h, double wt) {h->Fill(ZCandidates->size(), wt);}
   void fillZmass(TH1F* h, double wt) {for (auto & theZ : *ZCandidates) h->Fill(theZ.M(), wt);}
   void fillZpt(TH1F* h, double wt) {for (auto & theZ : *ZCandidates) h->Fill(theZ.Pt(), wt);}
 
