@@ -8,7 +8,7 @@ tree_signal/tree_ZJetsToNuNu_HT-1200to2500.root
 tree_signal/tree_ZJetsToNuNu_HT-2500toInf.root
 ##
 
-zinvldp 10   # Z->vv MC
+zinvldp 10   # Z->vv MC LDP
 tree_LDP/tree_ZJetsToNuNu_HT-100to200.root
 tree_LDP/tree_ZJetsToNuNu_HT-200to400.root
 tree_LDP/tree_ZJetsToNuNu_HT-400to600.root
@@ -22,7 +22,7 @@ ttzvv    # Z->ttzvv MC
 tree_signal/tree_TTZToLLNuNu.root
 ##
 
-ttzvvldp    # Z->ttzvv MC
+ttzvvldp    # Z->ttzvv MC LDP
 tree_LDP/tree_TTZToLLNuNu.root
 ##
 
