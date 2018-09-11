@@ -1,11 +1,13 @@
 RA2bZinvAnalysis
 Bill Ford
-12 July 2018
+12 July 2018; updated 10 September
 
-RA2bZinvAnalysis is a root macro in C++ for performing the Z->nunu
-background measurement in the RA2b analysis.  It is a reimplementation
-of Troy's RA2b.py, and at this writing very much a work in progress.
-The input source is the skims of ntuples produced by TreeMaker.
+RA2bZinvAnalysis is a root macro in C++ that produces the histograms
+needed for performing the Z->nunu background measurement in the RA2b
+analysis.  It is a reimplementation of parts of Troy's RA2b.py.  The
+remaining functions are accomplished by feeding the histograms into
+RA2b.py.  The input source is the skims of ntuples produced by
+TreeMaker.
 
 What the macro can do now is produce the 174-bin histogram of the
 background expectation, including both Z+jets and ttZ MC samples, and
@@ -13,69 +15,59 @@ some N-1 plots of the main analysis variables.  It accommodates Kevin
 Pedro's recipes for both pileup and BTag scale factor corrections.
 
 The code lives in
-https://github.com/tmulholland/z-team-assembly/blob/master/
-in the src/ subdirectory.  Because of the pileup and BTag corrections
-one also needs Kevin Pedro's analysis code, in
+https://github.com/wmtford/znunu/blob/master/
+Because of the pileup and BTag corrections one also needs Kevin Pedro's
+analysis code, in 
 https://github.com/kpedro88/Analysis/blob/master/ 
 
 The files needed to run this class are
-RA2bZinvLoadClasses.C
-RA2bZinvDriver.C
-RA2bZinvAnalysis.C
-LeafDeclaration_V12.h
-fillFileMap_V12.h
+src/RA2bZinvLoadClasses.C
+src/RA2bZinvDriver.C
+src/RA2bZinvAnalysis.h
+src/RA2bZinvAnalysis.C
+src/RA2bZinvAnalysis.cfi
+src/LeafDeclaration_XXXX.h 
+src/YYYY.cfg  (optional)
+datFiles/[skim|ntuple]FilesZZZZ.dat
 
-And to launch from the command line,
+The contents of the tree are different between data and MC, skimmed and
+unskimmed samples, and TreeMaker versions.  Therefore, before compiling,
+(Un)comment compiler directives at the top of RA2bZinvAnalysis.h to
+select: 
+data/MC
+skim/ntuple
+TreeMaker version
+
+Configuration of the RA2bZinvAnalysis instance, beyond that controlled
+by the compiler directives, is set via config files RA2bZinvAnalysis.cfi
+(for default initialization), plus (filename).cfg for specialization. 
+
+To launch from the command line,
 root -l -b RA2bZinvLoadClasses.C RA2bZinvDriver.C
 
 The main source file, RA2bZinvAnalysis.C, defines a singleton class and
 some user-callable functions.  Its use is illustrated by the
 implementation in RA2bZinvDriver.C.
 
-For now at least, the constructor takes no arguments.  Class
-variables that are set in the constructor include items that the user
-will need to review and possibly change, like
-  era_("2016"),
-  ntupleVersion_("V12"),
-  treeName_("tree"),
-  deltaPhi_("nominal"),
-  // deltaPhi_("hdp"),
-  applyBTagSF_(true),
-  applyPuWeight_(true),
-  customPuWeight_(true)  // Substitute Kevin P recipe for the PuWeight in the tree
-and within the era_ = "2016" block,
-    if (ntupleVersion_ == "V12") {
-      treeLoc_ = "root://cmseos.fnal.gov//store/user/lpcsusyhad/SusyRA2Analysis2015/Skims/Run2ProductionV12";
-    }
-    intLumi_ = 35.9;
-Some of these may be promoted to constructor arguments in the future.
+The constructor takes one optional argument, a const char* with the name
+of the .cfg file to be used.  The .dat file, chosen in the .cfi or .cfg
+file, is an index of the names of the TreeMaker ntuple files for each of
+the samples.  (The reason for having more than one index file is simply
+their size for the raw nutple root file sets.)
 
-The file fillFileMap_V12.h needs to be edited to name the sets of skim
-files for the various samples.  For now only the zinv and ttzvv samples
-are coded.  For a new TreeMaker version, or production, one will need to
-create the corresponding version of this file. 
-
-Once fillFileMap_Vxx.h exists, one can run RA2bZinvDriver to call the
-runMakeClass method to generate a TreeMkrTemplate_Vxx.h file.  With a
-little editing one then embeds the tree-specific information from this
-file into LeafDeclaration_Vxx.h.  See 
-diff_TreeMkrTemplate_V12.h-LeafDeclaration_V12.h
-for guidance.  (Someone with fresh skills in some parsing language will
-doubtless write a macro to do this transformation, probably in "15
-minutes".)
-
-The contents of the tree are quite different between data and MC, so
-separate LeafDeclaration headers are needed.  A processor directive at
-the top of RA2bZinvAnalysis.C defines ISMC to control compilation of
-code that is valid only for MC.
-
-Again, for a new Treemaker version, the section of the RA2bZinvAnalysis
-constructor under if (ntupleVersion_ = "Vxx") will need to be added.
-Similarly for new eras.
+Once a fileList (datFiles/*Files*.dat) has been created for a given
+TreeMaker version, (un)skimmed, data/MC configuration, one can run
+RA2bZinvDriver with a non-empty, compatible sample name as argument to
+the runMakeClass method to generate a TreeMkrTemplate_*_*_Vxx.h file.
+With a little editing one then embeds the tree-specific information from
+this file into LeafDeclaration_*_*_Vxx.h.  See
+diff_TreeMkrTemplate_V12.h-LeafDeclaration_V12.h for guidance.  (Someone
+with fresh skills in some parsing language will doubtless write a macro
+to do this transformation.)
 
 The baseline cuts are defined as a TCut string built in the getCuts
-method.  To lift one or more cuts in making N-1 histograms, one needs to
-associate the specific cut string found in getCuts with a class
-variable.  This variable will then be referenced by code one would add
-to the makeHistograms method.
+method.  To lift one or more cuts in making N-1 histograms, or to impose
+additional cuts, one needs to associate the specific cut string(s) found
+in getCuts with a class variable.  This variable will then be referenced
+by code one would add to the makeHistograms method.
 

@@ -225,7 +225,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
 }  // ======================================================================================
 
 TChain*
-RA2bZinvAnalysis::getChain(const char* sample, Int_t* fCurrent, bool setBrAddr) {
+RA2bZinvAnalysis::getChain(const char* sample, Int_t* fCurrent, bool makeClass) {
   TString theSample(sample);
   TString key;
   if (theSample.Contains("zinv")) key = TString("zinv");
@@ -240,6 +240,7 @@ RA2bZinvAnalysis::getChain(const char* sample, Int_t* fCurrent, bool setBrAddr) 
   else if (theSample.Contains("ttee")) key = TString("ttee");
   else if (theSample.Contains("zmm")) key = TString("zmm");
   else if (theSample.Contains("zee")) key = TString("zee");
+  if (deltaPhi_ == "ldp") key += "ldp";
 
   TChain* chain = new TChain(treeName_.data());
   std::vector<TString> files = fileList(key);
@@ -247,6 +248,9 @@ RA2bZinvAnalysis::getChain(const char* sample, Int_t* fCurrent, bool setBrAddr) 
     if (verbosity_ >= 2) cout << file << endl;
     chain->Add(file);
   }
+  if (fCurrent != nullptr) *fCurrent = -1;
+  if (makeClass) return chain;
+
   cout << "Initial size of cache for chain = " << chain->GetCacheSize() << endl;
   TTreeCache::SetLearnEntries(1);
   chain->SetCacheSize(200*1024*1024);
@@ -256,9 +260,8 @@ RA2bZinvAnalysis::getChain(const char* sample, Int_t* fCurrent, bool setBrAddr) 
   chain->StopCacheLearningPhase();
   cout << "Reset size of cache for chain = " << chain->GetCacheSize() << endl;
 
-  if (fCurrent != nullptr) *fCurrent = -1;
-  // if (setBrAddr) tmt_->Init(chain);
-  if (setBrAddr) setBranchAddress(chain);
+  // tmt_->Init(chain);
+  setBranchAddress(chain);
 
   chain->SetBranchStatus("*", 0);  // disable all branches
   for (auto theBranch : activeBranches_) chain->SetBranchStatus(theBranch, 1);
@@ -1028,10 +1031,12 @@ RA2bZinvAnalysis::cutHistos::fill(TH1F* hcf, Double_t wt) {
 }  // ======================================================================================
 
 void
-RA2bZinvAnalysis::runMakeClass(const char* sample, const char* ext) {
-  TChain* chain = getChain(sample, nullptr, false);
+RA2bZinvAnalysis::runMakeClass(const std::string& sample) {
+  TChain* chain = getChain(sample.data(), nullptr, true);
   TString templateName("TreeMkrTemplate_");
-  templateName += ext;
+  if (!isSkim_) templateName += "unskimmed_";
+  templateName += isMC_ ? "MC_" : "data_";
+  templateName += ntupleVersion_;
   chain->MakeClass(templateName.Data());
 
 }  // ======================================================================================

@@ -4638,8 +4638,10 @@ def getZmassFitPlot(fitFunc=None, dataSet=None, mcSet=None, plotMC=None, doDiMu=
 
         # BW convolved with Gaussian
         vm = ROOT.RooRealVar("vm","m in voigtian",91.19,90.,92.)
-        vg = ROOT.RooRealVar("vg","g in voigtian",2.64,1.0,3.0)
-        vs = ROOT.RooRealVar("vs","s in voigtian",1.45,1.0,2.0)
+        vg = ROOT.RooRealVar("vg","g in voigtian",2.64,1.0,5.0)  # wtf
+        vs = ROOT.RooRealVar("vs","s in voigtian",1.45,1.0,3.0)  # wtf
+        # vg = ROOT.RooRealVar("vg","g in voigtian",2.64,1.0,3.0)
+        # vs = ROOT.RooRealVar("vs","s in voigtian",1.45,1.0,2.0)
         zfitV = ROOT.RooVoigtian("voigtian","Voigtian PDF",rooVarX,vm,vg,vs)
 
         # double Gaussian

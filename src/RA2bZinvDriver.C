@@ -9,13 +9,13 @@
 
   gEnv->SetValue("TFile.AsyncPrefetching", 1);
 
-  bool doCCzvv = false;
-  bool doCCttzvv = false;
+  bool doCCzvv = true;
+  bool doCCttzvv = true;
   bool doCCzmm = false;
   bool doCCzee = false;
   bool do1Dzvv = false;
   bool do1Dttzvv = false;
-  bool do1Dzmm = true;
+  bool do1Dzmm = false;
   bool do1Dzee = false;
   bool do1Ddymm = false;
   bool do1Ddyee = false;
@@ -25,11 +25,11 @@
   bool do1DVVee = false;
   bool do1Dttmm = false;
   bool do1Dttee = false;
-  bool doMakeClass = false;
+  const std::string makeClassSample = "";  // Must be compatible with compiler directives
   bool doListTrigPrescales = false;
 
-  // RA2bZinvAnalysis analyzer;  // Default configuration
-  RA2bZinvAnalysis analyzer("data2017.cfg");
+  RA2bZinvAnalysis analyzer;  // Default configuration
+  // RA2bZinvAnalysis analyzer("data2018.cfg");
   // RA2bZinvAnalysis analyzer("lowDphi.cfg");
 
   if (doCCzvv || doCCttzvv) {
@@ -142,10 +142,8 @@
     analyzer.checkTrigPrescales("zmm");
   }
 
-  if (doMakeClass) {
-    // analyzer.runMakeClass("zinv", "MC_V12");
-    // analyzer.runMakeClass("zmm", "data_V12");
-    analyzer.runMakeClass("zmm", "data_V15");
+  if (!makeClassSample.empty()) {
+    analyzer.runMakeClass(makeClassSample);
   }
 
   gApplication->Terminate(0);

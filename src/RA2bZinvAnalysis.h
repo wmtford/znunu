@@ -8,9 +8,9 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
-#define VERSION 15
-/* #define ISSKIM */
-/* #define ISMC */
+#define VERSION 12
+#define ISSKIM
+#define ISMC
 
 #include <TString.h>
 #include <TChain.h>
@@ -41,7 +41,7 @@ public:
   RA2bZinvAnalysis(const std::string& cfg_filename);
   virtual ~RA2bZinvAnalysis() {};
 
-  TChain* getChain(const char* sample, Int_t* fCurrent = nullptr, bool setBrAddr = true);
+  TChain* getChain(const char* sample, Int_t* fCurrent = nullptr, bool makeClass = false);
   std::vector<TString> fileList(TString sampleKey);
   std::vector<TH1F*> makeHistograms(const char* sample);
   TH1F* makeCChist(const char* sample);
@@ -49,7 +49,7 @@ public:
   int kinBin(double& ht, double& mht);
   void checkTrigPrescales(const char* sample);
   void checkActiveTrigPrescales(const char* sample);
-  void runMakeClass(const char* sample, const char* ext);
+  void runMakeClass(const std::string& sample);
 
   struct hist1D {
     TH1F* hist;

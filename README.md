@@ -3,23 +3,7 @@ Text files and common code for RA2b Zinv analysers
 
 Created from a fork of tmulholland/z-team-assembly 17 Aug. 2018.
 
-# To create a histogram root file from Bill's front-end root macro
-
-(in src directory) (Un)comment compiler directives in RA2bZinvAnalysis.h to select:
-
-data/MC
-
-skim/ntuple
-
-TreeMaker version
-
-The corresponding configuration of the RA2bZinvAnalysis instance is
-controlled via config files RA2bZinvAnalysis.cfi (for default initialization), 
-plus (filename).cfg for specialization.
-
-Run the code with
-
-root -l -b RA2bZinvLoadClasses.C RA2bZinvDriver.C
+# To create a histogram root file from Bill's front-end root macro, follow the instructions in src/README_RA2bZinvAnalysis
 
 # To make comparisons and ratios of N-1 plots
 

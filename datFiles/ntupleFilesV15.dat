@@ -21,7 +21,6 @@ Run2018A-PromptReco-v1.SingleMuon_1017_RA2AnalysisTree.root
 Run2018A-PromptReco-v1.SingleMuon_1018_RA2AnalysisTree.root
 
 # === zmm 2018 20 ======================================================
-#*
     
 Run2018A-PromptReco-v1.SingleMuon_1019_RA2AnalysisTree.root
 Run2018A-PromptReco-v1.SingleMuon_101_RA2AnalysisTree.root
@@ -2974,7 +2973,6 @@ Run2018B-PromptReco-v1.SingleMuon_97_RA2AnalysisTree.root
 Run2018B-PromptReco-v1.SingleMuon_98_RA2AnalysisTree.root
 Run2018B-PromptReco-v1.SingleMuon_99_RA2AnalysisTree.root
 Run2018B-PromptReco-v1.SingleMuon_9_RA2AnalysisTree.root
-*#
 ##  === zmm 2018 end =========================================
 
 zee 5000    # DY->ee data
@@ -2999,7 +2997,6 @@ Run2018A-PromptReco-v1.EGamma_1016_RA2AnalysisTree.root
 Run2018A-PromptReco-v1.EGamma_1017_RA2AnalysisTree.root
 Run2018A-PromptReco-v1.EGamma_1018_RA2AnalysisTree.root
 #  === zee 2018 20 =================================================
-#*
 Run2018A-PromptReco-v1.EGamma_1019_RA2AnalysisTree.root
 Run2018A-PromptReco-v1.EGamma_101_RA2AnalysisTree.root
 Run2018A-PromptReco-v1.EGamma_1020_RA2AnalysisTree.root
@@ -7374,6 +7371,5 @@ Run2018B-PromptReco-v1.EGamma_97_RA2AnalysisTree.root
 Run2018B-PromptReco-v1.EGamma_98_RA2AnalysisTree.root
 Run2018B-PromptReco-v1.EGamma_99_RA2AnalysisTree.root
 Run2018B-PromptReco-v1.EGamma_9_RA2AnalysisTree.root
-*#
 ##  === zee 2018 end =========================================
 

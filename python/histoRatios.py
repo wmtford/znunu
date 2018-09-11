@@ -48,47 +48,45 @@ filehists = {}
 #   filehists['D'] = (Dfile, histnames)
 #   hists.append(filehists)
 
-iPeriod = 6
-legList = ['2017 data','2016 data, scaled']
-# legList = ['2017 data, no trigger 50','2017 data']
-if (doMumu):
-  # Nfile = ROOT.TFile('../outputs/histsDYmm_2017v15_noTrig50.root')
-  Nfile = ROOT.TFile('../outputs/histsDYmm_2017v15.root')
-  Dfile = ROOT.TFile('../outputs/histsDY_2016v12.root')
-  histnames = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm"]
-  filehists['N'] = (Nfile, histnames)
-  filehists['D'] = (Dfile, histnames)
-  hists.append(filehists)
-  fScale = 41.5/35.9
-if (doEe):
-  Nfile = ROOT.TFile('../outputs/histsDYee_2017v15.root')
-  Dfile = ROOT.TFile('../outputs/histsDY_2016v12.root')
-  histnames = ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee"]
-  filehists['N'] = (Nfile, histnames)
-  filehists['D'] = (Dfile, histnames)
-  hists.append(filehists)
-  fScale = 41.5/35.9
-
-# iPeriod = 8
-# legList = ['2018 data','2016 data, scaled']
+# iPeriod = 6
+# legList = ['2017 data','2016 data, scaled']
 # if (doMumu):
-#   Nfile = ROOT.TFile('../outputs/histsDYmm_2018v15.root')
+#   Nfile = ROOT.TFile('../outputs/histsDYmm_2017v15.root')
 #   Dfile = ROOT.TFile('../outputs/histsDY_2016v12.root')
 #   histnames = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm"]
 #   filehists['N'] = (Nfile, histnames)
 #   filehists['D'] = (Dfile, histnames)
 #   hists.append(filehists)
-#   fScale = 14.0/35.9
-#   MZmmMax = 700
+#   fScale = 41.5/35.9
 # if (doEe):
-#   Nfile = ROOT.TFile('../outputs/histsDYee_2018v15.root')
+#   Nfile = ROOT.TFile('../outputs/histsDYee_2017v15.root')
 #   Dfile = ROOT.TFile('../outputs/histsDY_2016v12.root')
 #   histnames = ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee"]
 #   filehists['N'] = (Nfile, histnames)
 #   filehists['D'] = (Dfile, histnames)
 #   hists.append(filehists)
-#   fScale = 13.5/35.9
-#   MZeeMax = 600
+#   fScale = 41.5/35.9
+
+iPeriod = 8
+legList = ['2018 data','2016 data, scaled']
+if (doMumu):
+  Nfile = ROOT.TFile('../outputs/histsDYmm_2018v15.root')
+  Dfile = ROOT.TFile('../outputs/histsDY_2016v12.root')
+  histnames = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm"]
+  filehists['N'] = (Nfile, histnames)
+  filehists['D'] = (Dfile, histnames)
+  hists.append(filehists)
+  fScale = 14.0/35.9
+  MZmmMax = 700
+if (doEe):
+  Nfile = ROOT.TFile('../outputs/histsDYee_2018v15.root')
+  Dfile = ROOT.TFile('../outputs/histsDY_2016v12.root')
+  histnames = ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee"]
+  filehists['N'] = (Nfile, histnames)
+  filehists['D'] = (Dfile, histnames)
+  hists.append(filehists)
+  fScale = 13.5/35.9
+  MZeeMax = 600
 
 # zhists = {}
 # Dfile = ROOT.TFile('~/cms/src/root/zinvData_2017Feb24/ZinvMCttzMC174binV12.root')
