@@ -226,6 +226,9 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
 
 TChain*
 RA2bZinvAnalysis::getChain(const char* sample, Int_t* fCurrent, bool makeClass) {
+
+  bool activateAllBranches = false;  // Can be set true for debugging
+
   TString theSample(sample);
   TString key;
   if (theSample.Contains("zinv")) key = TString("zinv");
@@ -255,16 +258,20 @@ RA2bZinvAnalysis::getChain(const char* sample, Int_t* fCurrent, bool makeClass) 
   TTreeCache::SetLearnEntries(1);
   chain->SetCacheSize(200*1024*1024);
   chain->SetCacheEntryRange(0, chain->GetEntries());
-  for (auto theBranch : activeBranches_) chain->AddBranchToCache(theBranch, true);
-  // chain->AddBranchToCache("*", true);
+  if (activateAllBranches) {
+    chain->AddBranchToCache("*", true);
+  } else {
+    for (auto theBranch : activeBranches_) chain->AddBranchToCache(theBranch, true);
+  }
   chain->StopCacheLearningPhase();
   cout << "Reset size of cache for chain = " << chain->GetCacheSize() << endl;
 
-  // tmt_->Init(chain);
   setBranchAddress(chain);
 
-  chain->SetBranchStatus("*", 0);  // disable all branches
-  for (auto theBranch : activeBranches_) chain->SetBranchStatus(theBranch, 1);
+  if (!activateAllBranches) {
+    chain->SetBranchStatus("*", 0);  // disable all branches
+    for (auto theBranch : activeBranches_) chain->SetBranchStatus(theBranch, 1);
+  }
 
   return chain;
 
@@ -395,6 +402,18 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
   objcut_ = objCutMap_.at(sampleKey);
   minDphicut_ = minDphiCutMap_.at(deltaPhi_);
 
+  // For test of same-flavor isoLeptonTracks veto
+  isoSFlepTksVeto_ = "1";
+  if (isSkim_) {
+    if (sampleKey == "zmm") {isoSFlepTksVeto_ = "isoMuonTracks!=0";  isoSFlepTksCut_ = "isoMuonTracks==0";}
+    if (sampleKey == "zee") {isoSFlepTksVeto_ = "isoElectronTracks!=0";  isoSFlepTksCut_ = "isoElectronTracks==0";}
+  } else {
+    if (sampleKey == "zmm") {isoSFlepTksVeto_ = "isoMuonTracksclean!=0";  isoSFlepTksCut_ = "isoMuonTracksclean==0";}
+    if (sampleKey == "zee") {isoSFlepTksVeto_ = "isoElectronTracksclean!=0";  isoSFlepTksCut_ = "isoElectronTracksclean==0";}
+  }
+  photonVeto_ = "@Photons.size()==0";
+  photonCut_ = "@Photons.size()!=0";
+
   cuts += objcut_;
   cuts += HTcut_;
   cuts += NJetscut_;
@@ -419,23 +438,28 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
 }  // ======================================================================================
 
 void
-RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<hist1D*>& histograms) {
+RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConfig*>& histograms, TCut baselineCuts) {
   //
   // Define N - 1 (or N - multiple) cuts, book histograms.  Traverse the chain and fill.
   //
-  TCut baselineCuts = getCuts(sample);
-  if(verbosity_ >= 1) cout << endl << "baseline = " << endl << baselineCuts << endl << endl;
+  if (verbosity_ >= 1) cout << endl << "baseline = " << endl << baselineCuts << endl << endl;
   Int_t fCurrent;  // current Tree number in a TChain
   TChain* chain = getChain(sample, &fCurrent);
   TObjArray* forNotify = new TObjArray;
 
-  cutHistos cutHistFiller(chain, forNotify);
+  cutHistos cutHistFiller(chain, forNotify);  // for cutFlow histograms
   for (auto & hg : histograms) {
-    hg->hist = new TH1F(hg->name, hg->title, hg->Nbins, hg->lowEdge, hg->highEdge);
+    if (hg->is2D) {
+      hg->hist = new TH2F(hg->name, hg->title, hg->NbinsX, hg->lowEdgeX, hg->highEdgeX,
+			  hg->NbinsY, hg->lowEdgeY, hg->highEdgeY);
+      hg->hist->SetOption("colz");
+    } else {
+      hg->hist = new TH1F(hg->name, hg->title, hg->NbinsX, hg->lowEdgeX, hg->highEdgeX);
+      hg->hist->SetOption("hist");
+      hg->hist->SetMarkerSize(0);
+    }
     hg->hist->GetXaxis()->SetTitle(hg->axisTitles.first);
     hg->hist->GetYaxis()->SetTitle(hg->axisTitles.second);
-    hg->hist->SetOption("HIST");
-    hg->hist->SetMarkerSize(0);
     if (hg->name.Contains(TString("hCut"))) {
       hg->NminusOneCuts = "1";
     } else {
@@ -444,8 +468,9 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<hist1D*>
       if (strlen(hg->addCuts) != 0) hg->NminusOneCuts += TString(" && ") + hg->addCuts;
     }
     if (verbosity_ >= 1) {
-      cout << "\n For sample " << sample << ", histo " << hg->name  << ", hg->omitCuts = ";
+      cout << "\n For sample " << sample << ", histo " << hg->name << ", hg->omitCuts = ";
       for (auto cutToOmit : hg->omitCuts) cout << *cutToOmit << " ";
+      cout << "; hg->addCuts = " << hg->addCuts;
       cout << ", cuts = " << endl << hg->NminusOneCuts << endl;
     }
     hg->NminusOneFormula = new TTreeFormula(hg->name, hg->NminusOneCuts, chain);
@@ -492,7 +517,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<hist1D*>
 
     for (auto & hg : histograms) {
       if (hg->name.Contains(TString("hCut"))) {
-	cutHistFiller.fill(hg->hist, eventWt);
+	cutHistFiller.fill((TH1F*) hg->hist, eventWt);
 	continue;
       }
       hg->NminusOneFormula->GetNdata();
@@ -506,8 +531,10 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<hist1D*>
 	  // cout << "  " << *(hg->ivalue);
 	  hg->hist->Fill(Double_t(*(hg->ivalue)), selWt*eventWt);
 	}
-	else if (hg->filler != nullptr) (this->*(hg->filler))(hg->hist, selWt*eventWt);
+	else if (hg->filler1D != nullptr) (this->*(hg->filler1D))((TH1F*) hg->hist, selWt*eventWt);
+	else if (hg->filler2D != nullptr) (this->*(hg->filler2D))((TH2F*) hg->hist, selWt*eventWt);
 	else cerr << "No method to fill histogram provided for " << hg->name << endl;
+
       }
     }  // loop over histograms
     // cout << endl;
@@ -518,7 +545,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<hist1D*>
 
 }  // ======================================================================================
 
-std::vector<TH1F*>
+std::vector<TH1*>
 RA2bZinvAnalysis::makeHistograms(const char* sample) {
   //
   // Define histograms, variables to fill, and cuts to be modified.
@@ -531,131 +558,177 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   // TGaxis myTGaxis;
   // myTGaxis.SetMaxDigits(4);
 
-  std::vector<hist1D*> histograms;
+  std::vector<histConfig*> histograms;
+  TCut baselineCuts = getCuts(sample);
 
-  hist1D hHT;
-  hHT.name = TString("hHT_") + TString(sample);  hHT.title = "HT";
-  hHT.Nbins = 60;  hHT.lowEdge = 0;  hHT.highEdge = 3000;
+  histConfig hHT;
+  hHT.name = TString("hHT_") + sample;  hHT.title = "HT";
+  hHT.NbinsX = 60;  hHT.lowEdgeX = 0;  hHT.highEdgeX = 3000;
   hHT.axisTitles.first = "HT [GeV]";  hHT.axisTitles.second = "Events / 50 GeV";
   hHT.dvalue = &HT;  hHT.omitCuts.push_back(&HTcut_);
   histograms.push_back(&hHT);
 
-  hist1D hMHT;
-  hMHT.name = TString("hMHT_") + TString(sample);  hMHT.title = "MHT";
-  hMHT.Nbins = 60;  hMHT.lowEdge = 0;  hMHT.highEdge = 3000;
+  histConfig hMHT;
+  hMHT.name = TString("hMHT_") + sample;  hMHT.title = "MHT";
+  hMHT.NbinsX = 60;  hMHT.lowEdgeX = 0;  hMHT.highEdgeX = 3000;
   hMHT.axisTitles.first = "MHT [GeV]";  hMHT.axisTitles.second = "Events / 50 GeV";
   hMHT.dvalue = &MHT;  hMHT.omitCuts.push_back(&MHTcut_);  hMHT.omitCuts.push_back(&ptCut_);
   histograms.push_back(&hMHT);
 
-  hist1D hNJets;
-  hNJets.name = TString("hNJets_") + TString(sample);  hNJets.title = "NJets";
-  hNJets.Nbins = 20;  hNJets.lowEdge = 0;  hNJets.highEdge = 20;
+  histConfig hNJets;
+  hNJets.name = TString("hNJets_") + sample;  hNJets.title = "NJets";
+  hNJets.NbinsX = 20;  hNJets.lowEdgeX = 0;  hNJets.highEdgeX = 20;
   hNJets.axisTitles.first = "N (jets)";  hNJets.axisTitles.second = "Events / bin";
   hNJets.ivalue = &NJets;  hNJets.omitCuts.push_back(&NJetscut_);
   histograms.push_back(&hNJets);
 
-  hist1D hBTags;
-  hBTags.name = TString("hBTags_") + TString(sample);  hBTags.title = "BTags";
-  hBTags.Nbins = 20;  hBTags.lowEdge = 0;  hBTags.highEdge = 20;
+  histConfig hBTags;
+  hBTags.name = TString("hBTags_") + sample;  hBTags.title = "BTags";
+  hBTags.NbinsX = 20;  hBTags.lowEdgeX = 0;  hBTags.highEdgeX = 20;
   hBTags.axisTitles.first = "N (b jets)";  hBTags.axisTitles.second = "Events / bin";
   hBTags.ivalue = &BTags;
   histograms.push_back(&hBTags);
 
-  hist1D hnZcand;
-  hnZcand.name = TString("hnZcand_") + TString(sample);  hnZcand.title = "Number of Z candidates";
-  hnZcand.Nbins = 10;  hnZcand.lowEdge = 0;  hnZcand.highEdge = 10;
+  histConfig hnZcand;
+  hnZcand.name = TString("hnZcand_") + sample;  hnZcand.title = "Number of Z candidates";
+  hnZcand.NbinsX = 10;  hnZcand.lowEdgeX = 0;  hnZcand.highEdgeX = 10;
   hnZcand.axisTitles.first = "N(Z candidates)";  hnZcand.axisTitles.second = "Events / bin";
-  hnZcand.filler = &RA2bZinvAnalysis::fillnZcand;  hnZcand.omitCuts.push_back(&massCut_);
+  hnZcand.filler1D = &RA2bZinvAnalysis::fillnZcand;  hnZcand.omitCuts.push_back(&massCut_);
   histograms.push_back(&hnZcand);
 
-  hist1D hZmass;
-  hZmass.name = TString("hZmass_") + TString(sample);  hZmass.title = "Z mass";
-  hZmass.Nbins = 30;  hZmass.lowEdge = 60;  hZmass.highEdge = 120;
+  histConfig hZmass;
+  hZmass.name = TString("hZmass_") + sample;  hZmass.title = "Z mass";
+  hZmass.NbinsX = 30;  hZmass.lowEdgeX = 60;  hZmass.highEdgeX = 120;
   hZmass.axisTitles.first = "M(Z) [GeV]";  hZmass.axisTitles.second = "Events / 2 GeV";
-  hZmass.filler = &RA2bZinvAnalysis::fillZmass;  hZmass.omitCuts.push_back(&massCut_);
+  hZmass.filler1D = &RA2bZinvAnalysis::fillZmass;  hZmass.omitCuts.push_back(&massCut_);
   histograms.push_back(&hZmass);
 
-  hist1D hZpt;
-  hZpt.name = TString("hZpt_") + TString(sample);  hZpt.title = "Z Pt";
-  hZpt.Nbins = 60;  hZpt.lowEdge = 0;  hZpt.highEdge = 3000;
+  histConfig hZpt;
+  hZpt.name = TString("hZpt_") + sample;  hZpt.title = "Z Pt";
+  hZpt.NbinsX = 60;  hZpt.lowEdgeX = 0;  hZpt.highEdgeX = 3000;
   hZpt.axisTitles.first = "Pt(Z) [GeV]";  hZpt.axisTitles.second = "Events / 50 GeV";
-  hZpt.filler = &RA2bZinvAnalysis::fillZpt;  hZpt.omitCuts.push_back(&ptCut_);  hZpt.omitCuts.push_back(&MHTcut_);
+  hZpt.filler1D = &RA2bZinvAnalysis::fillZpt;  hZpt.omitCuts.push_back(&ptCut_);  hZpt.omitCuts.push_back(&MHTcut_);
   histograms.push_back(&hZpt);
 
-  hist1D hCutFlow;
-  hCutFlow.name = TString("hCutFlow_") + TString(sample);  hCutFlow.title = "Cut flow";
-  hCutFlow.Nbins = 10;  hCutFlow.lowEdge = 0;  hCutFlow.highEdge = 10;
+  histConfig hCutFlow;
+  hCutFlow.name = TString("hCutFlow_") + sample;  hCutFlow.title = "Cut flow";
+  hCutFlow.NbinsX = 10;  hCutFlow.lowEdgeX = 0;  hCutFlow.highEdgeX = 10;
   hCutFlow.axisTitles.first = "";  hCutFlow.axisTitles.second = "Events surviving";
   histograms.push_back(&hCutFlow);
 
-  hist1D hCuts;
-  hCuts.name = TString("hCuts_") + TString(sample);  hCuts.title = "Cuts passed";
-  hCuts.Nbins = 10;  hCuts.lowEdge = 0;  hCuts.highEdge = 10;
+  histConfig hCuts;
+  hCuts.name = TString("hCuts_") + sample;  hCuts.title = "Cuts passed";
+  hCuts.NbinsX = 10;  hCuts.lowEdgeX = 0;  hCuts.highEdgeX = 10;
   hCuts.axisTitles.first = "";  hCuts.axisTitles.second = "Events passing";
   histograms.push_back(&hCuts);
 
-  hist1D hVertices;
-  hVertices.name = TString("hVertices_") + TString(sample);  hVertices.title = "Number of reco vertices";
-  hVertices.Nbins = 100;  hVertices.lowEdge = 0;  hVertices.highEdge = 100;
+  histConfig hVertices;
+  hVertices.name = TString("hVertices_") + sample;  hVertices.title = "Number of reco vertices";
+  hVertices.NbinsX = 100;  hVertices.lowEdgeX = 0;  hVertices.highEdgeX = 100;
   hVertices.axisTitles.first = "No. of vertices";  hVertices.axisTitles.second = "Events / bin";
   hVertices.ivalue = &nAllVertices;
   histograms.push_back(&hVertices);
 
-  hist1D hTrueNumInt;
-  hTrueNumInt.name = TString("hTrueNumInt_") + TString(sample);  hTrueNumInt.title = "Number of generated interactions";
-  hTrueNumInt.Nbins = 100;  hTrueNumInt.lowEdge = 0;  hTrueNumInt.highEdge = 100;
+  histConfig hTrueNumInt;
+  hTrueNumInt.name = TString("hTrueNumInt_") + sample;  hTrueNumInt.title = "Number of generated interactions";
+  hTrueNumInt.NbinsX = 100;  hTrueNumInt.lowEdgeX = 0;  hTrueNumInt.highEdgeX = 100;
   hTrueNumInt.axisTitles.first = "No. of interactions";  hTrueNumInt.axisTitles.second = "Events / bin";
   hTrueNumInt.dvalue = &TrueNumInteractions;
   histograms.push_back(&hTrueNumInt);
 
+  histConfig hZmass_sfLepTksVeto(hZmass);
+  hZmass_sfLepTksVeto.name = TString("hZmass_sfLepTksVeto_") + sample;  hZmass_sfLepTksVeto.title = "Z mass, SF lepton vetoed";
+  hZmass_sfLepTksVeto.omitCuts.push_back(&isoSFlepTksCut_);  hZmass_sfLepTksVeto.addCuts = isoSFlepTksVeto_.Data();
+  histograms.push_back(&hZmass_sfLepTksVeto);
+
+  histConfig hZmass_photonVeto(hZmass);
+  hZmass_photonVeto.name = TString("hZmass_photonVeto_") + sample;  hZmass_photonVeto.title = "Z mass, photon vetoed";
+  hZmass_photonVeto.omitCuts.push_back(&photonVeto_);  hZmass_photonVeto.addCuts = photonCut_.Data();
+  histograms.push_back(&hZmass_photonVeto);
+
+  histConfig hGpt;
+  hGpt.name = TString("hGpt_") + sample;  hGpt.title = "Photon Pt";
+  hGpt.NbinsX = 60;  hGpt.lowEdgeX = 0;  hGpt.highEdgeX = 3000;
+  hGpt.axisTitles.first = "Pt(gamma) [GeV]";  hGpt.axisTitles.second = "Events / 50 GeV";
+  hGpt.filler1D = &RA2bZinvAnalysis::fillGpt;
+  hGpt.omitCuts.push_back(&photonVeto_);  hGpt.addCuts = photonCut_.Data();
+  histograms.push_back(&hGpt);
+
+  histConfig hZGmass;
+  hZGmass.name = TString("hZGmass_") + sample;  hZGmass.title = "Z-gamma mass";
+  hZGmass.NbinsX = 100;  hZGmass.lowEdgeX = 0;  hZGmass.highEdgeX = 2000;
+  hZGmass.axisTitles.first = "M(Z gamma) [GeV]";  hZGmass.axisTitles.second = "Events / 20 GeV";
+  hZGmass.filler1D = &RA2bZinvAnalysis::fillZGmass;
+  hZGmass.omitCuts.push_back(&photonVeto_);  hZGmass.addCuts = photonCut_.Data();
+  histograms.push_back(&hZGmass);
+
+  histConfig hZGdRvsM;
+  hZGdRvsM.name = TString("hZGdRvsM_")+sample;  hZGdRvsM.is2D = true;
+  hZGdRvsM.title = "Min Delta R vs M(Zgamma) for Z(ll) leptons";
+  hZGdRvsM.NbinsX = 100;  hZGdRvsM.lowEdgeX = 0;  hZGdRvsM.highEdgeX = 200;
+  hZGdRvsM.NbinsY = 40;  hZGdRvsM.lowEdgeY = 0;  hZGdRvsM.highEdgeY = 0.02;
+  hZGdRvsM.axisTitles.first = "M(Z gamma) [GeV]";  hZGdRvsM.axisTitles.second = "DR(l gamma)";
+  hZGdRvsM.filler2D = &RA2bZinvAnalysis::fillZGdRvsM;
+  hZGdRvsM.omitCuts.push_back(&photonVeto_);  hZGdRvsM.addCuts = photonCut_.Data();
+  histograms.push_back(&hZGdRvsM);
+
+  histConfig hGJdR;
+  hGJdR.name = TString("hGJdR_") + sample;  hGJdR.title = "min DR(photon-jet)";
+  hGJdR.NbinsX = 350;  hGJdR.lowEdgeX = 0;  hGJdR.highEdgeX = 3.5;
+  hGJdR.axisTitles.first = "Delta R";  hGJdR.axisTitles.second = "Events / 0.01";
+  hGJdR.filler1D = &RA2bZinvAnalysis::fillGJdR;
+  hGJdR.omitCuts.push_back(&photonVeto_);  hGJdR.addCuts = photonCut_.Data();
+  histograms.push_back(&hGJdR);
+
   // Z mass in Njet, Nb bins
-  hist1D hZmass_2j0b(hZmass);
-  hZmass_2j0b.name = TString("hZmass_2j0b_") + TString(sample);  hZmass_2j0b.title = "Z mass, 2 jets & 0 b jets";
+  histConfig hZmass_2j0b(hZmass);
+  hZmass_2j0b.name = TString("hZmass_2j0b_") + sample;  hZmass_2j0b.title = "Z mass, 2 jets & 0 b jets";
   hZmass_2j0b.addCuts = isSkim_ ? "NJets==2 && BTags==0" : "NJetsclean==2 && BTagsclean==0";
   histograms.push_back(&hZmass_2j0b);
 
-  hist1D hZmass_2j1b(hZmass);
-  hZmass_2j1b.name = TString("hZmass_2j1b_") + TString(sample);  hZmass_2j1b.title = "Z mass, 2 jets & 1 b jet";
+  histConfig hZmass_2j1b(hZmass);
+  hZmass_2j1b.name = TString("hZmass_2j1b_") + sample;  hZmass_2j1b.title = "Z mass, 2 jets & 1 b jet";
   hZmass_2j1b.addCuts = isSkim_ ? "NJets==2 && BTags==1" : "NJetsclean==2 && BTagsclean==1";
   histograms.push_back(&hZmass_2j1b);
 
-  hist1D hZmass_2j2b(hZmass);
-  hZmass_2j2b.name = TString("hZmass_2j2b_") + TString(sample);  hZmass_2j2b.title = "Z mass, 2 jets & >=2 b jets";
+  histConfig hZmass_2j2b(hZmass);
+  hZmass_2j2b.name = TString("hZmass_2j2b_") + sample;  hZmass_2j2b.title = "Z mass, 2 jets & >=2 b jets";
   hZmass_2j2b.addCuts = isSkim_ ? "NJets==2 && BTags>=2" : "NJetsclean==2 && BTagsclean>=2";
   histograms.push_back(&hZmass_2j2b);
   //
-  hist1D hZmass_3j0b(hZmass);
-  hZmass_3j0b.name = TString("hZmass_3j0b_") + TString(sample);  hZmass_3j0b.title = "Z mass, 3-4 jets & 0 b jets";
+  histConfig hZmass_3j0b(hZmass);
+  hZmass_3j0b.name = TString("hZmass_3j0b_") + sample;  hZmass_3j0b.title = "Z mass, 3-4 jets & 0 b jets";
   hZmass_3j0b.addCuts = isSkim_ ? "NJets>=3 && NJets<=4 && BTags==0" : "NJetsclean>=3 && NJetsclean<=4 && BTagsclean==0";
   histograms.push_back(&hZmass_3j0b);
 
-  hist1D hZmass_3j1b(hZmass);
-  hZmass_3j1b.name = TString("hZmass_3j1b_") + TString(sample);  hZmass_3j1b.title = "Z mass, 3-4 jets & 1 b jet";
+  histConfig hZmass_3j1b(hZmass);
+  hZmass_3j1b.name = TString("hZmass_3j1b_") + sample;  hZmass_3j1b.title = "Z mass, 3-4 jets & 1 b jet";
   hZmass_3j1b.addCuts = isSkim_ ? "NJets>=3 && NJets<=4 && BTags==1" : "NJetsclean>=3 && NJetsclean<=4 && BTagsclean==1";
   histograms.push_back(&hZmass_3j1b);
 
-  hist1D hZmass_3j2b(hZmass);
-  hZmass_3j2b.name = TString("hZmass_3j2b_") + TString(sample);  hZmass_3j2b.title = "Z mass, 3-4 jets & >=2 b jets";
+  histConfig hZmass_3j2b(hZmass);
+  hZmass_3j2b.name = TString("hZmass_3j2b_") + sample;  hZmass_3j2b.title = "Z mass, 3-4 jets & >=2 b jets";
   hZmass_3j2b.addCuts = isSkim_ ? "NJets>=3 && NJets<=4 && BTags>=2" : "NJetsclean>=3 && NJetsclean<=4 && BTagsclean>=2";
   histograms.push_back(&hZmass_3j2b);
   //
-  hist1D hZmass_5j0b(hZmass);
-  hZmass_5j0b.name = TString("hZmass_5j0b_") + TString(sample);  hZmass_5j0b.title = "Z mass, >=5 jets & 0 B jets";
+  histConfig hZmass_5j0b(hZmass);
+  hZmass_5j0b.name = TString("hZmass_5j0b_") + sample;  hZmass_5j0b.title = "Z mass, >=5 jets & 0 B jets";
   hZmass_5j0b.addCuts = isSkim_ ? "NJets>=5 && BTags==0" : "NJetsclean>=5 && BTagsclean==0";
   histograms.push_back(&hZmass_5j0b);
 
-  hist1D hZmass_5j1b(hZmass);
-  hZmass_5j1b.name = TString("hZmass_5j1b_") + TString(sample);  hZmass_5j1b.title = "Z mass, >=5 jets & 1 B jet";
+  histConfig hZmass_5j1b(hZmass);
+  hZmass_5j1b.name = TString("hZmass_5j1b_") + sample;  hZmass_5j1b.title = "Z mass, >=5 jets & 1 B jet";
   hZmass_5j1b.addCuts = isSkim_ ? "NJets>=5 && BTags==1" : "NJetsclean>=5 && BTagsclean==1";
   histograms.push_back(&hZmass_5j1b);
 
-  hist1D hZmass_5j2b(hZmass);
-  hZmass_5j2b.name = TString("hZmass_5j2b_") + TString(sample);  hZmass_5j2b.title = "Z mass, >=5 jets & >=2 B jets";
+  histConfig hZmass_5j2b(hZmass);
+  hZmass_5j2b.name = TString("hZmass_5j2b_") + sample;  hZmass_5j2b.title = "Z mass, >=5 jets & >=2 B jets";
   hZmass_5j2b.addCuts = isSkim_ ? "NJets>=5 && BTags>=2" : "NJetsclean>=5 && BTagsclean>=2";
   histograms.push_back(&hZmass_5j2b);
-  bookAndFillHistograms(sample, histograms);
 
-  std::vector<TH1F*> theHists;
+  bookAndFillHistograms(sample, histograms, baselineCuts);
+
+  std::vector<TH1*> theHists;
   theHists.push_back(hHT.hist);
   theHists.push_back(hMHT.hist);
   theHists.push_back(hNJets.hist);
@@ -665,6 +738,12 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   theHists.push_back(hZpt.hist);
   theHists.push_back(hVertices.hist);
   theHists.push_back(hTrueNumInt.hist);
+  theHists.push_back(hZmass_sfLepTksVeto.hist);
+  theHists.push_back(hZmass_photonVeto.hist);
+  theHists.push_back(hGpt.hist);
+  theHists.push_back(hZGmass.hist);
+  theHists.push_back(hZGdRvsM.hist);
+  theHists.push_back(hGJdR.hist);
   theHists.push_back(hZmass_2j0b.hist);
   theHists.push_back(hZmass_2j1b.hist);
   theHists.push_back(hZmass_2j2b.hist);
@@ -687,7 +766,8 @@ RA2bZinvAnalysis::makeCChist(const char* sample) {
   Int_t MaxBins = toCCbin_.size();
   cout << "MaxBins = " << MaxBins << endl;
 
-  TH1F* hCCbins = new TH1F("hCCbins", "Zinv background estimate", MaxBins, 0.5, MaxBins+0.5);
+  const char* hName = TString("hCCbins_") + sample;
+  TH1F* hCCbins = new TH1F(hName, "Zinv background estimate", MaxBins, 0.5, MaxBins+0.5);
 
   TObjArray* forNotify = new TObjArray;  // Allow for more than one TObject to notify of a new file
   
@@ -886,12 +966,12 @@ RA2bZinvAnalysis::fillCutMaps() {
     if (ntupleVersion_ == "V12") {
       objCutMap_["sig"] = "@Muons.size()==0 && @Electrons.size()==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";
       objCutMap_["zmm"] = "@Muons.size()==2 && @Electrons.size()==0 && isoElectronTracks==0 && isoPionTracks==0 && (@Photons.size()==0) && isoMuonTracks==0";
-      // objCutMap_["zmm"] = "@Muons.size()==2 && @Electrons.size()==0 && isoElectronTracks==0 && isoPionTracks==0;  // Troy mod+
-      objCutMap_["zee"] = "@Muons.size()==0 && @Electrons.size()==2 && isoMuonTracks==0 && isoPionTracks==0 && (@Photons.size()==0) && isoElectronTracks==0";
-      // objCutMap_["zee"] = "@Muons.size()==0 && @Electrons.size()==2 && isoMuonTracks==0 && isoPionTracks==0;  // Troy mod+
-      objCutMap_["zll"] = "((@Muons.size()==2 && @Electrons.size()==0 && isoElectronTracks==0 && isoPionTracks==0) || (@Muons.size()==0 && @Electrons.size()==2 && isoMuonTracks==0 && isoPionTracks==0))";
+      objCutMap_["zmm"] = "@Muons.size()==2 && @Electrons.size()==0 && isoElectronTracks==0 && isoPionTracks==0";  // Troy mod+
+      // objCutMap_["zee"] = "@Muons.size()==0 && @Electrons.size()==2 && isoMuonTracks==0 && isoPionTracks==0 && (@Photons.size()==0) && isoElectronTracks==0";
+      objCutMap_["zee"] = "@Muons.size()==0 && @Electrons.size()==2 && isoMuonTracks==0 && isoPionTracks==0";  // Troy mod+
+      // objCutMap_["zll"] = "((@Muons.size()==2 && @Electrons.size()==0 && isoElectronTracks==0 && isoPionTracks==0) || (@Muons.size()==0 && @Electrons.size()==2 && isoMuonTracks==0 && isoPionTracks==0))";
       objCutMap_["photon"] = "Sum$(Photons_nonPrompt)==0 && Sum$(Photons_fullID)==1 && (@Photons.size()==1) && @Muons.size()==0 && @Electrons.size()==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";
-      objCutMap_["photonqcd"] = "Sum$(Photons_nonPrompt)!=0 && Photons->at(0).Pt()>=200 && @Muons.size()==0 && @Electrons.size()==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";
+      objCutMap_["photonqcd"] = "Sum$(Photons_nonPrompt)!=0 && @Photons.at(0).Pt()>=200 && @Muons.size()==0 && @Electrons.size()==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";
       // objCutMap_["photonqcd"] = "Sum$(Photons_nonPrompt)!=0 && @Muons.size()==0 && @Electrons.size()==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";  // Troy mod+
       objCutMap_["ttz"] = "@Muons.size()==0 && @Electrons.size()==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0 && (@GenMuons.size()==0 && @GenElectrons.size()==0 && @GenTaus.size()==0)";
       objCutMap_["slm"] = "@Muons.size()==1 && @Electrons.size()==0 && isoElectronTracks==0 && isoPionTracks==0";
@@ -912,16 +992,18 @@ RA2bZinvAnalysis::fillCutMaps() {
     if (ntupleVersion_ == "V12") {
     } else if (ntupleVersion_ == "V15") {
       objCutMap_["sig"] = "NMuons==0 && NElectrons==0 && isoElectronTracksclean==0 && isoMuonTracksclean==0 && isoPionTracksclean==0";
-      objCutMap_["zmm"] = "NMuons==2 && NElectrons==0 && isoElectronTracksclean==0 && isoPionTracksclean==0 && (@Photons.size()==0) && isoMuonTracksclean==0";
-      objCutMap_["zee"] = "NMuons==0 && NElectrons==2 && isoMuonTracksclean==0 && isoPionTracksclean==0 && (@Photons.size()==0) && isoElectronTracksclean==0";
+      objCutMap_["zmm"] = "NMuons==2 && NElectrons==0 && isoElectronTracksclean==0 && isoPionTracksclean==0";
+      // objCutMap_["zmm"] = "NMuons==2 && NElectrons==0 && isoElectronTracksclean==0 && isoPionTracksclean==0 && (@Photons.size()==0) && isoMuonTracksclean==0";
+      objCutMap_["zee"] = "NMuons==0 && NElectrons==2 && isoMuonTracksclean==0 && isoPionTracksclean==0";
+      // objCutMap_["zee"] = "NMuons==0 && NElectrons==2 && isoMuonTracksclean==0 && isoPionTracksclean==0 && (@Photons.size()==0) && isoElectronTracksclean==0";
       objCutMap_["zll"] = "((NMuons==2 && NElectrons==0 && isoElectronTracksclean==0 && isoPionTracksclean==0) || (NMuons==0 && NElectrons==2 && isoMuonTracksclean==0 && isoPionTracksclean==0))";
       objCutMap_["photon"] = "Sum$(Photons_nonPrompt)==0 && Sum$(Photons_fullID)==1 && (@Photons.size()==1) && NMuons==0 && NElectrons==0 && isoElectronTracksclean==0 && isoMuonTracksclean==0 && isoPionTracksclean==0";
-      objCutMap_["photonqcd"] = "Sum$(Photons_nonPrompt)!=0 && Photons->at(0).Pt()>=200 && NMuons==0 && NElectrons==0 && isoElectronTracksclean==0 && isoMuonTracksclean==0 && isoPionTracksclean==0";
+      objCutMap_["photonqcd"] = "Sum$(Photons_nonPrompt)!=0 && @Photons.at(0).Pt()>=200 && NMuons==0 && NElectrons==0 && isoElectronTracksclean==0 && isoMuonTracksclean==0 && isoPionTracksclean==0";
       objCutMap_["ttz"] = "NMuons==0 && NElectrons==0 && isoElectronTracksclean==0 && isoMuonTracksclean==0 && isoPionTracksclean==0 && (@GenMuons.size()==0 && @GenElectrons.size()==0 && @GenTaus.size()==0)";
       objCutMap_["slm"] = "NMuons==1 && NElectrons==0 && isoElectronTracksclean==0 && isoPionTracksclean==0";
-      objCutMap_["slm"] += " && TransverseMass(METPt,METPhi,Muons->at(0).Pt(),Muons->at(0).Phi()) < 100";  // add'l skim cut
+      objCutMap_["slm"] += " && TransverseMass(METPt,METPhi,@Muons.at(0).Pt(),@Muons.at(0).Phi()) < 100";  // add'l skim cut
       objCutMap_["sle"] = "NMuons==0 && NElectrons==1 && isoMuonTracksclean==0 && isoPionTracksclean==0";
-      objCutMap_["sle"] += " && TransverseMass(METPt,METPhi,Electrons->at(0).Pt(),Electrons->at(0).Phi()) < 100";  // add'l skim cut
+      objCutMap_["sle"] += " && TransverseMass(METPt,METPhi,@Electrons.at(0).Pt(),@Electrons.at(0).Phi()) < 100";  // add'l skim cut
     }
 
     minDphiCutMap_["nominal"] = "DeltaPhi1clean>0.5 && DeltaPhi2clean>0.5 && DeltaPhi3clean>0.3 && DeltaPhi4clean>0.3";

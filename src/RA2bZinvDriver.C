@@ -9,14 +9,14 @@
 
   gEnv->SetValue("TFile.AsyncPrefetching", 1);
 
-  bool doCCzvv = true;
-  bool doCCttzvv = true;
+  bool doCCzvv = false;
+  bool doCCttzvv = false;
   bool doCCzmm = false;
   bool doCCzee = false;
   bool do1Dzvv = false;
   bool do1Dttzvv = false;
-  bool do1Dzmm = false;
-  bool do1Dzee = false;
+  bool do1Dzmm = true;
+  bool do1Dzee = true;
   bool do1Ddymm = false;
   bool do1Ddyee = false;
   bool do1Dttzmm = false;
@@ -35,17 +35,18 @@
   if (doCCzvv || doCCttzvv) {
     // Output file
     TFile *CChistos = TFile::Open("hCCzinv.root", "RECREATE");
+    TH1F *hCCzvv, *hCCttzvv, *hCCzinv;
 
     if (doCCzvv) {
-      TH1F* hCCzvv = analyzer.makeCChist("zinv");
+      hCCzvv = analyzer.makeCChist("zinv");
       hCCzvv->SetName("hCCzvv");  hCCzvv->Draw();
     }
     if (doCCttzvv) {
-      TH1F* hCCttzvv = analyzer.makeCChist("ttzvv");
+      hCCttzvv = analyzer.makeCChist("ttzvv");
       hCCttzvv->SetName("hCCttzvv");  hCCttzvv->Draw();
     }
     if (doCCzvv && doCCttzvv) {
-      TH1F* hCCzinv = (TH1F*) hCCzvv->Clone();
+      hCCzinv = (TH1F*) hCCzvv->Clone();
       hCCzinv->Add(hCCttzvv);
       hCCzinv->SetName("hCCzinv");  hCCzinv->Draw();
     }
@@ -55,14 +56,20 @@
   if (doCCzmm || doCCzee) {
     // Output file
     TFile *CChistos = TFile::Open("hCCzll.root", "RECREATE");
+    TH1F *hCCzmm, *hCCzee, *hCCzll;
 
     if (doCCzmm) {
-      TH1F* hCCzmm = analyzer.makeCChist("zmm");
+      hCCzmm = analyzer.makeCChist("zmm");
       hCCzmm->Draw();
     }
     if (doCCzee) {
-      TH1F* hCCzee = analyzer.makeCChist("zee");
+      hCCzee = analyzer.makeCChist("zee");
       hCCzee->Draw();
+    }
+    if (doCCzmm && doCCzee) {
+      hCCzll = (TH1F*) hCCzmm->Clone();
+      hCCzll->Add(hCCzee);
+      hCCzll->SetName("hCCbins_zll");  hCCzll->Draw();
     }
     CChistos->Write();
   }
@@ -70,11 +77,11 @@
   if (do1Dzvv || do1Dttzvv) {
     TFile *histos1D = TFile::Open("histsZjets.root", "RECREATE");
     if (do1Dzvv) {
-      std::vector<TH1F*> h_zinv = analyzer.makeHistograms("zinv");
+      std::vector<TH1*> h_zinv = analyzer.makeHistograms("zinv");
       for (auto& theHist : h_zinv) theHist->Draw();
     }
     if (do1Dttzvv) {
-      std::vector<TH1F*> h_ttzvv = analyzer.makeHistograms("ttzvv");
+      std::vector<TH1*> h_ttzvv = analyzer.makeHistograms("ttzvv");
       for (auto& theHist : h_ttzvv) theHist->Draw();
     }
     histos1D->Write();
@@ -85,12 +92,12 @@
     if (do1Dzmm && do1Dzee) histos1D = TFile::Open("histsZll.root", "RECREATE");
     if (do1Dzmm) {
       if (!do1Dzee) histos1D = TFile::Open("histsZmm.root", "RECREATE");
-      std::vector<TH1F*> h_zmm = analyzer.makeHistograms("zmm");
+      std::vector<TH1*> h_zmm = analyzer.makeHistograms("zmm");
       for (auto& theHist : h_zmm) theHist->Draw();
     }
     if (do1Dzee) {
       if (!do1Dzmm) histos1D = TFile::Open("histsZee.root", "RECREATE");
-      std::vector<TH1F*> h_zee = analyzer.makeHistograms("zee");
+      std::vector<TH1*> h_zee = analyzer.makeHistograms("zee");
       for (auto& theHist : h_zee) theHist->Draw();
     }
     histos1D->Write();
@@ -100,38 +107,38 @@
     TFile *histos1D = TFile::Open("histsDYMC.root", "RECREATE");
 
     if (do1Ddymm) {
-      std::vector<TH1F*> h_dymm = analyzer.makeHistograms("dymm");
+      std::vector<TH1*> h_dymm = analyzer.makeHistograms("dymm");
       for (auto& theHist : h_dymm) theHist->Draw();
     }
     if (do1Ddyee) {
-      std::vector<TH1F*> h_dyee = analyzer.makeHistograms("dyee");
+      std::vector<TH1*> h_dyee = analyzer.makeHistograms("dyee");
       for (auto& theHist : h_dyee) theHist->Draw();
     }
 
     if (do1Dttzmm) {
-      std::vector<TH1F*> h_ttzmm = analyzer.makeHistograms("ttzmm");
+      std::vector<TH1*> h_ttzmm = analyzer.makeHistograms("ttzmm");
       for (auto& theHist : h_ttzmm) theHist->Draw();
     }
     if (do1Dttzee) {
-      std::vector<TH1F*> h_ttzee = analyzer.makeHistograms("ttzee");
+      std::vector<TH1*> h_ttzee = analyzer.makeHistograms("ttzee");
       for (auto& theHist : h_ttzee) theHist->Draw();
     }
 
     if (do1DVVmm) {
-      std::vector<TH1F*> h_VVmm = analyzer.makeHistograms("VVmm");
+      std::vector<TH1*> h_VVmm = analyzer.makeHistograms("VVmm");
       for (auto& theHist : h_VVmm) theHist->Draw();
     }
     if (do1DVVee) {
-      std::vector<TH1F*> h_VVee = analyzer.makeHistograms("VVee");
+      std::vector<TH1*> h_VVee = analyzer.makeHistograms("VVee");
       for (auto& theHist : h_VVee) theHist->Draw();
     }
 
     if (do1Dttmm) {
-      std::vector<TH1F*> h_ttmm = analyzer.makeHistograms("ttmm");
+      std::vector<TH1*> h_ttmm = analyzer.makeHistograms("ttmm");
       for (auto& theHist : h_ttmm) theHist->Draw();
     }
     if (do1Dttee) {
-      std::vector<TH1F*> h_ttee = analyzer.makeHistograms("ttee");
+      std::vector<TH1*> h_ttee = analyzer.makeHistograms("ttee");
       for (auto& theHist : h_ttee) theHist->Draw();
     }
 

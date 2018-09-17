@@ -10,7 +10,7 @@
 
 #define VERSION 12
 #define ISSKIM
-#define ISMC
+/* #define ISMC */
 
 #include <TString.h>
 #include <TChain.h>
@@ -43,7 +43,7 @@ public:
 
   TChain* getChain(const char* sample, Int_t* fCurrent = nullptr, bool makeClass = false);
   std::vector<TString> fileList(TString sampleKey);
-  std::vector<TH1F*> makeHistograms(const char* sample);
+  std::vector<TH1*> makeHistograms(const char* sample);
   TH1F* makeCChist(const char* sample);
   TCut getCuts(const TString sampleKey);
   int kinBin(double& ht, double& mht);
@@ -51,22 +51,27 @@ public:
   void checkActiveTrigPrescales(const char* sample);
   void runMakeClass(const std::string& sample);
 
-  struct hist1D {
-    TH1F* hist;
+  struct histConfig {
+    TH1* hist;
+    bool is2D;
     TString name;
     const char* title;
     std::pair<const char*, const char*> axisTitles;
-    Int_t Nbins;
-    Double_t lowEdge;
-    Double_t highEdge;
+    Int_t NbinsX;
+    Double_t lowEdgeX;
+    Double_t highEdgeX;
+    Int_t NbinsY;
+    Double_t lowEdgeY;
+    Double_t highEdgeY;
     Double_t* dvalue;
     Int_t* ivalue;
-    void (RA2bZinvAnalysis::*filler)(TH1F* h, double wt);
+    void (RA2bZinvAnalysis::*filler1D)(TH1F* h, double wt);
+    void (RA2bZinvAnalysis::*filler2D)(TH2F* h, double wt);
     std::vector<TString*> omitCuts;
     const char* addCuts;
     TString NminusOneCuts;
     TTreeFormula* NminusOneFormula;
-    hist1D() : dvalue(nullptr), ivalue(nullptr), filler(nullptr), addCuts("") {}
+  histConfig() : dvalue(nullptr), ivalue(nullptr), filler1D(nullptr), filler2D(nullptr), addCuts(""), is2D(false) {}
   };
 
   class cutHistos {
@@ -125,6 +130,10 @@ private:
   std::vector<int> nJetThresholds_;
   std::vector<int> nbThresholds_;
   unsigned kinSize_;
+  TString isoSFlepTksVeto_;
+  TString isoSFlepTksCut_;
+  TString photonVeto_;
+  TString photonCut_;
 
 #ifdef ISMC
 
@@ -173,7 +182,7 @@ private:
 
   void Init(const std::string& cfg_filename="");
   void fillCutMaps();
-  void bookAndFillHistograms(const char* sample, std::vector<hist1D*>& histograms);
+  void bookAndFillHistograms(const char* sample, std::vector<histConfig*>& histograms, TCut baselineCuts);
   void fillCutFlow(TH1F* hcf, Double_t wt);
 
   void cleanVars() {
@@ -200,6 +209,41 @@ private:
   void fillnZcand(TH1F* h, double wt) {h->Fill(ZCandidates->size(), wt);}
   void fillZmass(TH1F* h, double wt) {for (auto & theZ : *ZCandidates) h->Fill(theZ.M(), wt);}
   void fillZpt(TH1F* h, double wt) {for (auto & theZ : *ZCandidates) h->Fill(theZ.Pt(), wt);}
+  void fillGpt(TH1F* h, double wt) {for (auto & theG : *Photons) h->Fill(theG.Pt(), wt);}
+  void fillZGmass(TH1F* h, double wt) {
+    for (auto & theZ : *ZCandidates) {
+      for (auto & aPhoton : *Photons) {
+	TLorentzVector Zg(theZ);  Zg += aPhoton;
+	h->Fill(Zg.M(), wt);
+      }
+    }
+  }
+  void fillGJdR(TH1F* h, double wt) {
+    TLorentzVector thePhoton = Photons->at(0);
+    if (Jets->size() > 0) {
+      Double_t dR = 999.;
+      for (auto & thisJet : *Jets)
+	dR = thePhoton.DeltaR(thisJet) < dR ? thePhoton.DeltaR(thisJet) : dR;
+      h->Fill(dR, wt);
+    }
+  }
+  void fillZGdRvsM(TH2F* h, double wt) {
+    TLorentzVector theZ = ZCandidates->at(0);
+    TLorentzVector thePhoton = Photons->at(0);
+    TLorentzVector Zg(theZ);  Zg += thePhoton;
+    if (Muons->size() > 0) {
+      Double_t dR = 999.;
+      for (auto & thisMuon : *Muons)
+	dR = thePhoton.DeltaR(thisMuon) < dR ? thePhoton.DeltaR(thisMuon) : dR;
+      h->Fill(Zg.M(), dR, wt);
+    }
+    if (Electrons->size() > 0) {
+      Double_t dR = 999.;
+      for (auto & thisElectron : *Electrons)
+	dR = thePhoton.DeltaR(thisElectron) < dR ? thePhoton.DeltaR(thisElectron) : dR;
+      h->Fill(Zg.M(), dR, wt);
+    }
+  }
 
   ClassDef(RA2bZinvAnalysis, 1) // 2nd arg is ClassVersionID
 };
