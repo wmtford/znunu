@@ -449,12 +449,12 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 
   cutHistos cutHistFiller(chain, forNotify);  // for cutFlow histograms
   for (auto & hg : histograms) {
-    if (hg->is2D) {
-      hg->hist = new TH2F(hg->name, hg->title, hg->NbinsX, hg->lowEdgeX, hg->highEdgeX,
-			  hg->NbinsY, hg->lowEdgeY, hg->highEdgeY);
+    if (hg->NbinsY > 0) {
+      hg->hist = new TH2F(hg->name, hg->title, hg->NbinsX, hg->rangeX.first, hg->rangeX.second,
+			  hg->NbinsY, hg->rangeY.first, hg->rangeY.second);
       hg->hist->SetOption("colz");
     } else {
-      hg->hist = new TH1F(hg->name, hg->title, hg->NbinsX, hg->lowEdgeX, hg->highEdgeX);
+      hg->hist = new TH1F(hg->name, hg->title, hg->NbinsX, hg->rangeX.first, hg->rangeX.second);
       hg->hist->SetOption("hist");
       hg->hist->SetMarkerSize(0);
     }
@@ -563,75 +563,75 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 
   histConfig hHT;
   hHT.name = TString("hHT_") + sample;  hHT.title = "HT";
-  hHT.NbinsX = 60;  hHT.lowEdgeX = 0;  hHT.highEdgeX = 3000;
+  hHT.NbinsX = 60;  hHT.rangeX.first = 0;  hHT.rangeX.second = 3000;
   hHT.axisTitles.first = "HT [GeV]";  hHT.axisTitles.second = "Events / 50 GeV";
   hHT.dvalue = &HT;  hHT.omitCuts.push_back(&HTcut_);
   histograms.push_back(&hHT);
 
   histConfig hMHT;
   hMHT.name = TString("hMHT_") + sample;  hMHT.title = "MHT";
-  hMHT.NbinsX = 60;  hMHT.lowEdgeX = 0;  hMHT.highEdgeX = 3000;
+  hMHT.NbinsX = 60;  hMHT.rangeX.first = 0;  hMHT.rangeX.second = 3000;
   hMHT.axisTitles.first = "MHT [GeV]";  hMHT.axisTitles.second = "Events / 50 GeV";
   hMHT.dvalue = &MHT;  hMHT.omitCuts.push_back(&MHTcut_);  hMHT.omitCuts.push_back(&ptCut_);
   histograms.push_back(&hMHT);
 
   histConfig hNJets;
   hNJets.name = TString("hNJets_") + sample;  hNJets.title = "NJets";
-  hNJets.NbinsX = 20;  hNJets.lowEdgeX = 0;  hNJets.highEdgeX = 20;
+  hNJets.NbinsX = 20;  hNJets.rangeX.first = 0;  hNJets.rangeX.second = 20;
   hNJets.axisTitles.first = "N (jets)";  hNJets.axisTitles.second = "Events / bin";
   hNJets.ivalue = &NJets;  hNJets.omitCuts.push_back(&NJetscut_);
   histograms.push_back(&hNJets);
 
   histConfig hBTags;
   hBTags.name = TString("hBTags_") + sample;  hBTags.title = "BTags";
-  hBTags.NbinsX = 20;  hBTags.lowEdgeX = 0;  hBTags.highEdgeX = 20;
+  hBTags.NbinsX = 20;  hBTags.rangeX.first = 0;  hBTags.rangeX.second = 20;
   hBTags.axisTitles.first = "N (b jets)";  hBTags.axisTitles.second = "Events / bin";
   hBTags.ivalue = &BTags;
   histograms.push_back(&hBTags);
 
   histConfig hnZcand;
   hnZcand.name = TString("hnZcand_") + sample;  hnZcand.title = "Number of Z candidates";
-  hnZcand.NbinsX = 10;  hnZcand.lowEdgeX = 0;  hnZcand.highEdgeX = 10;
+  hnZcand.NbinsX = 10;  hnZcand.rangeX.first = 0;  hnZcand.rangeX.second = 10;
   hnZcand.axisTitles.first = "N(Z candidates)";  hnZcand.axisTitles.second = "Events / bin";
   hnZcand.filler1D = &RA2bZinvAnalysis::fillnZcand;  hnZcand.omitCuts.push_back(&massCut_);
   histograms.push_back(&hnZcand);
 
   histConfig hZmass;
   hZmass.name = TString("hZmass_") + sample;  hZmass.title = "Z mass";
-  hZmass.NbinsX = 30;  hZmass.lowEdgeX = 60;  hZmass.highEdgeX = 120;
+  hZmass.NbinsX = 30;  hZmass.rangeX.first = 60;  hZmass.rangeX.second = 120;
   hZmass.axisTitles.first = "M(Z) [GeV]";  hZmass.axisTitles.second = "Events / 2 GeV";
   hZmass.filler1D = &RA2bZinvAnalysis::fillZmass;  hZmass.omitCuts.push_back(&massCut_);
   histograms.push_back(&hZmass);
 
   histConfig hZpt;
   hZpt.name = TString("hZpt_") + sample;  hZpt.title = "Z Pt";
-  hZpt.NbinsX = 60;  hZpt.lowEdgeX = 0;  hZpt.highEdgeX = 3000;
+  hZpt.NbinsX = 60;  hZpt.rangeX.first = 0;  hZpt.rangeX.second = 3000;
   hZpt.axisTitles.first = "Pt(Z) [GeV]";  hZpt.axisTitles.second = "Events / 50 GeV";
   hZpt.filler1D = &RA2bZinvAnalysis::fillZpt;  hZpt.omitCuts.push_back(&ptCut_);  hZpt.omitCuts.push_back(&MHTcut_);
   histograms.push_back(&hZpt);
 
   histConfig hCutFlow;
   hCutFlow.name = TString("hCutFlow_") + sample;  hCutFlow.title = "Cut flow";
-  hCutFlow.NbinsX = 10;  hCutFlow.lowEdgeX = 0;  hCutFlow.highEdgeX = 10;
+  hCutFlow.NbinsX = 10;  hCutFlow.rangeX.first = 0;  hCutFlow.rangeX.second = 10;
   hCutFlow.axisTitles.first = "";  hCutFlow.axisTitles.second = "Events surviving";
   histograms.push_back(&hCutFlow);
 
   histConfig hCuts;
   hCuts.name = TString("hCuts_") + sample;  hCuts.title = "Cuts passed";
-  hCuts.NbinsX = 10;  hCuts.lowEdgeX = 0;  hCuts.highEdgeX = 10;
+  hCuts.NbinsX = 10;  hCuts.rangeX.first = 0;  hCuts.rangeX.second = 10;
   hCuts.axisTitles.first = "";  hCuts.axisTitles.second = "Events passing";
   histograms.push_back(&hCuts);
 
   histConfig hVertices;
   hVertices.name = TString("hVertices_") + sample;  hVertices.title = "Number of reco vertices";
-  hVertices.NbinsX = 100;  hVertices.lowEdgeX = 0;  hVertices.highEdgeX = 100;
+  hVertices.NbinsX = 100;  hVertices.rangeX.first = 0;  hVertices.rangeX.second = 100;
   hVertices.axisTitles.first = "No. of vertices";  hVertices.axisTitles.second = "Events / bin";
   hVertices.ivalue = &nAllVertices;
   histograms.push_back(&hVertices);
 
   histConfig hTrueNumInt;
   hTrueNumInt.name = TString("hTrueNumInt_") + sample;  hTrueNumInt.title = "Number of generated interactions";
-  hTrueNumInt.NbinsX = 100;  hTrueNumInt.lowEdgeX = 0;  hTrueNumInt.highEdgeX = 100;
+  hTrueNumInt.NbinsX = 100;  hTrueNumInt.rangeX.first = 0;  hTrueNumInt.rangeX.second = 100;
   hTrueNumInt.axisTitles.first = "No. of interactions";  hTrueNumInt.axisTitles.second = "Events / bin";
   hTrueNumInt.dvalue = &TrueNumInteractions;
   histograms.push_back(&hTrueNumInt);
@@ -648,7 +648,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 
   histConfig hGpt;
   hGpt.name = TString("hGpt_") + sample;  hGpt.title = "Photon Pt";
-  hGpt.NbinsX = 60;  hGpt.lowEdgeX = 0;  hGpt.highEdgeX = 3000;
+  hGpt.NbinsX = 60;  hGpt.rangeX.first = 0;  hGpt.rangeX.second = 3000;
   hGpt.axisTitles.first = "Pt(gamma) [GeV]";  hGpt.axisTitles.second = "Events / 50 GeV";
   hGpt.filler1D = &RA2bZinvAnalysis::fillGpt;
   hGpt.omitCuts.push_back(&photonVeto_);  hGpt.addCuts = photonCut_.Data();
@@ -656,17 +656,17 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 
   histConfig hZGmass;
   hZGmass.name = TString("hZGmass_") + sample;  hZGmass.title = "Z-gamma mass";
-  hZGmass.NbinsX = 100;  hZGmass.lowEdgeX = 0;  hZGmass.highEdgeX = 2000;
+  hZGmass.NbinsX = 100;  hZGmass.rangeX.first = 0;  hZGmass.rangeX.second = 2000;
   hZGmass.axisTitles.first = "M(Z gamma) [GeV]";  hZGmass.axisTitles.second = "Events / 20 GeV";
   hZGmass.filler1D = &RA2bZinvAnalysis::fillZGmass;
   hZGmass.omitCuts.push_back(&photonVeto_);  hZGmass.addCuts = photonCut_.Data();
   histograms.push_back(&hZGmass);
 
   histConfig hZGdRvsM;
-  hZGdRvsM.name = TString("hZGdRvsM_")+sample;  hZGdRvsM.is2D = true;
+  hZGdRvsM.name = TString("hZGdRvsM_")+sample;
   hZGdRvsM.title = "Min Delta R vs M(Zgamma) for Z(ll) leptons";
-  hZGdRvsM.NbinsX = 100;  hZGdRvsM.lowEdgeX = 0;  hZGdRvsM.highEdgeX = 200;
-  hZGdRvsM.NbinsY = 40;  hZGdRvsM.lowEdgeY = 0;  hZGdRvsM.highEdgeY = 0.02;
+  hZGdRvsM.NbinsX = 100;  hZGdRvsM.rangeX.first = 0;  hZGdRvsM.rangeX.second = 200;
+  hZGdRvsM.NbinsY = 40;  hZGdRvsM.rangeY.first = 0;  hZGdRvsM.rangeY.second = 0.02;
   hZGdRvsM.axisTitles.first = "M(Z gamma) [GeV]";  hZGdRvsM.axisTitles.second = "DR(l gamma)";
   hZGdRvsM.filler2D = &RA2bZinvAnalysis::fillZGdRvsM;
   hZGdRvsM.omitCuts.push_back(&photonVeto_);  hZGdRvsM.addCuts = photonCut_.Data();
@@ -674,7 +674,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 
   histConfig hGJdR;
   hGJdR.name = TString("hGJdR_") + sample;  hGJdR.title = "min DR(photon-jet)";
-  hGJdR.NbinsX = 350;  hGJdR.lowEdgeX = 0;  hGJdR.highEdgeX = 3.5;
+  hGJdR.NbinsX = 350;  hGJdR.rangeX.first = 0;  hGJdR.rangeX.second = 3.5;
   hGJdR.axisTitles.first = "Delta R";  hGJdR.axisTitles.second = "Events / 0.01";
   hGJdR.filler1D = &RA2bZinvAnalysis::fillGJdR;
   hGJdR.omitCuts.push_back(&photonVeto_);  hGJdR.addCuts = photonCut_.Data();

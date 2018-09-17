@@ -52,17 +52,15 @@ public:
   void runMakeClass(const std::string& sample);
 
   struct histConfig {
+    // 1D or 2D histogram; select by value of NbinsY, = 0 for 1D.
     TH1* hist;
-    bool is2D;
     TString name;
     const char* title;
     std::pair<const char*, const char*> axisTitles;
     Int_t NbinsX;
-    Double_t lowEdgeX;
-    Double_t highEdgeX;
+    std::pair<Double_t, Double_t> rangeX;
     Int_t NbinsY;
-    Double_t lowEdgeY;
-    Double_t highEdgeY;
+    std::pair<Double_t, Double_t> rangeY;
     Double_t* dvalue;
     Int_t* ivalue;
     void (RA2bZinvAnalysis::*filler1D)(TH1F* h, double wt);
@@ -71,7 +69,7 @@ public:
     const char* addCuts;
     TString NminusOneCuts;
     TTreeFormula* NminusOneFormula;
-  histConfig() : dvalue(nullptr), ivalue(nullptr), filler1D(nullptr), filler2D(nullptr), addCuts(""), is2D(false) {}
+  histConfig() : dvalue(nullptr), ivalue(nullptr), filler1D(nullptr), filler2D(nullptr), addCuts(""), NbinsY(0) {}
   };
 
   class cutHistos {
