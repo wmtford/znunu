@@ -7,8 +7,6 @@
 #include <TStyle.h>
 #include <TROOT.h>
 #include <TCanvas.h>
-// #include <TLegend.h>
-// #include <TGraphAsymmErrors.h>
 #include <TFile.h>
 #include <TRegexp.h>
 #include <TCut.h>
@@ -446,6 +444,15 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
   Int_t fCurrent;  // current Tree number in a TChain
   TChain* chain = getChain(sample, &fCurrent);
   TObjArray* forNotify = new TObjArray;
+  forNotify->SetOwner();  // so that TreeFormulas will be deleted
+
+  // For B-tagging corrections
+  if (applyBTagSF_) {
+    btagcorr_ = new BTagCorrector;
+    btagcorr_->SetCalib(BTagSFfile_);
+  } else {
+    btagcorr_ = nullptr;
+  }
 
   cutHistos cutHistFiller(chain, forNotify);  // for cutFlow histograms
   for (auto & hg : histograms) {
@@ -490,7 +497,10 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
     if (chain->GetTreeNumber() != fCurrent) {
       fCurrent = chain->GetTreeNumber();
       TFile* thisFile = chain->GetCurrentFile();
-      if (thisFile && verbosity_ >= 1) cout << "Current file in chain: " << thisFile->GetName() << endl;
+      if (thisFile) {
+    	if (btagcorr_) btagcorr_->SetEffs(thisFile);
+	if (verbosity_ >= 1) cout << "Current file in chain: " << thisFile->GetName() << endl;
+      }
       countInFile = 0;
     }
     chain->GetEntry(entry);
@@ -542,6 +552,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 
   delete forNotify;
   delete chain->GetCurrentFile();
+  if (btagcorr_) delete btagcorr_;
 
 }  // ======================================================================================
 
@@ -560,6 +571,15 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 
   std::vector<histConfig*> histograms;
   TCut baselineCuts = getCuts(sample);
+
+  histConfig hCC;
+  hCC.name = TString("hCC_") + sample;  hCC.title = "Cut & count analysis";
+  Int_t MaxBins = toCCbin_.size();
+  cout << "MaxBins = " << MaxBins << endl;
+  hCC.NbinsX = MaxBins;  hCC.rangeX.first = 0.5;  hCC.rangeX.second = MaxBins+0.5;
+  hCC.axisTitles.first = "Analysis bin";  hCC.axisTitles.second = "Events / bin";
+  hCC.filler1D = &RA2bZinvAnalysis::fillCC;
+  histograms.push_back(&hCC);
 
   histConfig hHT;
   hHT.name = TString("hHT_") + sample;  hHT.title = "HT";
@@ -729,6 +749,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   bookAndFillHistograms(sample, histograms, baselineCuts);
 
   std::vector<TH1*> theHists;
+  theHists.push_back(hCC.hist);
   theHists.push_back(hHT.hist);
   theHists.push_back(hMHT.hist);
   theHists.push_back(hNJets.hist);
@@ -758,95 +779,22 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 
 }  // ======================================================================================
 
-TH1F*
-RA2bZinvAnalysis::makeCChist(const char* sample) {
-  //
-  // Book the analysis-binned histogram, fill, and return it.
-  //
-  Int_t MaxBins = toCCbin_.size();
-  cout << "MaxBins = " << MaxBins << endl;
+void
+RA2bZinvAnalysis::fillCC(TH1F* h, double wt) {
 
-  const char* hName = TString("hCCbins_") + sample;
-  TH1F* hCCbins = new TH1F(hName, "Zinv background estimate", MaxBins, 0.5, MaxBins+0.5);
-
-  TObjArray* forNotify = new TObjArray;  // Allow for more than one TObject to notify of a new file
-  
-  Int_t fCurrent; //!current Tree number in a TChain
-  TChain* chain = getChain(sample, &fCurrent);
-
-  // chain->Print();
-
-  BTagCorrector* btagcorr = nullptr;
-  if (applyBTagSF_) {
-    btagcorr = new BTagCorrector;
-    btagcorr->SetCalib(BTagSFfile_);
-  }
-
-  // Get the baseline cuts, make a TreeFormula, and add it to the list
-  // of objects to be notified as new files in the chain are encountered
-  TCut baselineCuts = getCuts(sample);
-  if (verbosity_ >= 1) cout << "baseline = " << baselineCuts << endl;
-  // See https://root-forum.cern.ch/t/how-to-evaluate-a-formula-for-a-single-tree-event/12283
-  TTreeFormula* baselineTF = new TTreeFormula("baselineTF", baselineCuts, chain);
-  forNotify->Add(baselineTF);
-  chain->SetNotify(forNotify);
-
-  // Traverse the events in the chain
-  Long64_t Nentries = chain->GetEntries();
-  if (verbosity_ >= 1) cout << "Nentries in tree = " << Nentries << endl;
-  int count = 0, outCount = 0, countInFile = 0;
-  for (Long64_t entry = 0; entry < Nentries; ++entry) {
-    count++;
-    if (verbosity_ >= 1 && (count % 100000 == 0)) cout << "Entry number " << count << endl;
-    chain->LoadTree(entry);
-    if (chain->GetTreeNumber() != fCurrent) {
-      fCurrent = chain->GetTreeNumber();
-      TFile* thisFile = chain->GetCurrentFile();
-      if (thisFile) {
-    	if (verbosity_ >= 1) cout << "Current file in chain: " << thisFile->GetName() << endl;
-    	if (btagcorr) btagcorr->SetEffs(thisFile);
-      }
-      countInFile = 0;
-    }
-    chain->GetEntry(entry);
-    countInFile++;
-    if (countInFile == 1) {
-      checkActiveTrigPrescales(sample);
-      if (isMC_ && verbosity_ >= 1) cout << "MC weight for this file is " << Weight << endl;
-    }
-    cleanVars();  // If unskimmed input, copy <var>clean to <var>
-
-    UInt_t binCC = 0;
-
-    // Apply baseline selection
-    baselineTF->GetNdata();
-    double selWt = baselineTF->EvalInstance(0);
-    if (selWt == 0) continue;
-    outCount++;
-
-    // Compute event weight factors
-    Double_t eventWt = 1;
-    Double_t PUweight = 1;
-    if (applyPuWeight_ && customPuWeight_) {
-      // This recipe from Kevin Pedro, https://twiki.cern.ch/twiki/bin/viewauth/CMS/RA2b13TeVProduction
-      PUweight = puHist_->GetBinContent(puHist_->GetXaxis()->FindBin(min(TrueNumInteractions, puHist_->GetBinLowEdge(puHist_->GetNbinsX()+1))));
-    }
-    if (isMC_) {
-      eventWt = 1000*intLumi_*Weight*selWt*PUweight;
-      if (eventWt < 0) eventWt *= -1;
-    }
-
-    if (useTreeCCbin_ && !applyBTagSF_) {
-      binCC = RA2bin;
-      hCCbins->Fill(Double_t(binCC), eventWt);
-    } else {
-      // Calculate binCC
-      std::vector<int> jbk;
-      int binKin = kinBin(HT, MHT);
-      if (binKin < 0) continue;
-      int binNjets = nJetThresholds_.size()-1;
-      while (NJets < nJetThresholds_[binNjets]) binNjets--;
-      if (!applyBTagSF_) {
+  // Filler for the analysis-bin jbk histogram
+  UInt_t binCC = 0;
+  if (useTreeCCbin_ && !applyBTagSF_) {
+    binCC = RA2bin;
+    h->Fill(Double_t(binCC), wt);
+  } else {
+    // Calculate binCC
+    std::vector<int> jbk;
+    int binKin = kinBin(HT, MHT);
+    if (binKin < 0) return;
+    int binNjets = nJetThresholds_.size()-1;
+    while (NJets < nJetThresholds_[binNjets]) binNjets--;
+    if (!applyBTagSF_) {
 	int binNb = nbThresholds_.size()-1;
 	while (BTags < nbThresholds_[binNb]) binNb--;
 	jbk = {binNjets, binNb, binKin};
@@ -854,36 +802,68 @@ RA2bZinvAnalysis::makeCChist(const char* sample) {
 	  binCC = toCCbin_.at(jbk);
 	}
 	catch (const std::out_of_range& oor) {
-          // Omitted bins j = 3,4, k = 0,3
+        // Omitted bins j = 3,4, k = 0,3
 	  // std::cerr << "jpk out of range: " << oor.what() << ": j = " << binNjets
 	  // 	    << ", b = " << binNb << ", k = " << binKin << ", RA2bin = " << RA2bin << '\n';
-	  continue;
+	  return;
 	}
-	// if (outCount < 100) cout << "j = " << binNjets << ", b = " << binNb << ", k = " << binKin << ", binCC = " << binCC << ", RA2bin = " << RA2bin << endl;
-	hCCbins->Fill(Double_t(binCC), eventWt);
-      } else {
-        // apply BTagSF to all Nb bins
-	// if (count < 20 || count % 10000 == 0) cout << "Size of input Jets = " << Jets->size() << ", Jets_hadronFlavor = " << Jets_hadronFlavor->size() << " Jets_HTMask = " << Jets_HTMask->size() << endl;
-	vector<double> probNb = btagcorr->GetCorrections(Jets, Jets_hadronFlavor, Jets_HTMask);
+	// if (verbosity_ >= 3) cout << "j = " << binNjets << ", b = " << binNb << ", k = " << binKin << ", binCC = " << binCC << ", RA2bin = " << RA2bin << endl;
+	h->Fill(Double_t(binCC), wt);
+    } else {
+      // apply BTagSF to all Nb bins
+	// if (verbosity_ >= 3) cout << "Size of input Jets = " << Jets->size() << ", Jets_hadronFlavor = " << Jets_hadronFlavor->size() << " Jets_HTMask = " << Jets_HTMask->size() << endl;
+	vector<double> probNb = btagcorr_->GetCorrections(Jets, Jets_hadronFlavor, Jets_HTMask);
 	for (int binNb = 0; binNb < (int) nbThresholds_.size(); ++binNb) {
 	  jbk = {binNjets, binNb, binKin};
 	  try {binCC = toCCbin_.at(jbk);}
-	  catch (const std::out_of_range& oor) {continue;}
-	  if (verbosity_ >= 2 && count % 100000 == 0) cout << "j = " << binNjets << ", NbTags = " << BTags << ", b = " << binNb << ", b wt = " << probNb[binNb] << ", k = " << binKin << ", binCC = " << binCC << endl;
-	  hCCbins->Fill(Double_t(binCC), eventWt*probNb[binNb]);
+	  catch (const std::out_of_range& oor) {return;}
+	  if (verbosity_ >= 3) cout << "j = " << binNjets << ", NbTags = " << BTags << ", b = " << binNb << ", b wt = " << probNb[binNb] << ", k = " << binKin << ", binCC = " << binCC << endl;
+	  h->Fill(Double_t(binCC), wt*probNb[binNb]);
 	}
-      }  // if apply BTagSF
-    }  // if useTreeCCbin
-  }  // End loop over entries
+    }  // if apply BTagSF
+  }  // if useTreeCCbin
 
-  delete forNotify;
-  delete baselineTF;
-  delete chain->GetCurrentFile();
-  if (btagcorr) delete btagcorr;
+}  // ======================================================================================
 
-  return hCCbins;
+void
+RA2bZinvAnalysis::fillZGmass(TH1F* h, double wt) {
+  for (auto & theZ : *ZCandidates) {
+    for (auto & aPhoton : *Photons) {
+      TLorentzVector Zg(theZ);  Zg += aPhoton;
+      h->Fill(Zg.M(), wt);
+    }
+  }
+}  // ======================================================================================
 
-  }  // ======================================================================================
+void
+RA2bZinvAnalysis::fillGJdR(TH1F* h, double wt) {
+  TLorentzVector thePhoton = Photons->at(0);
+  if (Jets->size() > 0) {
+    Double_t dR = 999.;
+    for (auto & thisJet : *Jets)
+	dR = thePhoton.DeltaR(thisJet) < dR ? thePhoton.DeltaR(thisJet) : dR;
+    h->Fill(dR, wt);
+  }
+}  // ======================================================================================
+
+void
+RA2bZinvAnalysis::fillZGdRvsM(TH2F* h, double wt) {
+  TLorentzVector theZ = ZCandidates->at(0);
+  TLorentzVector thePhoton = Photons->at(0);
+  TLorentzVector Zg(theZ);  Zg += thePhoton;
+  if (Muons->size() > 0) {
+    Double_t dR = 999.;
+    for (auto & thisMuon : *Muons)
+	dR = thePhoton.DeltaR(thisMuon) < dR ? thePhoton.DeltaR(thisMuon) : dR;
+    h->Fill(Zg.M(), dR, wt);
+  }
+  if (Electrons->size() > 0) {
+    Double_t dR = 999.;
+    for (auto & thisElectron : *Electrons)
+	dR = thePhoton.DeltaR(thisElectron) < dR ? thePhoton.DeltaR(thisElectron) : dR;
+    h->Fill(Zg.M(), dR, wt);
+  }
+}  // ======================================================================================
 
 int
 RA2bZinvAnalysis::kinBin(double& ht, double& mht) {
