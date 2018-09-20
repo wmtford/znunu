@@ -212,6 +212,8 @@ private:
   void fillZGmass(TH1F* h, double wt);
   void fillGJdR(TH1F* h, double wt);
   void fillZGdRvsM(TH2F* h, double wt);
+  void fillGLdRnoPixelSeed(TH1F* h, double wt);
+  void fillGLdRpixelSeed(TH1F* h, double wt);
 
   ClassDef(RA2bZinvAnalysis, 1) // 2nd arg is ClassVersionID
 };

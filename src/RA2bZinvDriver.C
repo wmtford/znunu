@@ -81,7 +81,7 @@
 	if (hName.Contains("hCC") && hCCzmm) {
 	  TH1F* hCCll = (TH1F*) hCCzmm->Clone();
 	  hCCll->Add(theHist);
-	  hCCll->SetName("hCCll");
+	  hCCll->SetName("hCC_zll");
 	  hCCll->Draw();
 	}
       }

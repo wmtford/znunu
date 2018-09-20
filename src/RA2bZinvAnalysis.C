@@ -140,6 +140,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   activeBranches_.push_back("Photons");
   activeBranches_.push_back("Photons_nonPrompt");
   activeBranches_.push_back("Photons_fullID");
+  activeBranches_.push_back("Photons_hasPixelSeed");
   activeBranches_.push_back("NVtx");
   activeBranches_.push_back("TriggerPass");
   activeBranches_.push_back("TriggerPrescales");
@@ -226,6 +227,7 @@ TChain*
 RA2bZinvAnalysis::getChain(const char* sample, Int_t* fCurrent, bool makeClass) {
 
   bool activateAllBranches = false;  // Can be set true for debugging
+  cout << "activateAllBranches = " << activateAllBranches << endl;
 
   TString theSample(sample);
   TString key;
@@ -694,11 +696,27 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 
   histConfig hGJdR;
   hGJdR.name = TString("hGJdR_") + sample;  hGJdR.title = "min DR(photon-jet)";
-  hGJdR.NbinsX = 350;  hGJdR.rangeX.first = 0;  hGJdR.rangeX.second = 3.5;
-  hGJdR.axisTitles.first = "Delta R";  hGJdR.axisTitles.second = "Events / 0.01";
+  hGJdR.NbinsX = 200;  hGJdR.rangeX.first = 0;  hGJdR.rangeX.second = 4;
+  hGJdR.axisTitles.first = "Delta R";  hGJdR.axisTitles.second = "Events / 0.02";
   hGJdR.filler1D = &RA2bZinvAnalysis::fillGJdR;
   hGJdR.omitCuts.push_back(&photonVeto_);  hGJdR.addCuts = photonCut_.Data();
   histograms.push_back(&hGJdR);
+
+  histConfig hGLdRnoPixelSeed;
+  hGLdRnoPixelSeed.name = TString("hGLdRnoPixelSeed_") + sample;  hGLdRnoPixelSeed.title = "min DR(photon-lepton), noPixelSeed";
+  hGLdRnoPixelSeed.NbinsX = 200;  hGLdRnoPixelSeed.rangeX.first = 0;  hGLdRnoPixelSeed.rangeX.second = 4;
+  hGLdRnoPixelSeed.axisTitles.first = "Delta R";  hGLdRnoPixelSeed.axisTitles.second = "Events / 0.02";
+  hGLdRnoPixelSeed.filler1D = &RA2bZinvAnalysis::fillGLdRnoPixelSeed;
+  hGLdRnoPixelSeed.omitCuts.push_back(&photonVeto_);  hGLdRnoPixelSeed.addCuts = photonCut_.Data();
+  histograms.push_back(&hGLdRnoPixelSeed);
+
+  histConfig hGLdRpixelSeed;
+  hGLdRpixelSeed.name = TString("hGLdRpixelSeed_") + sample;  hGLdRpixelSeed.title = "min DR(photon-lepton), pixelSeed";
+  hGLdRpixelSeed.NbinsX = 200;  hGLdRpixelSeed.rangeX.first = 0;  hGLdRpixelSeed.rangeX.second = 4;
+  hGLdRpixelSeed.axisTitles.first = "Delta R";  hGLdRpixelSeed.axisTitles.second = "Events / 0.02";
+  hGLdRpixelSeed.filler1D = &RA2bZinvAnalysis::fillGLdRpixelSeed;
+  hGLdRpixelSeed.omitCuts.push_back(&photonVeto_);  hGLdRpixelSeed.addCuts = photonCut_.Data();
+  histograms.push_back(&hGLdRpixelSeed);
 
   // Z mass in Njet, Nb bins
   histConfig hZmass_2j0b(hZmass);
@@ -749,31 +767,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   bookAndFillHistograms(sample, histograms, baselineCuts);
 
   std::vector<TH1*> theHists;
-  theHists.push_back(hCC.hist);
-  theHists.push_back(hHT.hist);
-  theHists.push_back(hMHT.hist);
-  theHists.push_back(hNJets.hist);
-  theHists.push_back(hBTags.hist);
-  theHists.push_back(hnZcand.hist);
-  theHists.push_back(hZmass.hist);
-  theHists.push_back(hZpt.hist);
-  theHists.push_back(hVertices.hist);
-  theHists.push_back(hTrueNumInt.hist);
-  theHists.push_back(hZmass_sfLepTksVeto.hist);
-  theHists.push_back(hZmass_photonVeto.hist);
-  theHists.push_back(hGpt.hist);
-  theHists.push_back(hZGmass.hist);
-  theHists.push_back(hZGdRvsM.hist);
-  theHists.push_back(hGJdR.hist);
-  theHists.push_back(hZmass_2j0b.hist);
-  theHists.push_back(hZmass_2j1b.hist);
-  theHists.push_back(hZmass_2j2b.hist);
-  theHists.push_back(hZmass_3j0b.hist);
-  theHists.push_back(hZmass_3j1b.hist);
-  theHists.push_back(hZmass_3j2b.hist);
-  theHists.push_back(hZmass_5j0b.hist);
-  theHists.push_back(hZmass_5j1b.hist);
-  theHists.push_back(hZmass_5j2b.hist);
+  for (auto & thisHist : histograms) theHists.push_back(thisHist->hist);
 
   return theHists;
 
@@ -803,21 +797,25 @@ RA2bZinvAnalysis::fillCC(TH1F* h, double wt) {
 	}
 	catch (const std::out_of_range& oor) {
         // Omitted bins j = 3,4, k = 0,3
-	  // std::cerr << "jpk out of range: " << oor.what() << ": j = " << binNjets
-	  // 	    << ", b = " << binNb << ", k = " << binKin << ", RA2bin = " << RA2bin << '\n';
+	  if (verbosity_ >= 4) std::cerr << "jpk out of range: " << oor.what() << ": j = " << binNjets
+	  	    << ", b = " << binNb << ", k = " << binKin << ", RA2bin = " << RA2bin << '\n';
 	  return;
 	}
-	// if (verbosity_ >= 3) cout << "j = " << binNjets << ", b = " << binNb << ", k = " << binKin << ", binCC = " << binCC << ", RA2bin = " << RA2bin << endl;
+	if (verbosity_ >= 4) cout << "j = " << binNjets << ", b = " << binNb << ", k = " << binKin << ", binCC = "
+				  << binCC << ", RA2bin = " << RA2bin << endl;
 	h->Fill(Double_t(binCC), wt);
     } else {
       // apply BTagSF to all Nb bins
-	// if (verbosity_ >= 3) cout << "Size of input Jets = " << Jets->size() << ", Jets_hadronFlavor = " << Jets_hadronFlavor->size() << " Jets_HTMask = " << Jets_HTMask->size() << endl;
+	if (verbosity_ >= 4) cout << "Size of input Jets = " << Jets->size()
+				  << ", Jets_hadronFlavor = " << Jets_hadronFlavor->size()
+				  << " Jets_HTMask = " << Jets_HTMask->size() << endl;
 	vector<double> probNb = btagcorr_->GetCorrections(Jets, Jets_hadronFlavor, Jets_HTMask);
 	for (int binNb = 0; binNb < (int) nbThresholds_.size(); ++binNb) {
 	  jbk = {binNjets, binNb, binKin};
 	  try {binCC = toCCbin_.at(jbk);}
 	  catch (const std::out_of_range& oor) {return;}
-	  if (verbosity_ >= 3) cout << "j = " << binNjets << ", NbTags = " << BTags << ", b = " << binNb << ", b wt = " << probNb[binNb] << ", k = " << binKin << ", binCC = " << binCC << endl;
+	  if (verbosity_ >= 3) cout << "j = " << binNjets << ", NbTags = " << BTags << ", b = " << binNb
+				    << ", b wt = " << probNb[binNb] << ", k = " << binKin << ", binCC = " << binCC << endl;
 	  h->Fill(Double_t(binCC), wt*probNb[binNb]);
 	}
     }  // if apply BTagSF
@@ -862,6 +860,54 @@ RA2bZinvAnalysis::fillZGdRvsM(TH2F* h, double wt) {
     for (auto & thisElectron : *Electrons)
 	dR = thePhoton.DeltaR(thisElectron) < dR ? thePhoton.DeltaR(thisElectron) : dR;
     h->Fill(Zg.M(), dR, wt);
+  }
+}  // ======================================================================================
+
+void
+RA2bZinvAnalysis::fillGLdRnoPixelSeed(TH1F* h, double wt) {
+  for (size_t i = 0; i < Photons->size(); ++i) {
+    // if (Photons_fullID->size()) cout << "Photons_fullID = " << Photons_fullID->at(i) << endl;
+    // if (Photons_passElectronVeto->size()) cout << "Photons_passElectronVeto = " << Photons_passElectronVeto->at(i) << endl;
+    if (!Photons_fullID->at(i)) continue;
+    if (Photons_hasPixelSeed->at(i)) continue;
+    if (Muons->size() > 0) {
+      Double_t dR = 999.;
+      for (auto & thisMuon : *Muons)
+	dR = Photons->at(i).DeltaR(thisMuon) < dR ? Photons->at(i).DeltaR(thisMuon) : dR;
+      h->Fill(dR, wt);
+      // if (Photons_isEB->size() && dR < 0.02) cout << "isEB photon = " << Photons_isEB->at(i) << endl;
+      // if (Photons_hasPixelSeed->size() && dR < 0.02) cout << "Photons_hasPixelSeed, fake = " << Photons_hasPixelSeed->at(i) << endl;
+      // if (Photons_hasPixelSeed->size() && dR >= 0.02) cout << "Photons_hasPixelSeed, real = " << Photons_hasPixelSeed->at(i) << endl;
+    }
+    if (Electrons->size() > 0) {
+      Double_t dR = 999.;
+      for (auto & thisElectron : *Electrons)
+	dR = Photons->at(i).DeltaR(thisElectron) < dR ? Photons->at(i).DeltaR(thisElectron) : dR;
+      h->Fill(dR, wt);
+      // if (Photons_isEB->size() && dR < 0.02) cout << "isEB photon = " << Photons_isEB->at(i) << endl;
+      // if (Photons_hasPixelSeed->size() && dR < 0.02) cout << "Photons_hasPixelSeed, fake = " << Photons_hasPixelSeed->at(i) << endl;
+      // if (Photons_hasPixelSeed->size() && dR >= 0.02) cout << "Photons_hasPixelSeed, real = " << Photons_hasPixelSeed->at(i) << endl;
+    }
+  }
+}  // ======================================================================================
+
+void
+RA2bZinvAnalysis::fillGLdRpixelSeed(TH1F* h, double wt) {
+  for (size_t i = 0; i < Photons->size(); ++i) {
+    if (!Photons_fullID->at(i)) continue;
+    if (!Photons_hasPixelSeed->at(i)) continue;
+    if (Muons->size() > 0) {
+      Double_t dR = 999.;
+      for (auto & thisMuon : *Muons)
+	dR = Photons->at(i).DeltaR(thisMuon) < dR ? Photons->at(i).DeltaR(thisMuon) : dR;
+      h->Fill(dR, wt);
+    }
+    if (Electrons->size() > 0) {
+      Double_t dR = 999.;
+      for (auto & thisElectron : *Electrons)
+	dR = Photons->at(i).DeltaR(thisElectron) < dR ? Photons->at(i).DeltaR(thisElectron) : dR;
+      h->Fill(dR, wt);
+    }
   }
 }  // ======================================================================================
 
