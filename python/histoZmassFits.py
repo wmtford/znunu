@@ -17,31 +17,36 @@ print '\n'
 print "removeDYkfactor = "+str(removeDYkfactor)
 
 # period = 5  # 2016
-# lumi = 35.9
-# DataFileM = ROOT.TFile('../outputs/histsDY_2016v12.root')
+# lumimm = 35.9
+# lumiee = lumimm
+# # DataFileM = ROOT.TFile('../outputs/histsDY_2016v12.root')
+# DataFileM = ROOT.TFile('../outputs/histsDY_2016v12_skimCuts.root')
 # DataFileE = DataFileM
+# MCfile = ROOT.TFile('../outputs/histsDYMC_2016v12_skimCuts.root')
 # # MCfile = ROOT.TFile('../outputs/histsDYMC_2016v12.root')
-# MCfile = ROOT.TFile('../outputs/histsDYMC_2016v12_puWt.root')
+# # MCfile = ROOT.TFile('../outputs/histsDYMC_2016v12_puWt.root')
 
 # period = 6  # 2017
-# lumi = 41.5
-# DataFileM = ROOT.TFile('../outputs/histsDYmm_2017v15.root')
-# DataFileE = ROOT.TFile('../outputs/histsDYee_2017v15.root')
-# MCfile = ROOT.TFile('../outputs/histsDYMC_2016v12_puWt.root')
-# MCscaleM = lumi/35.9
-# MCscaleE = lumi/35.9
+# lumimm = 41.5
+# lumiee = lumimm
+# DataFileM = ROOT.TFile('../outputs/histsDY_2017v15_skimCuts.root')
+# DataFileE = DataFileM
+# MCfile = ROOT.TFile('../outputs/histsDYMC_2016v12_skimCuts.root')
+# MCscaleM = lumimm/35.9
+# MCscaleE = lumiee/35.9
 
 period = 8  # 2018
-lumi = 14.0
-DataFileM = ROOT.TFile('../outputs/histsDYmm_2018v15.root')
-DataFileE = ROOT.TFile('../outputs/histsDYee_2018v15.root')
-MCfile = ROOT.TFile('../outputs/histsDYMC_2016v12_puWt.root')
-MCscaleM = lumi/35.9
-MCscaleE = 13.5/35.9
+lumimm = 14.0
+lumiee = 13.5
+DataFileM = ROOT.TFile('../outputs/histsDY_2018v15_skimCuts.root')
+DataFileE = DataFileM
+MCfile = ROOT.TFile('../outputs/histsDYMC_2016v12_skimCuts.root')
+MCscaleM = lumimm/35.9
+MCscaleE = lumiee/35.9
 
 reactions = ["tt", "ttz", "VV", "dy"]
 
-# outFile = ROOT.TFile('ZmassRooPlots.root', 'RECREATE')
+# outFile = ROOT.TFile('ZmassRootPlots.root', 'RECREATE')
 
 d1 = {}
 d1["loose"] = DataFileM.Get("hZmass_zmm")
@@ -68,6 +73,7 @@ for jbin in ["2j", "3j", "5j", "all"]:
 
     hsMC = []
     hsMM = ROOT.THStack("hsMM","dimuon mass [GeV]")
+    lumi = lumimm
     for proc in reactions:
       hName = str(histNameRoot)+str(proc)+"mm"
       if (removeDYkfactor and 'dy' in hName):
@@ -77,6 +83,7 @@ for jbin in ["2j", "3j", "5j", "all"]:
       hsMM.Add(MCfile.Get(hName))
     hsMC.append(hsMM)
     hsEE = ROOT.THStack("hsEE","dielectron mass [GeV]")
+    lumi = lumiee
     for proc in reactions:
       hName = str(histNameRoot)+str(proc)+"ee"
       if (removeDYkfactor and 'dy' in hName):

@@ -25,6 +25,9 @@ using std::ifstream;
 #include <sstream>
 using std::stringstream;
 
+#include <stdio.h>
+// using std::sprintf;
+
 #include <string>
 
 #include <boost/program_options.hpp>
@@ -38,8 +41,10 @@ RA2bZinvAnalysis::RA2bZinvAnalysis() {
   Init();
 }
 
-RA2bZinvAnalysis::RA2bZinvAnalysis(const std::string& cfg_filename) {
+RA2bZinvAnalysis::RA2bZinvAnalysis(const std::string& cfg_filename, const std::string& runBlock) {
   Init(cfg_filename);
+  if (!runBlock.empty()) runBlock_ = runBlock;
+  cout << "The runBlock is " << runBlock_ << endl;
 }
 
 void
@@ -50,6 +55,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   desc.add_options()
     ("verbosity", po::value<int>(&verbosity_))
     ("era", po::value<std::string>(&era_))
+    ("runBlock", po::value<std::string>(&runBlock_))  // May be overridden by constructor
     ("tree path", po::value<std::string>(&treeLoc_))
     ("root file index", po::value<std::string>(&fileListsFile_))
     ("delta phi sample", po::value<std::string>(&deltaPhi_), "nominal, hdp, ldp")
@@ -99,6 +105,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   activeBranches_.push_back("NJets");
   activeBranches_.push_back("BTags");
   activeBranches_.push_back("HT");
+  activeBranches_.push_back("HT5");
   activeBranches_.push_back("MHT");
   activeBranches_.push_back("JetID");
   activeBranches_.push_back("Jets");
@@ -117,6 +124,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
     activeBranches_.push_back("NJetsclean");
     activeBranches_.push_back("BTagsclean");
     activeBranches_.push_back("HTclean");
+    activeBranches_.push_back("HT5clean");
     activeBranches_.push_back("MHTclean");
     activeBranches_.push_back("JetIDclean");
     activeBranches_.push_back("Jetsclean");
@@ -134,6 +142,9 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
     activeBranches_.push_back("NMuons");
     activeBranches_.push_back("NElectrons");
   }
+  activeBranches_.push_back("RunNum");
+  activeBranches_.push_back("LumiBlockNum");
+  activeBranches_.push_back("EvtNum");
   activeBranches_.push_back("Muons");
   activeBranches_.push_back("Electrons");
   activeBranches_.push_back("ZCandidates");
@@ -231,7 +242,7 @@ RA2bZinvAnalysis::getChain(const char* sample, Int_t* fCurrent, bool makeClass) 
 
   TString theSample(sample);
   TString key;
-  if (theSample.Contains("zinv")) key = TString("zinv");
+  if      (theSample.Contains("zinv")) key = TString("zinv");
   else if (theSample.Contains("ttzvv")) key = TString("ttzvv");
   else if (theSample.Contains("dymm")) key = TString("dymm");
   else if (theSample.Contains("dyee")) key = TString("dyee");
@@ -243,7 +254,8 @@ RA2bZinvAnalysis::getChain(const char* sample, Int_t* fCurrent, bool makeClass) 
   else if (theSample.Contains("ttee")) key = TString("ttee");
   else if (theSample.Contains("zmm")) key = TString("zmm");
   else if (theSample.Contains("zee")) key = TString("zee");
-  if (deltaPhi_ == "ldp") key += "ldp";
+  if (deltaPhi_ == "ldp" && isSkim_) key += "ldp";
+  if (!runBlock_.empty()) key += runBlock_;
 
   TChain* chain = new TChain(treeName_.data());
   std::vector<TString> files = fileList(key);
@@ -329,8 +341,8 @@ RA2bZinvAnalysis::fileList(TString sampleKey) {
       while (!buf.Contains("*#"));
     }
     if (buf.Contains("#")) continue;
-    files.push_back(dir+buf);
     buf = buf.Strip();  // Remove any trailing whitespace
+    files.push_back(dir+buf);
   }
   while (!buf.Contains("##"));  // Dataset terminator is ##
 
@@ -364,15 +376,17 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
 
   // commonCuts_ = "(JetID==1&& HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && BadChargedCandidateFilter && NVtx > 0 && BadPFMuonFilter && PFCaloMETRatio < 5)";  // Troy revision+
   if (trigger.empty()) {
-    commonCuts_ = "JetID==1 && HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && eeBadScFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && NVtx > 0";  // Troy revision-
+    commonCuts_ = "HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && eeBadScFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && NVtx > 0";  // Troy revision-;  moved JetID to !isSkim_
   } else {
-    commonCuts_ = "JetID==1 && globalTightHalo2016Filter==1 && HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && eeBadScFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && BadChargedCandidateFilter && BadPFMuonFilter && NVtx > 0";  // Troy revision-
+    commonCuts_ = "globalTightHalo2016Filter==1 && HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && eeBadScFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && BadChargedCandidateFilter && BadPFMuonFilter && NVtx > 0";  // Troy revision-;  moved JetID to !isSkim_
   }
-  // if (!isSkim_) {
-  //   commonCuts_ += " && PFCaloMETRatio < 5";  // Applied in skimming
-  //   commonCuts_ += " && noMuonJet";  // Defined in loop, applied in skimming
-  //   commonCuts_ += " && noFakeJet";  // Defined in loop, applied in skimming FastSim
-  // }
+  if (!isSkim_) {
+    commonCuts_ += " && JetIDclean";
+    commonCuts_ += " && PFCaloMETRatio < 5";  // Applied in skimming
+    commonCuts_ += " && HT5clean/HTclean <= 2";  // Applied in skimming
+    // commonCuts_ += " && noMuonJet";  // Defined in loop, applied in skimming, single lepton
+    // commonCuts_ += " && noFakeJet";  // Defined in loop, applied in skimming FastSim
+  }
 
   massCut_ = "1";
   if ((sampleKey == "zmm" || sampleKey == "zee" || sampleKey == "zll") && applyMassCut_)
@@ -424,6 +438,7 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
   cuts += photonDeltaRcut_;
   cuts += commonCuts_;
   cuts += trigCuts_;
+
     // 	  if(applySF):
     //     cuts*=bJetCutsSF[bJetBin]
     // 	else:
@@ -447,6 +462,9 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
   TChain* chain = getChain(sample, &fCurrent);
   TObjArray* forNotify = new TObjArray;
   forNotify->SetOwner();  // so that TreeFormulas will be deleted
+
+  TTreeFormula* baselineFormula = new TTreeFormula("baselineCuts", baselineCuts, chain);
+  forNotify->Add(baselineFormula);
 
   // For B-tagging corrections
   if (applyBTagSF_) {
@@ -514,6 +532,8 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
     cleanVars();  // If unskimmed input, copy <var>clean to <var>
 
     if (ZCandidates->size() > 1 && verbosity_ >= 2) cout << ZCandidates->size() << " Z candidates found" << endl;
+    // baselineFormula->GetNdata();
+    // double baselineWt = baselineFormula->EvalInstance(0);
 
     // Compute event weight factors
     Double_t eventWt = 1;
@@ -536,11 +556,9 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       double selWt = hg->NminusOneFormula->EvalInstance(0);
       if (selWt != 0) {
 	if (hg->dvalue != nullptr) {
-	  // cout << "  " << *(hg->dvalue);
 	  hg->hist->Fill(*(hg->dvalue), selWt*eventWt);
 	}
 	else if (hg->ivalue != nullptr) {
-	  // cout << "  " << *(hg->ivalue);
 	  hg->hist->Fill(Double_t(*(hg->ivalue)), selWt*eventWt);
 	}
 	else if (hg->filler1D != nullptr) (this->*(hg->filler1D))((TH1F*) hg->hist, selWt*eventWt);
@@ -549,7 +567,6 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 
       }
     }  // loop over histograms
-    // cout << endl;
   }  // loop over entries
 
   delete forNotify;
@@ -780,7 +797,7 @@ RA2bZinvAnalysis::fillCC(TH1F* h, double wt) {
   UInt_t binCC = 0;
   if (useTreeCCbin_ && !applyBTagSF_) {
     binCC = RA2bin;
-    h->Fill(Double_t(binCC), wt);
+    if (binCC > 0) h->Fill(Double_t(binCC), wt);
   } else {
     // Calculate binCC
     std::vector<int> jbk;
@@ -991,18 +1008,32 @@ RA2bZinvAnalysis::fillCutMaps() {
   if (isSkim_) {
     if (ntupleVersion_ == "V12") {
       objCutMap_["sig"] = "@Muons.size()==0 && @Electrons.size()==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";
-      objCutMap_["zmm"] = "@Muons.size()==2 && @Electrons.size()==0 && isoElectronTracks==0 && isoPionTracks==0 && (@Photons.size()==0) && isoMuonTracks==0";
+      // objCutMap_["zmm"] = "@Muons.size()==2 && @Electrons.size()==0 && isoElectronTracks==0 && isoPionTracks==0 && (@Photons.size()==0) && isoMuonTracks==0";
       objCutMap_["zmm"] = "@Muons.size()==2 && @Electrons.size()==0 && isoElectronTracks==0 && isoPionTracks==0";  // Troy mod+
       // objCutMap_["zee"] = "@Muons.size()==0 && @Electrons.size()==2 && isoMuonTracks==0 && isoPionTracks==0 && (@Photons.size()==0) && isoElectronTracks==0";
       objCutMap_["zee"] = "@Muons.size()==0 && @Electrons.size()==2 && isoMuonTracks==0 && isoPionTracks==0";  // Troy mod+
-      // objCutMap_["zll"] = "((@Muons.size()==2 && @Electrons.size()==0 && isoElectronTracks==0 && isoPionTracks==0) || (@Muons.size()==0 && @Electrons.size()==2 && isoMuonTracks==0 && isoPionTracks==0))";
+      objCutMap_["zll"] = "((@Muons.size()==2 && @Electrons.size()==0 && isoElectronTracks==0 && isoPionTracks==0) || (@Muons.size()==0 && @Electrons.size()==2 && isoMuonTracks==0 && isoPionTracks==0))";
       objCutMap_["photon"] = "Sum$(Photons_nonPrompt)==0 && Sum$(Photons_fullID)==1 && (@Photons.size()==1) && @Muons.size()==0 && @Electrons.size()==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";
       objCutMap_["photonqcd"] = "Sum$(Photons_nonPrompt)!=0 && @Photons.at(0).Pt()>=200 && @Muons.size()==0 && @Electrons.size()==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";
       // objCutMap_["photonqcd"] = "Sum$(Photons_nonPrompt)!=0 && @Muons.size()==0 && @Electrons.size()==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";  // Troy mod+
       objCutMap_["ttz"] = "@Muons.size()==0 && @Electrons.size()==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0 && (@GenMuons.size()==0 && @GenElectrons.size()==0 && @GenTaus.size()==0)";
       objCutMap_["slm"] = "@Muons.size()==1 && @Electrons.size()==0 && isoElectronTracks==0 && isoPionTracks==0";
       objCutMap_["sle"] = "@Muons.size()==0 && @Electrons.size()==1 && isoMuonTracks==0 && isoPionTracks==0";
+
     } else if (ntupleVersion_ == "V15") {
+
+      objCutMap_["sig"] = "NMuons==0 && NElectrons==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";
+      // objCutMap_["zmm"] = "NMuons==2 && NElectrons==0 && isoElectronTracks==0 && isoPionTracks==0 && (@Photons.size()==0) && isoMuonTracks==0";
+      objCutMap_["zmm"] = "NMuons==2 && NElectrons==0 && isoElectronTracks==0 && isoPionTracks==0";  // Troy mod+
+      // objCutMap_["zee"] = "NMuons==0 && NElectrons==2 && isoMuonTracks==0 && isoPionTracks==0 && (@Photons.size()==0) && isoElectronTracks==0";
+      objCutMap_["zee"] = "NMuons==0 && NElectrons==2 && isoMuonTracks==0 && isoPionTracks==0";  // Troy mod+
+      objCutMap_["zll"] = "((NMuons==2 && NElectrons==0 && isoElectronTracks==0 && isoPionTracks==0) || (NMuons==0 && NElectrons==2 && isoMuonTracks==0 && isoPionTracks==0))";
+      objCutMap_["photon"] = "Sum$(Photons_nonPrompt)==0 && Sum$(Photons_fullID)==1 && (@Photons.size()==1) && NMuons==0 && NElectrons==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";
+      objCutMap_["photonqcd"] = "Sum$(Photons_nonPrompt)!=0 && @Photons.at(0).Pt()>=200 && NMuons==0 && NElectrons==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";
+      // objCutMap_["photonqcd"] = "Sum$(Photons_nonPrompt)!=0 && NMuons==0 && NElectrons==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";  // Troy mod+
+      objCutMap_["ttz"] = "NMuons==0 && NElectrons==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0 && (@GenMuons.size()==0 && @GenElectrons.size()==0 && @GenTaus.size()==0)";
+      objCutMap_["slm"] = "NMuons==1 && NElectrons==0 && isoElectronTracks==0 && isoPionTracks==0";
+      objCutMap_["sle"] = "NMuons==0 && NElectrons==1 && isoMuonTracks==0 && isoPionTracks==0";
     }
 
     minDphiCutMap_["nominal"] = "DeltaPhi1>0.5 && DeltaPhi2>0.5 && DeltaPhi3>0.3 && DeltaPhi4>0.3";
@@ -1013,15 +1044,15 @@ RA2bZinvAnalysis::fillCutMaps() {
     MHTCutMap_["hdp"] = "MHT>=250";
     MHTCutMap_["ldp"] = "MHT>=250";
 
-  } else {
+  } else {  // ntuple
 
     if (ntupleVersion_ == "V12") {
     } else if (ntupleVersion_ == "V15") {
       objCutMap_["sig"] = "NMuons==0 && NElectrons==0 && isoElectronTracksclean==0 && isoMuonTracksclean==0 && isoPionTracksclean==0";
-      objCutMap_["zmm"] = "NMuons==2 && NElectrons==0 && isoElectronTracksclean==0 && isoPionTracksclean==0";
       // objCutMap_["zmm"] = "NMuons==2 && NElectrons==0 && isoElectronTracksclean==0 && isoPionTracksclean==0 && (@Photons.size()==0) && isoMuonTracksclean==0";
-      objCutMap_["zee"] = "NMuons==0 && NElectrons==2 && isoMuonTracksclean==0 && isoPionTracksclean==0";
+      objCutMap_["zmm"] = "NMuons==2 && NElectrons==0 && isoElectronTracksclean==0 && isoPionTracksclean==0";
       // objCutMap_["zee"] = "NMuons==0 && NElectrons==2 && isoMuonTracksclean==0 && isoPionTracksclean==0 && (@Photons.size()==0) && isoElectronTracksclean==0";
+      objCutMap_["zee"] = "NMuons==0 && NElectrons==2 && isoMuonTracksclean==0 && isoPionTracksclean==0";
       objCutMap_["zll"] = "((NMuons==2 && NElectrons==0 && isoElectronTracksclean==0 && isoPionTracksclean==0) || (NMuons==0 && NElectrons==2 && isoMuonTracksclean==0 && isoPionTracksclean==0))";
       objCutMap_["photon"] = "Sum$(Photons_nonPrompt)==0 && Sum$(Photons_fullID)==1 && (@Photons.size()==1) && NMuons==0 && NElectrons==0 && isoElectronTracksclean==0 && isoMuonTracksclean==0 && isoPionTracksclean==0";
       objCutMap_["photonqcd"] = "Sum$(Photons_nonPrompt)!=0 && @Photons.at(0).Pt()>=200 && NMuons==0 && NElectrons==0 && isoElectronTracksclean==0 && isoMuonTracksclean==0 && isoPionTracksclean==0";
@@ -1195,5 +1226,119 @@ RA2bZinvAnalysis::checkActiveTrigPrescales(const char* sample) {
       temp = "";
     }
   }
+
+}  // ======================================================================================
+
+void
+RA2bZinvAnalysis::dumpSelEvIDs(const char* sample, const char* idFileName) {
+  //
+  // For debugging, where individual events need to be selected
+  //
+  FILE* idFile;
+  idFile = fopen(idFileName, "w");
+
+  Int_t fCurrent;  // current Tree number in a TChain
+  TChain* chain = getChain(sample, &fCurrent);
+
+  TObjArray* forNotify = new TObjArray;
+  forNotify->SetOwner();  // so that TreeFormulas will be deleted
+
+  TCut baselineCuts = getCuts(sample);
+  if (verbosity_ >= 1) cout << endl << "baseline = " << endl << baselineCuts << endl << endl;
+  TTreeFormula* baselineFormula = new TTreeFormula("baselineCuts", baselineCuts, chain);
+  forNotify->Add(baselineFormula);
+  TTreeFormula* HTcutf_ = new TTreeFormula("HTcut", HTcut_, chain);  forNotify->Add(HTcutf_);
+  TTreeFormula* MHTcutf_ = new TTreeFormula("MHTcut", MHTcut_, chain);  forNotify->Add(MHTcutf_);
+  TTreeFormula* NJetscutf_ = new TTreeFormula("NJetscut", NJetscut_, chain);  forNotify->Add(NJetscutf_);
+  TTreeFormula* minDphicutf_ = new TTreeFormula("minDphicut", minDphicut_, chain);  forNotify->Add(minDphicutf_);
+  TTreeFormula* objcutf_ = new TTreeFormula("objcut", objcut_, chain);  forNotify->Add(objcutf_);
+  TTreeFormula* ptcutf_ = new TTreeFormula("ptcut", ptCut_, chain);  forNotify->Add(ptcutf_);
+  TTreeFormula* masscutf_ = new TTreeFormula("masscut", massCut_, chain);  forNotify->Add(masscutf_);
+  TTreeFormula* trigcutf_ = new TTreeFormula("trigcut", trigCuts_, chain);  forNotify->Add(trigcutf_);
+  TTreeFormula* commoncutf_ = new TTreeFormula("commoncut", commonCuts_, chain);  forNotify->Add(commoncutf_);
+
+  chain->SetNotify(forNotify);
+
+  std::vector<ULong64_t> EvtNums = {
+    // 721713515,
+    // 276225503,
+    // 243443474,
+    // 210695036,
+    // 644860046,
+    // 245742780,
+    // 265782210,
+    // 220373684,
+    // 133598095,
+    //  12214825,
+    // 760192813,
+    // 265408355,
+    // 743702352
+      703085123,
+      872764606,
+      743702352,
+     1106837339,
+      528776780,
+     1295400923,
+     4021888665,
+      116551966
+  };
+
+  Long64_t Nentries = chain->GetEntries();
+  if (verbosity_ >= 1) cout << "Nentries in tree = " << Nentries << endl;
+  int count = 0;
+  for (Long64_t entry = 0; entry < Nentries; ++entry) {
+    count++;
+    if (verbosity_ >= 1 && count % 100000 == 0) cout << "Entry number " << count << endl;
+
+    chain->LoadTree(entry);
+    if (chain->GetTreeNumber() != fCurrent) {
+      fCurrent = chain->GetTreeNumber();
+      TFile* thisFile = chain->GetCurrentFile();
+      if (thisFile) {
+	if (verbosity_ >= 1) cout << "Current file in chain: " << thisFile->GetName() << endl;
+      }
+    }
+    chain->GetEntry(entry);
+
+    if (std::find(EvtNums.begin(), EvtNums.end(), EvtNum) == EvtNums.end()) continue;
+    printf("%15u %15u %15llu\n", RunNum, LumiBlockNum, EvtNum);
+    fprintf(idFile, "%15u %15u %15llu\n", RunNum, LumiBlockNum, EvtNum);
+
+    cleanVars();  // If unskimmed input, copy <var>clean to <var>
+
+    baselineFormula->GetNdata();  cout << "baseline = " << baselineFormula->EvalInstance(0) << endl;
+    HTcutf_->GetNdata();  cout << "HTcut = " << HTcutf_->EvalInstance(0) << endl;
+    MHTcutf_->GetNdata();  cout << "MHTcut = " << MHTcutf_->EvalInstance(0) << endl;
+    NJetscutf_->GetNdata();  cout << "NJetscut = " << NJetscutf_->EvalInstance(0) << endl;
+    minDphicutf_->GetNdata();  cout << "minDphicut = " << minDphicutf_->EvalInstance(0) << endl;
+    objcutf_->GetNdata();  cout << "objcut = " << objcutf_->EvalInstance(0) << endl;
+    ptcutf_->GetNdata();  cout << "ptcut = " << ptcutf_->EvalInstance(0) << endl;
+    masscutf_->GetNdata();  cout << "masscut = " << masscutf_->EvalInstance(0) << endl;
+    trigcutf_->GetNdata();  cout << "trigcut = " << trigcutf_->EvalInstance(0) << endl;
+    commoncutf_->GetNdata();  cout << "commoncut = " << commoncutf_->EvalInstance(0) << endl;
+    cout << "globalTightHalo2016Filter = " << globalTightHalo2016Filter << endl;
+    cout << "HBHENoiseFilter = " << HBHENoiseFilter << endl;
+    cout << "HBHEIsoNoiseFilter = " << HBHEIsoNoiseFilter << endl;
+    cout << "eeBadScFilter = " << eeBadScFilter << endl;
+    cout << "EcalDeadCellTriggerPrimitiveFilter = " << EcalDeadCellTriggerPrimitiveFilter << endl;
+    cout << "BadChargedCandidateFilter = " << BadChargedCandidateFilter << endl;
+    cout << "BadPFMuonFilter = " << BadPFMuonFilter << endl;
+    cout << "NVtx = " << NVtx << endl;
+    cout << "PFCaloMETRatio = " << PFCaloMETRatio << endl;
+    cout << "JetID = " << JetID << endl;
+    cout << "HT = " << HT << ", HT5 = " << HT5 << ", HT5/HT = " << HT5/HT << endl;
+    // cout << "JetIDclean = " << JetIDclean << endl;
+    // cout << "HTclean = " << HTclean << ", HT5clean = " << HT5clean << ", HT5clean/HTclean = " << HT5clean/HTclean << endl;
+
+    // if (baselineFormula->EvalInstance(0)) {
+      // if (std::find(EvtNums.begin(), EvtNums.end(), EvtNum) != EvtNums.end()) {
+	// cout << "Passes baseline" << endl;
+	// printf("%15u %15u %15llu\n", RunNum, LumiBlockNum, EvtNum);
+	// fprintf(idFile, "%15u %15u %15llu\n", RunNum, LumiBlockNum, EvtNum);
+	// cout << " PFCaloMETRatio = " << PFCaloMETRatio << ", HT5/HT = " << HT5/HT << endl;
+      // }
+    // }
+  }
+  fclose(idFile);
 
 }  // ======================================================================================

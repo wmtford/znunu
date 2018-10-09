@@ -8,7 +8,7 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
-#define VERSION 12
+#define VERSION 15
 #define ISSKIM
 /* #define ISMC */
 
@@ -38,12 +38,13 @@ class RA2bZinvAnalysis {
 
 public:
   RA2bZinvAnalysis();
-  RA2bZinvAnalysis(const std::string& cfg_filename);
+  RA2bZinvAnalysis(const std::string& cfg_filename, const std::string& runBlock = "");
   virtual ~RA2bZinvAnalysis() {};
 
   TChain* getChain(const char* sample, Int_t* fCurrent = nullptr, bool makeClass = false);
   std::vector<TString> fileList(TString sampleKey);
   std::vector<TH1*> makeHistograms(const char* sample);
+  void dumpSelEvIDs(const char* sample, const char* idFileName);
   TCut getCuts(const TString sampleKey);
   int kinBin(double& ht, double& mht);
   void checkTrigPrescales(const char* sample);
@@ -109,6 +110,7 @@ private:
   std::string treeName_;
   std::string treeLoc_;
   std::string fileListsFile_;
+  std::string runBlock_;
   std::string era_;  // "2016", ...
   double intLumi_;
   std::string deltaPhi_;  // "nominal", "hdp", "ldp"
@@ -144,7 +146,9 @@ private:
   #if VERSION == 12
     #include "LeafDeclaration_data_V12.h"
   #elif VERSION == 15
-    #ifndef ISSKIM
+    #ifdef ISSKIM
+      #include "LeafDeclaration_data_V15.h"
+    #else
       #include "LeafDeclaration_unskimmed_data_V15.h"
     #endif
 
@@ -188,6 +192,7 @@ private:
     NJets = NJetsclean;
     BTags = BTagsclean;
     HT = HTclean;
+    HT5 = HT5clean;
     MHT = MHTclean;
     JetID = JetIDclean;
     Jets = Jetsclean;

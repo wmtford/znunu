@@ -1,4 +1,4 @@
-zmm 7000    # DY->mumu data
+zmm2017B 2000    # DY->mumu data
 Run2017B-31Mar2018-v1.SingleMuon_0_RA2AnalysisTree.root
 Run2017B-31Mar2018-v1.SingleMuon_1000_RA2AnalysisTree.root
 Run2017B-31Mar2018-v1.SingleMuon_1001_RA2AnalysisTree.root
@@ -1061,6 +1061,9 @@ Run2017B-31Mar2018-v1.SingleMuon_998_RA2AnalysisTree.root
 Run2017B-31Mar2018-v1.SingleMuon_999_RA2AnalysisTree.root
 Run2017B-31Mar2018-v1.SingleMuon_99_RA2AnalysisTree.root
 Run2017B-31Mar2018-v1.SingleMuon_9_RA2AnalysisTree.root
+## === zmm2017B end ===========================================
+
+zmm2017C 2000    # DY->mumu data
 Run2017C-31Mar2018-v1.SingleMuon_0_RA2AnalysisTree.root
 Run2017C-31Mar2018-v1.SingleMuon_1000_RA2AnalysisTree.root
 Run2017C-31Mar2018-v1.SingleMuon_1001_RA2AnalysisTree.root
@@ -2309,6 +2312,9 @@ Run2017C-31Mar2018-v1.SingleMuon_998_RA2AnalysisTree.root
 Run2017C-31Mar2018-v1.SingleMuon_999_RA2AnalysisTree.root
 Run2017C-31Mar2018-v1.SingleMuon_99_RA2AnalysisTree.root
 Run2017C-31Mar2018-v1.SingleMuon_9_RA2AnalysisTree.root
+## === zmm2017C end ===========================================
+
+zmm2017D 2000    # DY->mumu data
 Run2017D-31Mar2018-v1.SingleMuon_0_RA2AnalysisTree.root
 Run2017D-31Mar2018-v1.SingleMuon_100_RA2AnalysisTree.root
 Run2017D-31Mar2018-v1.SingleMuon_101_RA2AnalysisTree.root
@@ -2916,6 +2922,9 @@ Run2017D-31Mar2018-v1.SingleMuon_97_RA2AnalysisTree.root
 Run2017D-31Mar2018-v1.SingleMuon_98_RA2AnalysisTree.root
 Run2017D-31Mar2018-v1.SingleMuon_99_RA2AnalysisTree.root
 Run2017D-31Mar2018-v1.SingleMuon_9_RA2AnalysisTree.root
+## === zmm2017D end ===========================================
+
+zmm2017E 2000    # DY->mumu data
 Run2017E-31Mar2018-v1.SingleMuon_0_RA2AnalysisTree.root
 Run2017E-31Mar2018-v1.SingleMuon_1000_RA2AnalysisTree.root
 Run2017E-31Mar2018-v1.SingleMuon_1001_RA2AnalysisTree.root
@@ -4439,6 +4448,9 @@ Run2017E-31Mar2018-v1.SingleMuon_998_RA2AnalysisTree.root
 Run2017E-31Mar2018-v1.SingleMuon_999_RA2AnalysisTree.root
 Run2017E-31Mar2018-v1.SingleMuon_99_RA2AnalysisTree.root
 Run2017E-31Mar2018-v1.SingleMuon_9_RA2AnalysisTree.root
+## === zmm2017E end ===========================================
+
+zmm2017F 2000    # DY->mumu data
 Run2017F-31Mar2018-v1.SingleMuon_0_RA2AnalysisTree.root
 Run2017F-31Mar2018-v1.SingleMuon_1000_RA2AnalysisTree.root
 Run2017F-31Mar2018-v1.SingleMuon_1001_RA2AnalysisTree.root
@@ -6874,9 +6886,9 @@ Run2017F-31Mar2018-v1.SingleMuon_998_RA2AnalysisTree.root
 Run2017F-31Mar2018-v1.SingleMuon_999_RA2AnalysisTree.root
 Run2017F-31Mar2018-v1.SingleMuon_99_RA2AnalysisTree.root
 Run2017F-31Mar2018-v1.SingleMuon_9_RA2AnalysisTree.root
-## === zmm 2017 end ===========================================
+## === zmm2017F end ===========================================
 
-zee 5000    # DY->ee data
+zee2017B 2000    # DY->ee data
 Run2017B-31Mar2018-v1.SingleElectron_0_RA2AnalysisTree.root
 Run2017B-31Mar2018-v1.SingleElectron_100_RA2AnalysisTree.root
 Run2017B-31Mar2018-v1.SingleElectron_101_RA2AnalysisTree.root
@@ -7379,6 +7391,9 @@ Run2017B-31Mar2018-v1.SingleElectron_97_RA2AnalysisTree.root
 Run2017B-31Mar2018-v1.SingleElectron_98_RA2AnalysisTree.root
 Run2017B-31Mar2018-v1.SingleElectron_99_RA2AnalysisTree.root
 Run2017B-31Mar2018-v1.SingleElectron_9_RA2AnalysisTree.root
+## === zee2017B end ===========================================
+
+zee2017C 2000    # DY->ee data
 Run2017C-31Mar2018-v1.SingleElectron_0_RA2AnalysisTree.root
 Run2017C-31Mar2018-v1.SingleElectron_1000_RA2AnalysisTree.root
 Run2017C-31Mar2018-v1.SingleElectron_1001_RA2AnalysisTree.root
@@ -8558,6 +8573,9 @@ Run2017C-31Mar2018-v1.SingleElectron_998_RA2AnalysisTree.root
 Run2017C-31Mar2018-v1.SingleElectron_999_RA2AnalysisTree.root
 Run2017C-31Mar2018-v1.SingleElectron_99_RA2AnalysisTree.root
 Run2017C-31Mar2018-v1.SingleElectron_9_RA2AnalysisTree.root
+## === zee2017C end ===========================================
+
+zee2017D 2000    # DY->ee data
 Run2017D-31Mar2018-v1.SingleElectron_0_RA2AnalysisTree.root
 Run2017D-31Mar2018-v1.SingleElectron_100_RA2AnalysisTree.root
 Run2017D-31Mar2018-v1.SingleElectron_101_RA2AnalysisTree.root
@@ -9006,6 +9024,9 @@ Run2017D-31Mar2018-v1.SingleElectron_97_RA2AnalysisTree.root
 Run2017D-31Mar2018-v1.SingleElectron_98_RA2AnalysisTree.root
 Run2017D-31Mar2018-v1.SingleElectron_99_RA2AnalysisTree.root
 Run2017D-31Mar2018-v1.SingleElectron_9_RA2AnalysisTree.root
+## === zee2017D end ===========================================
+
+zee2017E 2000    # DY->ee data
 Run2017E-31Mar2018-v1.SingleElectron_0_RA2AnalysisTree.root
 Run2017E-31Mar2018-v1.SingleElectron_1000_RA2AnalysisTree.root
 Run2017E-31Mar2018-v1.SingleElectron_1001_RA2AnalysisTree.root
@@ -10060,6 +10081,9 @@ Run2017E-31Mar2018-v1.SingleElectron_998_RA2AnalysisTree.root
 Run2017E-31Mar2018-v1.SingleElectron_999_RA2AnalysisTree.root
 Run2017E-31Mar2018-v1.SingleElectron_99_RA2AnalysisTree.root
 Run2017E-31Mar2018-v1.SingleElectron_9_RA2AnalysisTree.root
+## === zee2017E end ===========================================
+
+zee2017F 2000    # DY->ee data
 Run2017F-31Mar2018-v1.SingleElectron_0_RA2AnalysisTree.root
 Run2017F-31Mar2018-v1.SingleElectron_1000_RA2AnalysisTree.root
 Run2017F-31Mar2018-v1.SingleElectron_1001_RA2AnalysisTree.root
@@ -11411,5 +11435,32 @@ Run2017F-31Mar2018-v1.SingleElectron_998_RA2AnalysisTree.root
 Run2017F-31Mar2018-v1.SingleElectron_999_RA2AnalysisTree.root
 Run2017F-31Mar2018-v1.SingleElectron_99_RA2AnalysisTree.root
 Run2017F-31Mar2018-v1.SingleElectron_9_RA2AnalysisTree.root
-## === zee 2017 end ===========================================
+## === zee2017F end ===========================================
+
+zee2017Dsel 20    # DY->ee block D data missing from skim
+Run2017D-31Mar2018-v1.SingleElectron_334_RA2AnalysisTree.root
+Run2017D-31Mar2018-v1.SingleElectron_2_RA2AnalysisTree.root
+Run2017D-31Mar2018-v1.SingleElectron_68_RA2AnalysisTree.root
+Run2017D-31Mar2018-v1.SingleElectron_159_RA2AnalysisTree.root
+Run2017D-31Mar2018-v1.SingleElectron_356_RA2AnalysisTree.root
+Run2017D-31Mar2018-v1.SingleElectron_316_RA2AnalysisTree.root
+Run2017D-31Mar2018-v1.SingleElectron_373_RA2AnalysisTree.root
+Run2017D-31Mar2018-v1.SingleElectron_369_RA2AnalysisTree.root
+Run2017D-31Mar2018-v1.SingleElectron_320_RA2AnalysisTree.root
+Run2017D-31Mar2018-v1.SingleElectron_447_RA2AnalysisTree.root
+Run2017D-31Mar2018-v1.SingleElectron_302_RA2AnalysisTree.root
+Run2017D-31Mar2018-v1.SingleElectron_241_RA2AnalysisTree.root
+Run2017D-31Mar2018-v1.SingleElectron_81_RA2AnalysisTree.root
+## === zee2017Dsel end ========================================
+
+zee2017sel 20    # DY->ee data missing from skim
+Run2017C-31Mar2018-v1.SingleElectron_1004_RA2AnalysisTree.root
+Run2017C-31Mar2018-v1.SingleElectron_456_RA2AnalysisTree.root
+Run2017D-31Mar2018-v1.SingleElectron_81_RA2AnalysisTree.root
+Run2017F-31Mar2018-v1.SingleElectron_79_RA2AnalysisTree.root
+Run2017F-31Mar2018-v1.SingleElectron_149_RA2AnalysisTree.root
+Run2017F-31Mar2018-v1.SingleElectron_1105_RA2AnalysisTree.root
+Run2017F-31Mar2018-v1.SingleElectron_1160_RA2AnalysisTree.root
+Run2017F-31Mar2018-v1.SingleElectron_1252_RA2AnalysisTree.root
+## === zee2017sel end ========================================
 

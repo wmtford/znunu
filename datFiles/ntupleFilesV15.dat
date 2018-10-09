@@ -1,4 +1,4 @@
-zmm 4000    # DY->mumu data
+zmm2018A 4000    # DY->mumu data
 Run2018A-PromptReco-v1.SingleMuon_1000_RA2AnalysisTree.root
 Run2018A-PromptReco-v1.SingleMuon_1001_RA2AnalysisTree.root
 Run2018A-PromptReco-v1.SingleMuon_1002_RA2AnalysisTree.root
@@ -2305,6 +2305,9 @@ Run2018A-PromptReco-v3.SingleMuon_97_RA2AnalysisTree.root
 Run2018A-PromptReco-v3.SingleMuon_98_RA2AnalysisTree.root
 Run2018A-PromptReco-v3.SingleMuon_99_RA2AnalysisTree.root
 Run2018A-PromptReco-v3.SingleMuon_9_RA2AnalysisTree.root
+##  === zmm 2018A end =========================================
+
+zmm2018B 4000    # DY->mumu data
 Run2018B-PromptReco-v1.SingleMuon_0_RA2AnalysisTree.root
 Run2018B-PromptReco-v1.SingleMuon_100_RA2AnalysisTree.root
 Run2018B-PromptReco-v1.SingleMuon_101_RA2AnalysisTree.root
@@ -2973,9 +2976,9 @@ Run2018B-PromptReco-v1.SingleMuon_97_RA2AnalysisTree.root
 Run2018B-PromptReco-v1.SingleMuon_98_RA2AnalysisTree.root
 Run2018B-PromptReco-v1.SingleMuon_99_RA2AnalysisTree.root
 Run2018B-PromptReco-v1.SingleMuon_9_RA2AnalysisTree.root
-##  === zmm 2018 end =========================================
+##  === zmm 2018B end =========================================
 
-zee 5000    # DY->ee data
+zee2018A 5000    # DY->ee data
 Run2018A-PromptReco-v1.EGamma_1000_RA2AnalysisTree.root
 Run2018A-PromptReco-v1.EGamma_1001_RA2AnalysisTree.root
 Run2018A-PromptReco-v1.EGamma_1002_RA2AnalysisTree.root
@@ -6465,6 +6468,9 @@ Run2018A-PromptReco-v3.EGamma_97_RA2AnalysisTree.root
 Run2018A-PromptReco-v3.EGamma_98_RA2AnalysisTree.root
 Run2018A-PromptReco-v3.EGamma_99_RA2AnalysisTree.root
 Run2018A-PromptReco-v3.EGamma_9_RA2AnalysisTree.root
+##  === zee 2018A end =========================================
+
+zee2018B 5000    # DY->ee data
 Run2018B-PromptReco-v1.EGamma_0_RA2AnalysisTree.root
 Run2018B-PromptReco-v1.EGamma_100_RA2AnalysisTree.root
 Run2018B-PromptReco-v1.EGamma_101_RA2AnalysisTree.root
@@ -7371,5 +7377,5 @@ Run2018B-PromptReco-v1.EGamma_97_RA2AnalysisTree.root
 Run2018B-PromptReco-v1.EGamma_98_RA2AnalysisTree.root
 Run2018B-PromptReco-v1.EGamma_99_RA2AnalysisTree.root
 Run2018B-PromptReco-v1.EGamma_9_RA2AnalysisTree.root
-##  === zee 2018 end =========================================
+##  === zee 2018B end =========================================
 
