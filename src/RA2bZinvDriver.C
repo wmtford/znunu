@@ -16,7 +16,7 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
   bool doHzvv = false;
   bool doHttzvv = false;
   bool doHzmm = true;
-  bool doHzee = true;
+  bool doHzee = false;
   bool doHdymm = false;
   bool doHdyee = false;
   bool doHttzmm = false;
@@ -30,7 +30,8 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
   const std::string dumpSelEvIDsample("");
 
   // RA2bZinvAnalysis analyzer("", runBlock);  // Default configuration
-  RA2bZinvAnalysis analyzer("data2017.cfg", runBlock);
+  RA2bZinvAnalysis analyzer("data2016.cfg", runBlock);
+  // RA2bZinvAnalysis analyzer("data2017.cfg", runBlock);
   // RA2bZinvAnalysis analyzer("data2018.cfg", runBlock);
   // RA2bZinvAnalysis analyzer("lowDphi.cfg", runBlock);
 

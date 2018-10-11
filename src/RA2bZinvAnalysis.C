@@ -374,16 +374,19 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
     if (Ntrig > 1) trigCuts_.Replace(trigCuts_.Length()-3, 3, ")");
   }
 
-  // commonCuts_ = "(JetID==1&& HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && BadChargedCandidateFilter && NVtx > 0 && BadPFMuonFilter && PFCaloMETRatio < 5)";  // Troy revision+
-  if (trigger.empty()) {
-    commonCuts_ = "HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && eeBadScFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && NVtx > 0";  // Troy revision-;  moved JetID to !isSkim_
-  } else {
-    commonCuts_ = "globalTightHalo2016Filter==1 && HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && eeBadScFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && BadChargedCandidateFilter && BadPFMuonFilter && NVtx > 0";  // Troy revision-;  moved JetID to !isSkim_
-  }
+  // // commonCuts_ = "(JetID==1&& HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && BadChargedCandidateFilter && NVtx > 0 && BadPFMuonFilter && PFCaloMETRatio < 5)";  // Troy revision+
+  // if (trigger.empty()) {
+  //   commonCuts_ = "JetID==1&& HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && eeBadScFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && NVtx > 0";  // Troy revision-;  moved JetID to !isSkim_
+  // } else {
+  //   commonCuts_ = "JetID==1&& globalTightHalo2016Filter==1 && HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && eeBadScFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && BadChargedCandidateFilter && BadPFMuonFilter && NVtx > 0";  // Troy revision-;  moved JetID to !isSkim_
+  // }
+
+  commonCuts_ = "globalTightHalo2016Filter==1 && HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && BadChargedCandidateFilter && BadPFMuonFilter && NVtx > 0";
+  if (!isMC_) commonCuts_ += " &&  eeBadScFilter==1";
   if (!isSkim_) {
     commonCuts_ += " && JetIDclean";
-    commonCuts_ += " && PFCaloMETRatio < 5";  // Applied in skimming
-    commonCuts_ += " && HT5clean/HTclean <= 2";  // Applied in skimming
+    commonCuts_ += " && PFCaloMETRatio < 5";
+    commonCuts_ += " && HT5clean/HTclean <= 2";
     // commonCuts_ += " && noMuonJet";  // Defined in loop, applied in skimming, single lepton
     // commonCuts_ += " && noFakeJet";  // Defined in loop, applied in skimming FastSim
   }
@@ -661,6 +664,14 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hCuts.axisTitles.first = "";  hCuts.axisTitles.second = "Events passing";
   histograms.push_back(&hCuts);
 
+  histConfig hFilterCuts;
+  hFilterCuts.name = TString("hFilterCuts_") + sample;  hFilterCuts.title = "Filter cuts";
+  hFilterCuts.NbinsX = 15;  hFilterCuts.rangeX.first = 0;  hFilterCuts.rangeX.second = 15;
+  hFilterCuts.axisTitles.first = "";  hFilterCuts.axisTitles.second = "Events failing";
+  hFilterCuts.filler1D = &RA2bZinvAnalysis::fillFilterCuts;
+  hFilterCuts.omitCuts.push_back(&commonCuts_);
+  histograms.push_back(&hFilterCuts);
+
   histConfig hVertices;
   hVertices.name = TString("hVertices_") + sample;  hVertices.title = "Number of reco vertices";
   hVertices.NbinsX = 100;  hVertices.rangeX.first = 0;  hVertices.rangeX.second = 100;
@@ -837,6 +848,24 @@ RA2bZinvAnalysis::fillCC(TH1F* h, double wt) {
 	}
     }  // if apply BTagSF
   }  // if useTreeCCbin
+
+}  // ======================================================================================
+
+void
+RA2bZinvAnalysis::fillFilterCuts(TH1F* h, double wt) {
+  h->Fill(0.5, wt);
+  if (!(globalTightHalo2016Filter==1)) h->Fill(1.5, wt);
+  // if (!(globalSuperTightHalo2016Filter==1)) h->Fill(2.5, wt);
+  if (!(HBHENoiseFilter==1)) h->Fill(3.5, wt);
+  if (!(HBHEIsoNoiseFilter==1)) h->Fill(4.5, wt);
+  if (!(EcalDeadCellTriggerPrimitiveFilter==1)) h->Fill(5.5, wt);
+  if (!BadChargedCandidateFilter) h->Fill(6.5, wt);
+  if (!BadPFMuonFilter) h->Fill(7.5, wt);
+  if (!(NVtx > 0)) h->Fill(8.5, wt);
+  if (!(eeBadScFilter==1)) h->Fill(9.5, wt);
+  if (!(JetID)) h->Fill(10.5, wt);
+  if (!(PFCaloMETRatio < 5)) h->Fill(11.5, wt);
+  if (!(HT5/HT <= 2)) h->Fill(12.5, wt);
 
 }  // ======================================================================================
 

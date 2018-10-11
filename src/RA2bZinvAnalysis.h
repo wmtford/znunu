@@ -214,6 +214,7 @@ private:
   void fillZmass(TH1F* h, double wt) {for (auto & theZ : *ZCandidates) h->Fill(theZ.M(), wt);}
   void fillZpt(TH1F* h, double wt) {for (auto & theZ : *ZCandidates) h->Fill(theZ.Pt(), wt);}
   void fillGpt(TH1F* h, double wt) {for (auto & theG : *Photons) h->Fill(theG.Pt(), wt);}
+  void fillFilterCuts(TH1F* h, double wt);
   void fillZGmass(TH1F* h, double wt);
   void fillGJdR(TH1F* h, double wt);
   void fillZGdRvsM(TH2F* h, double wt);

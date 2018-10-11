@@ -10,8 +10,8 @@ ROOT.gROOT.SetBatch(1)
 
 singleOutFile = True
 doMumu = True
-doEe = True
-norm2016 = False
+doEe = False
+norm2016 = True
 iPeriod = 5
 fScaleM = 1
 fScaleE = 1
@@ -36,6 +36,7 @@ filehistsE = {}
 #   filehistsE['D'] = (Dfile, ["hHT_dyee", "hMHT_dyee", "hNJets_dyee", "hBTags_dyee", "hZmass_dyee", "hZpt_dyee", "hCutFlow_dyee", "hCuts_dyee", "hVertices_dyee"])
 #   hists.append(filehistsE)
 
+# iPeriod = 5
 # legList = ['2016 DY MC, pileup wt','2016 DY MC']
 # Nfile = ROOT.TFile('../outputs/histsDYMC_2016v12_puWt.root')
 # Dfile = ROOT.TFile('../outputs/histsDYMC_2016v12.root')
@@ -52,11 +53,28 @@ filehistsE = {}
 #   filehistsE['D'] = (Dfile, fScaleE, histnames)
 #   hists.append(filehistsE)
 
+# iPeriod = 5
+# legList = ['2016 data V15', '2016 data V12']
+# Nfile = ROOT.TFile('../outputs/histsDYmm_2016v15.root')
+# Dfile = ROOT.TFile('../outputs/histsDY_2016v12.root')
+# if (doMumu):
+#   histnames = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm"]
+#   filehistsM['N'] = (Nfile, histnames)
+#   filehistsM['D'] = (Dfile, fScaleM, histnames)
+#   hists.append(filehistsM)
+# if (doEe):
+#   histnames = ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee"]
+#   filehistsE['N'] = (Nfile, histnames)
+#   filehistsE['D'] = (Dfile, fScaleE, histnames)
+#   hists.append(filehistsE)
+
+#  ========================================================================================
+
 iPeriod = 6
 Nfile = ROOT.TFile('../outputs/histsDY_2017v15.root')
 if (norm2016):
   legList = ['2017 data','2016 data, scaled']
-  Dfile = ROOT.TFile('../outputs/histsDY_2016v12_skimCuts.root')
+  Dfile = ROOT.TFile('../outputs/histsDYmm_2016v15.root')
   fScaleM = 41.5/35.9
   fScaleE = fScaleM
 else:
@@ -77,8 +95,8 @@ if (doEe):
 
 # iPeriod = 8
 # legList = ['2018 data','2016 data, scaled']
-# Nfile = ROOT.TFile('../outputs/histsDY_2018v15_skimCuts.root')
-# Dfile = ROOT.TFile('../outputs/histsDY_2016v12_skimCuts.root')
+# Nfile = ROOT.TFile('../outputs/histsDY_2018_14ifb_v15.root')
+# Dfile = ROOT.TFile('../outputs/histsDYmm_2016v15.root')
 # fScaleM = 14.0/35.9
 # fScaleE = 13.5/35.9
 # if (doMumu):
@@ -87,7 +105,7 @@ if (doEe):
 #   filehistsM['N'] = (Nfile, histnames)
 #   filehistsM['D'] = (Dfile, fScaleM, histnames)
 #   hists.append(filehistsM)
-#   MZmmMax = 700
+#   MZmmMax = 750
 # if (doEe):
 #   # Nfile = ROOT.TFile('../outputs/histsDYee_2018v15.root')
 #   histnames = ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee"]
