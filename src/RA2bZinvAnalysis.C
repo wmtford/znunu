@@ -158,6 +158,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   activeBranches_.push_back("HBHENoiseFilter");
   activeBranches_.push_back("HBHEIsoNoiseFilter");
   activeBranches_.push_back("eeBadScFilter");
+  activeBranches_.push_back("ecalBadCalibFilter");
   activeBranches_.push_back("EcalDeadCellTriggerPrimitiveFilter");
   activeBranches_.push_back("globalTightHalo2016Filter");
   activeBranches_.push_back("BadChargedCandidateFilter");
@@ -490,8 +491,37 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
     }
     hg->hist->GetXaxis()->SetTitle(hg->axisTitles.first);
     hg->hist->GetYaxis()->SetTitle(hg->axisTitles.second);
+    if (hg->name.Contains(TString("hFilterCuts"))) {
+      hg->hist->GetXaxis()->SetBinLabel(1, "None");
+      hg->hist->GetXaxis()->SetBinLabel(2, "TightHalo");
+      hg->hist->GetXaxis()->SetBinLabel(3, "SupTgtHalo");
+      hg->hist->GetXaxis()->SetBinLabel(4, "HBENoise");
+      hg->hist->GetXaxis()->SetBinLabel(5, "HBEIsoNoise");
+      hg->hist->GetXaxis()->SetBinLabel(6, "EcalDeadCell");
+      hg->hist->GetXaxis()->SetBinLabel(7, "BadChCand");
+      hg->hist->GetXaxis()->SetBinLabel(8, "BadPFMu");
+      hg->hist->GetXaxis()->SetBinLabel(9, "NVtx");
+      hg->hist->GetXaxis()->SetBinLabel(10, "eeBadSc");
+      hg->hist->GetXaxis()->SetBinLabel(11, "ecalBadCal");
+      hg->hist->GetXaxis()->SetBinLabel(12, "");
+      hg->hist->GetXaxis()->SetBinLabel(13, "JetID");
+      hg->hist->GetXaxis()->SetBinLabel(14, "PFCaloMETR");
+      hg->hist->GetXaxis()->SetBinLabel(15, "HT5/HT");
+      hg->hist->GetXaxis()->LabelsOption("vu");
+    }
     if (hg->name.Contains(TString("hCut"))) {
       hg->NminusOneCuts = "1";
+      hg->hist->GetXaxis()->SetBinLabel(1, "None");
+      hg->hist->GetXaxis()->SetBinLabel(2, "HT");
+      hg->hist->GetXaxis()->SetBinLabel(3, "MHT");
+      hg->hist->GetXaxis()->SetBinLabel(4, "NJets");
+      hg->hist->GetXaxis()->SetBinLabel(5, "mnDphi");
+      hg->hist->GetXaxis()->SetBinLabel(6, "objects");
+      hg->hist->GetXaxis()->SetBinLabel(7, "Zpt");
+      hg->hist->GetXaxis()->SetBinLabel(8, "Zmass");
+      hg->hist->GetXaxis()->SetBinLabel(9, "Trigger");
+      hg->hist->GetXaxis()->SetBinLabel(10, "Filters");
+      hg->hist->GetXaxis()->LabelsOption("vu");
     } else {
       hg->NminusOneCuts = baselineCuts;
       for (auto cutToOmit : hg->omitCuts) hg->NminusOneCuts(*cutToOmit) = "1";
@@ -863,9 +893,10 @@ RA2bZinvAnalysis::fillFilterCuts(TH1F* h, double wt) {
   if (!BadPFMuonFilter) h->Fill(7.5, wt);
   if (!(NVtx > 0)) h->Fill(8.5, wt);
   if (!(eeBadScFilter==1)) h->Fill(9.5, wt);
-  if (!(JetID)) h->Fill(10.5, wt);
-  if (!(PFCaloMETRatio < 5)) h->Fill(11.5, wt);
-  if (!(HT5/HT <= 2)) h->Fill(12.5, wt);
+  if (!(ecalBadCalibFilter==1)) h->Fill(10.5, wt);
+  if (!(JetID)) h->Fill(12.5, wt);
+  if (!(PFCaloMETRatio < 5)) h->Fill(13.5, wt);
+  if (!(HT5/HT <= 2)) h->Fill(14.5, wt);
 
 }  // ======================================================================================
 
@@ -1134,18 +1165,6 @@ RA2bZinvAnalysis::cutHistos::cutHistos(TChain* chain, TObjArray* forNotify) : fo
 
 void
 RA2bZinvAnalysis::cutHistos::fill(TH1F* hcf, Double_t wt) {
-  hcf->GetXaxis()->SetBinLabel(1, "None");
-  hcf->GetXaxis()->SetBinLabel(2, "HT");
-  hcf->GetXaxis()->SetBinLabel(3, "MHT");
-  hcf->GetXaxis()->SetBinLabel(4, "NJets");
-  hcf->GetXaxis()->SetBinLabel(5, "mnDphi");
-  hcf->GetXaxis()->SetBinLabel(6, "objects");
-  hcf->GetXaxis()->SetBinLabel(7, "Zpt");
-  hcf->GetXaxis()->SetBinLabel(8, "Zmass");
-  hcf->GetXaxis()->SetBinLabel(9, "Trigger");
-  hcf->GetXaxis()->SetBinLabel(10, "Filters");
-  hcf->GetXaxis()->LabelsOption("vu");
-
   HTcutf_->GetNdata();
   MHTcutf_->GetNdata();
   NJetscutf_->GetNdata();

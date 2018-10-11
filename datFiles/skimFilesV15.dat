@@ -1,0 +1,80 @@
+zmm2016 10   # DY->mumu data 2016
+tree_DYm_CleanVars/tree_SingleMuon_2016B.root
+tree_DYm_CleanVars/tree_SingleMuon_2016C.root
+tree_DYm_CleanVars/tree_SingleMuon_2016D.root
+tree_DYm_CleanVars/tree_SingleMuon_2016E.root
+tree_DYm_CleanVars/tree_SingleMuon_2016F.root
+tree_DYm_CleanVars/tree_SingleMuon_2016G.root
+tree_DYm_CleanVars/tree_SingleMuon_2016H.root
+##
+
+zmm2017 10   # DY->mumu data 2017
+tree_DYm_CleanVars/tree_SingleMuon_2017B.root
+tree_DYm_CleanVars/tree_SingleMuon_2017C.root
+tree_DYm_CleanVars/tree_SingleMuon_2017D.root
+tree_DYm_CleanVars/tree_SingleMuon_2017E.root
+tree_DYm_CleanVars/tree_SingleMuon_2017F.root
+##
+
+zmm2018 10   # DY->mumu data 2018
+tree_DYm_CleanVars/tree_SingleMuon_2018A1.root
+tree_DYm_CleanVars/tree_SingleMuon_2018A2.root
+tree_DYm_CleanVars/tree_SingleMuon_2018A3.root
+tree_DYm_CleanVars/tree_SingleMuon_2018B1.root
+##
+
+zee2017 10   # DY->ee data 2017
+tree_DYe_CleanVars/tree_SingleElectron_2017B.root
+tree_DYe_CleanVars/tree_SingleElectron_2017C.root
+tree_DYe_CleanVars/tree_SingleElectron_2017D.root
+tree_DYe_CleanVars/tree_SingleElectron_2017E.root
+tree_DYe_CleanVars/tree_SingleElectron_2017F.root
+##
+
+zee2018 10   # DY->ee data 2018
+tree_DYe_CleanVars/tree_EGamma_2018A1.root
+tree_DYe_CleanVars/tree_EGamma_2018A2.root
+tree_DYe_CleanVars/tree_EGamma_2018A3.root
+tree_DYe_CleanVars/tree_EGamma_2018B1.root
+##
+
+zmmldp2016 10   # DY->mumu data LDP 2016
+tree_DYmLDP_CleanVars/tree_SingleMuon_2016B.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2016C.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2016D.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2016E.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2016F.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2016G.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2016H.root
+##
+
+zmmldp2017 10   # DY->mumu data LDP 2017
+tree_DYmLDP_CleanVars/tree_SingleMuon_2017B.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2017C.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2017D.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2017E.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2017F.root
+##
+
+zmmldp2018 10   # DY->mumu data LDP 2018
+tree_DYmLDP_CleanVars/tree_SingleMuon_2018A1.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2018A2.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2018A3.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2018B1.root
+##
+
+zeeldp2017 10   # DY->ee data LDP 2017
+tree_DYeLDP_CleanVars/tree_SingleElectron_2017B.root
+tree_DYeLDP_CleanVars/tree_SingleElectron_2017C.root
+tree_DYeLDP_CleanVars/tree_SingleElectron_2017D.root
+tree_DYeLDP_CleanVars/tree_SingleElectron_2017E.root
+tree_DYeLDP_CleanVars/tree_SingleElectron_2017F.root
+##
+
+zeeldp2018 10   # DY->ee data LDP 2018
+tree_DYeLDP_CleanVars/tree_EGamma_2018A1.root
+tree_DYeLDP_CleanVars/tree_EGamma_2018A2.root
+tree_DYeLDP_CleanVars/tree_EGamma_2018A3.root
+tree_DYeLDP_CleanVars/tree_EGamma_2018B1.root
+##
+
