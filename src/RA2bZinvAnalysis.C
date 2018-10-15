@@ -101,6 +101,8 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
     treeName_ = "tree";  // For skims
   }
 
+  if (ntupleVersion_ == "V15") csvMthreshold_ = 0.8838;
+
   // Needed branches
   activeBranches_.push_back("NJets");
   activeBranches_.push_back("BTags");
@@ -145,6 +147,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   activeBranches_.push_back("RunNum");
   activeBranches_.push_back("LumiBlockNum");
   activeBranches_.push_back("EvtNum");
+  activeBranches_.push_back("Jets_bDiscriminatorCSV");
   activeBranches_.push_back("Muons");
   activeBranches_.push_back("Electrons");
   activeBranches_.push_back("ZCandidates");
@@ -564,6 +567,15 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
     }
     cleanVars();  // If unskimmed input, copy <var>clean to <var>
 
+    Int_t BTagsOrig = BTags;
+    // Recompute BTags with a different discriminator threhold
+    if (ntupleVersion_ == "V15") {
+      BTags = 0;
+      for (size_t j = 0; j < Jets->size(); ++j) {
+	if (Jets_bDiscriminatorCSV->at(j) >= csvMthreshold_) BTags++;
+      }
+    }
+
     if (ZCandidates->size() > 1 && verbosity_ >= 2) cout << ZCandidates->size() << " Z candidates found" << endl;
     // baselineFormula->GetNdata();
     // double baselineWt = baselineFormula->EvalInstance(0);
@@ -779,47 +791,48 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   // Z mass in Njet, Nb bins
   histConfig hZmass_2j0b(hZmass);
   hZmass_2j0b.name = TString("hZmass_2j0b_") + sample;  hZmass_2j0b.title = "Z mass, 2 jets & 0 b jets";
-  hZmass_2j0b.addCuts = isSkim_ ? "NJets==2 && BTags==0" : "NJetsclean==2 && BTagsclean==0";
+  hZmass_2j0b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
   histograms.push_back(&hZmass_2j0b);
 
   histConfig hZmass_2j1b(hZmass);
   hZmass_2j1b.name = TString("hZmass_2j1b_") + sample;  hZmass_2j1b.title = "Z mass, 2 jets & 1 b jet";
-  hZmass_2j1b.addCuts = isSkim_ ? "NJets==2 && BTags==1" : "NJetsclean==2 && BTagsclean==1";
+  hZmass_2j1b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
+  // hZmass_2j1b.addCuts = isSkim_ ? "NJets==2 && BTags==1" : "NJetsclean==2 && BTagsclean==1";
   histograms.push_back(&hZmass_2j1b);
 
   histConfig hZmass_2j2b(hZmass);
   hZmass_2j2b.name = TString("hZmass_2j2b_") + sample;  hZmass_2j2b.title = "Z mass, 2 jets & >=2 b jets";
-  hZmass_2j2b.addCuts = isSkim_ ? "NJets==2 && BTags>=2" : "NJetsclean==2 && BTagsclean>=2";
+  hZmass_2j2b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
   histograms.push_back(&hZmass_2j2b);
   //
   histConfig hZmass_3j0b(hZmass);
   hZmass_3j0b.name = TString("hZmass_3j0b_") + sample;  hZmass_3j0b.title = "Z mass, 3-4 jets & 0 b jets";
-  hZmass_3j0b.addCuts = isSkim_ ? "NJets>=3 && NJets<=4 && BTags==0" : "NJetsclean>=3 && NJetsclean<=4 && BTagsclean==0";
+  hZmass_3j0b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
   histograms.push_back(&hZmass_3j0b);
 
   histConfig hZmass_3j1b(hZmass);
   hZmass_3j1b.name = TString("hZmass_3j1b_") + sample;  hZmass_3j1b.title = "Z mass, 3-4 jets & 1 b jet";
-  hZmass_3j1b.addCuts = isSkim_ ? "NJets>=3 && NJets<=4 && BTags==1" : "NJetsclean>=3 && NJetsclean<=4 && BTagsclean==1";
+  hZmass_3j1b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
   histograms.push_back(&hZmass_3j1b);
 
   histConfig hZmass_3j2b(hZmass);
   hZmass_3j2b.name = TString("hZmass_3j2b_") + sample;  hZmass_3j2b.title = "Z mass, 3-4 jets & >=2 b jets";
-  hZmass_3j2b.addCuts = isSkim_ ? "NJets>=3 && NJets<=4 && BTags>=2" : "NJetsclean>=3 && NJetsclean<=4 && BTagsclean>=2";
+  hZmass_3j2b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
   histograms.push_back(&hZmass_3j2b);
   //
   histConfig hZmass_5j0b(hZmass);
   hZmass_5j0b.name = TString("hZmass_5j0b_") + sample;  hZmass_5j0b.title = "Z mass, >=5 jets & 0 B jets";
-  hZmass_5j0b.addCuts = isSkim_ ? "NJets>=5 && BTags==0" : "NJetsclean>=5 && BTagsclean==0";
+  hZmass_5j0b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
   histograms.push_back(&hZmass_5j0b);
 
   histConfig hZmass_5j1b(hZmass);
   hZmass_5j1b.name = TString("hZmass_5j1b_") + sample;  hZmass_5j1b.title = "Z mass, >=5 jets & 1 B jet";
-  hZmass_5j1b.addCuts = isSkim_ ? "NJets>=5 && BTags==1" : "NJetsclean>=5 && BTagsclean==1";
+  hZmass_5j1b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
   histograms.push_back(&hZmass_5j1b);
 
   histConfig hZmass_5j2b(hZmass);
   hZmass_5j2b.name = TString("hZmass_5j2b_") + sample;  hZmass_5j2b.title = "Z mass, >=5 jets & >=2 B jets";
-  hZmass_5j2b.addCuts = isSkim_ ? "NJets>=5 && BTags>=2" : "NJetsclean>=5 && BTagsclean>=2";
+  hZmass_5j2b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
   histograms.push_back(&hZmass_5j2b);
 
   bookAndFillHistograms(sample, histograms, baselineCuts);
@@ -879,6 +892,20 @@ RA2bZinvAnalysis::fillCC(TH1F* h, double wt) {
     }  // if apply BTagSF
   }  // if useTreeCCbin
 
+}  // ======================================================================================
+
+void
+RA2bZinvAnalysis::fillZmassjb(TH1F* h, double wt) {
+  Int_t j, b;
+  TString hName(h->GetName());
+  j = hName(hName.First('j')-1) - '0';
+  b = hName(hName.First('b')-1) - '0';
+  if ((j == 2 && NJets == 2) || (j == 3 && (NJets >=3 && NJets <= 4)) || (j == 5 && NJets >=5)) {
+    if ((b < 2 && BTags == b) || (b == 2 && BTags >= 2)) {
+      h->Fill(ZCandidates->at(0).M(), wt);
+    }
+  }
+  
 }  // ======================================================================================
 
 void

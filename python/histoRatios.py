@@ -53,45 +53,45 @@ filehistsE = {}
 #   filehistsE['D'] = (Dfile, fScaleE, histnames)
 #   hists.append(filehistsE)
 
-# iPeriod = 5
-# legList = ['2016 data V15', '2016 data V12']
-# Nfile = ROOT.TFile('../outputs/histsDYmm_2016v15.root')
-# Dfile = ROOT.TFile('../outputs/histsDY_2016v12.root')
-# if (doMumu):
-#   histnames = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm"]
-#   filehistsM['N'] = (Nfile, histnames)
-#   filehistsM['D'] = (Dfile, fScaleM, histnames)
-#   hists.append(filehistsM)
-# if (doEe):
-#   histnames = ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee"]
-#   filehistsE['N'] = (Nfile, histnames)
-#   filehistsE['D'] = (Dfile, fScaleE, histnames)
-#   hists.append(filehistsE)
-
-#  ========================================================================================
-
-iPeriod = 6
-Nfile = ROOT.TFile('../outputs/histsDY_2017v15.root')
-if (norm2016):
-  legList = ['2017 data','2016 data, scaled']
-  Dfile = ROOT.TFile('../outputs/histsDYmm_2016v15.root')
-  fScaleM = 41.5/35.9
-  fScaleE = fScaleM
-else:
-  legList = ['2017 data from skim','2017 data from ntuples']
-  Dfile = ROOT.TFile('../outputs/histsDY_2017v15_skimCuts.root')
+iPeriod = 5
+legList = ['2016 data V15', '2016 data V12']
+Nfile = ROOT.TFile('../outputs/histsDYmm_2016v15.root')
+Dfile = ROOT.TFile('../outputs/histsDY_2016v12_skimCuts.root')
 if (doMumu):
-  # Nfile = ROOT.TFile('../outputs/histsDYmm_2017v15.root')
   histnames = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm"]
   filehistsM['N'] = (Nfile, histnames)
   filehistsM['D'] = (Dfile, fScaleM, histnames)
   hists.append(filehistsM)
 if (doEe):
-  # Nfile = ROOT.TFile('../outputs/histsDYee_2017v15.root')
   histnames = ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee"]
   filehistsE['N'] = (Nfile, histnames)
   filehistsE['D'] = (Dfile, fScaleE, histnames)
   hists.append(filehistsE)
+
+#  ========================================================================================
+
+# iPeriod = 6
+# Nfile = ROOT.TFile('../outputs/histsDY_2017v15.root')
+# if (norm2016):
+#   legList = ['2017 data','2016 data, scaled']
+#   Dfile = ROOT.TFile('../outputs/histsDYmm_2016v15.root')
+#   fScaleM = 41.5/35.9
+#   fScaleE = fScaleM
+# else:
+#   legList = ['2017 data from skim','2017 data from ntuples']
+#   Dfile = ROOT.TFile('../outputs/histsDY_2017v15_skimCuts.root')
+# if (doMumu):
+#   # Nfile = ROOT.TFile('../outputs/histsDYmm_2017v15.root')
+#   histnames = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm"]
+#   filehistsM['N'] = (Nfile, histnames)
+#   filehistsM['D'] = (Dfile, fScaleM, histnames)
+#   hists.append(filehistsM)
+# if (doEe):
+#   # Nfile = ROOT.TFile('../outputs/histsDYee_2017v15.root')
+#   histnames = ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee"]
+#   filehistsE['N'] = (Nfile, histnames)
+#   filehistsE['D'] = (Dfile, fScaleE, histnames)
+#   hists.append(filehistsE)
 
 # iPeriod = 8
 # legList = ['2018 data','2016 data, scaled']

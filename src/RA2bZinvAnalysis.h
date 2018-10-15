@@ -134,6 +134,7 @@ private:
   TString isoSFlepTksCut_;
   TString photonVeto_;
   TString photonCut_;
+  double csvMthreshold_;
 
 #ifdef ISMC
 
@@ -212,6 +213,7 @@ private:
   void fillCC(TH1F* h, double wt);
   void fillnZcand(TH1F* h, double wt) {h->Fill(ZCandidates->size(), wt);}
   void fillZmass(TH1F* h, double wt) {for (auto & theZ : *ZCandidates) h->Fill(theZ.M(), wt);}
+  void fillZmassjb(TH1F* h, double wt);
   void fillZpt(TH1F* h, double wt) {for (auto & theZ : *ZCandidates) h->Fill(theZ.Pt(), wt);}
   void fillGpt(TH1F* h, double wt) {for (auto & theG : *Photons) h->Fill(theG.Pt(), wt);}
   void fillFilterCuts(TH1F* h, double wt);
