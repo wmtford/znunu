@@ -120,6 +120,7 @@ private:
   // bool applySF_;
   // bool njSplit_;
   bool useTreeCCbin_;
+  bool useDeepCSV_;
   bool applyBTagSF_;
   bool applyPuWeight_;
   bool customPuWeight_;
@@ -180,18 +181,20 @@ private:
   string_map minDphiCutMap_;
   string_map MHTCutMap_;
   string_map sampleKeyMap_;
-  ivector_map toCCbin_;
+  ivector_map toCCbin_, toCCbinjb_;
   std::vector<const char*> activeBranches_;
 
   void Init(const std::string& cfg_filename="");
   void fillCutMaps();
   void bookAndFillHistograms(const char* sample, std::vector<histConfig*>& histograms, TCut baselineCuts);
   void fillCutFlow(TH1F* hcf, Double_t wt);
+  Int_t setBTags();
 
   void cleanVars() {
 #ifndef ISSKIM
     NJets = NJetsclean;
     BTags = BTagsclean;
+    BTagsDeepCSV = BTagsDeepCSVclean;
     HT = HTclean;
     HT5 = HT5clean;
     MHT = MHTclean;

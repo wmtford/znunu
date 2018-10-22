@@ -21,6 +21,7 @@ apply Z mass cut = true
 apply Z Pt cut = true
 apply photon min Delta R cut = true
 use analysis bin from tree = true
+use DeepCSV = false
 apply b-tag SF = false
 apply pileup weight = true
 use custom pileup weight = true

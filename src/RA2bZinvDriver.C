@@ -16,7 +16,7 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
   bool doHzvv = false;
   bool doHttzvv = false;
   bool doHzmm = true;
-  bool doHzee = false;
+  bool doHzee = true;
   bool doHdymm = false;
   bool doHdyee = false;
   bool doHttzmm = false;
@@ -85,7 +85,7 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
       for (auto& theHist : h_zmm) {
 	theHist->Draw();
 	TString hName(theHist->GetName());
-	if (hName.Contains("hCC")) {
+	if (hName.Contains("hCC") && !hName.Contains("jb")) {
 	  hCCzmm = (TH1F*) theHist;
 	}
       }
@@ -99,7 +99,7 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
       for (auto& theHist : h_zee) {
 	theHist->Draw();
 	TString hName(theHist->GetName());
-	if (hName.Contains("hCC") && hCCzmm) {
+	if (hName.Contains("hCC") && !hName.Contains("jb") && hCCzmm) {
 	  TH1F* hCCll = (TH1F*) hCCzmm->Clone();
 	  hCCll->Add(theHist);
 	  hCCll->SetName("hCC_zll");

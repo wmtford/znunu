@@ -64,6 +64,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
     ("apply Z Pt cut", po::value<bool>(&applyPtCut_))
     ("apply photon min Delta R cut", po::value<bool>(&applyMinDeltaRCut_))
     ("use analysis bin from tree", po::value<bool>(&useTreeCCbin_))
+    ("use DeepCSV", po::value<bool>(&useDeepCSV_))
     ("apply b-tag SF", po::value<bool>(&applyBTagSF_))
     ("apply pileup weight", po::value<bool>(&applyPuWeight_))
     ("use custom pileup weight", po::value<bool>(&customPuWeight_))
@@ -100,12 +101,16 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   } else {
     treeName_ = "tree";  // For skims
   }
-
-  if (ntupleVersion_ == "V15") csvMthreshold_ = 0.8838;
+  if (applyBTagSF_
+      || (ntupleVersion_ == "V15" && runBlock_.find("2016")==std::string::npos)
+      || useDeepCSV_)
+    useTreeCCbin_ = false;
+  if (ntupleVersion_ == "V15" && runBlock_.find("2016")==std::string::npos) csvMthreshold_ = 0.8838;
 
   // Needed branches
   activeBranches_.push_back("NJets");
   activeBranches_.push_back("BTags");
+  activeBranches_.push_back("BTagsDeepCSV");
   activeBranches_.push_back("HT");
   activeBranches_.push_back("HT5");
   activeBranches_.push_back("MHT");
@@ -125,6 +130,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   } else {
     activeBranches_.push_back("NJetsclean");
     activeBranches_.push_back("BTagsclean");
+    activeBranches_.push_back("BTagsDeepCSVclean");
     activeBranches_.push_back("HTclean");
     activeBranches_.push_back("HT5clean");
     activeBranches_.push_back("MHTclean");
@@ -195,10 +201,13 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
     nJetThresholds_ = {2, 3, 5, 7, 9};
     nbThresholds_ = {0, 1, 2, 3};
 
-    Int_t bin = 0;
+    Int_t binjbk = 0, binjb = 0;
     for (unsigned j = 0; j < nJetThresholds_.size(); ++j) {
       for (unsigned b = 0; b < nbThresholds_.size(); ++b) {
 	if (nbThresholds_[b] > nJetThresholds_[j]) continue;  // Exclude (Njets0, Nb3)
+	std::vector<int> jb = {int(j), int(b)};
+	binjb++;
+	toCCbinjb_[jb] = binjb;
 	unsigned mmax = deltaPhi_ == TString("nominal") ? kinThresholds_.size()-1 : kinThresholds_.size();
 	int k = -1;
 	for (unsigned m = 0; m < mmax; ++m) {
@@ -206,8 +215,8 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
 	    k++;
 	    if (j > 2 && (m < 2 || m == kinThresholds_.size()-1) && h == 1) continue;   // Exclude (Njets3,4; HT0,3,(6))
 	    std::vector<int> jbk = {int(j), int(b), k};
-	    bin++;
-	    toCCbin_[jbk] = bin;
+	    binjbk++;
+	    toCCbin_[jbk] = binjbk;
 	    // cout << "Filling toCCbin; j = " << j << ", b = "  << b << ", k = " << k << ", bin = " << bin << endl;
 	  }
 	}
@@ -231,6 +240,8 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   cout << "The integrated luminosity = " << intLumi_ << endl;
   cout << "The path to input files is " << treeLoc_ << endl;
   cout << "The minDeltaPhi cuts are " << deltaPhi_ << endl;
+  cout << "Use analysis bin from tree is " << useTreeCCbin_ << endl;
+  cout << "Use DeepCSV is " << useDeepCSV_ << endl;
   cout << "The apply b-tag scale factors flag is " << applyBTagSF_ << endl;
   cout << "The apply pileup weight flag is " << applyPuWeight_ << endl;
   cout << "The custom pileup weight flag is " << customPuWeight_ << endl;
@@ -566,15 +577,8 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       if (isMC_ && verbosity_ >= 1) cout << "MC weight for this file is " << Weight << endl;
     }
     cleanVars();  // If unskimmed input, copy <var>clean to <var>
-
-    Int_t BTagsOrig = BTags;
-    // Recompute BTags with a different discriminator threhold
-    if (ntupleVersion_ == "V15") {
-      BTags = 0;
-      for (size_t j = 0; j < Jets->size(); ++j) {
-	if (Jets_bDiscriminatorCSV->at(j) >= csvMthreshold_) BTags++;
-      }
-    }
+    Int_t BTagsOrig = setBTags();
+    // if (countInFile <= 100) cout << "BTagsOrig, BTags, BTagsDeepCSV = " << BTagsOrig << ", " << BTags << ", " << BTagsDeepCSV << endl;
 
     if (ZCandidates->size() > 1 && verbosity_ >= 2) cout << ZCandidates->size() << " Z candidates found" << endl;
     // baselineFormula->GetNdata();
@@ -644,6 +648,15 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hCC.axisTitles.first = "Analysis bin";  hCC.axisTitles.second = "Events / bin";
   hCC.filler1D = &RA2bZinvAnalysis::fillCC;
   histograms.push_back(&hCC);
+
+  histConfig hCCjb;
+  hCCjb.name = TString("hCCjb_") + sample;  hCCjb.title = "Cut & count, kinematics integrated";
+  Int_t MaxBinsjb = toCCbinjb_.size();
+  cout << "MaxBinsjb = " << MaxBinsjb << endl;
+  hCCjb.NbinsX = MaxBinsjb;  hCCjb.rangeX.first = 0.5;  hCCjb.rangeX.second = MaxBinsjb+0.5;
+  hCCjb.axisTitles.first = "Njets, Nb bin";  hCCjb.axisTitles.second = "Events / bin";
+  hCCjb.filler1D = &RA2bZinvAnalysis::fillCC;
+  histograms.push_back(&hCCjb);
 
   histConfig hHT;
   hHT.name = TString("hHT_") + sample;  hHT.title = "HT";
@@ -797,7 +810,6 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   histConfig hZmass_2j1b(hZmass);
   hZmass_2j1b.name = TString("hZmass_2j1b_") + sample;  hZmass_2j1b.title = "Z mass, 2 jets & 1 b jet";
   hZmass_2j1b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
-  // hZmass_2j1b.addCuts = isSkim_ ? "NJets==2 && BTags==1" : "NJetsclean==2 && BTagsclean==1";
   histograms.push_back(&hZmass_2j1b);
 
   histConfig hZmass_2j2b(hZmass);
@@ -847,48 +859,81 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 void
 RA2bZinvAnalysis::fillCC(TH1F* h, double wt) {
 
-  // Filler for the analysis-bin jbk histogram
-  UInt_t binCC = 0;
-  if (useTreeCCbin_ && !applyBTagSF_) {
+  // Filler for the analysis-bin jbk and jb histograms
+  TString hName(h->GetName());
+  UInt_t binCC = 0, binCCjb = 0;
+
+  if (useTreeCCbin_) {
     binCC = RA2bin;
-    if (binCC > 0) h->Fill(Double_t(binCC), wt);
+    if (binCC > 0) {
+      if (hName.Contains("jb")) {
+	// Calculate binCCjb
+	int binNjets = nJetThresholds_.size()-1;
+	while (NJets < nJetThresholds_[binNjets]) binNjets--;
+	int binNb = nbThresholds_.size()-1;
+	while (BTags < nbThresholds_[binNb]) binNb--;
+	std::vector<int> jb = {binNjets, binNb};
+	try {
+	  binCCjb = toCCbinjb_.at(jb);
+	}
+	catch (const std::out_of_range& oor) {
+	  if (verbosity_ >= 1) std::cerr << "jb out of range: " << oor.what() << ": j = " << binNjets
+					   << ", b = " << binNb << ", RA2bin = " << RA2bin << '\n';
+	  return;
+	}
+	h->Fill(Double_t(binCCjb), wt);
+      } else {
+	h->Fill(Double_t(binCC), wt);
+      }
+    }
   } else {
     // Calculate binCC
-    std::vector<int> jbk;
     int binKin = kinBin(HT, MHT);
     if (binKin < 0) return;
     int binNjets = nJetThresholds_.size()-1;
     while (NJets < nJetThresholds_[binNjets]) binNjets--;
     if (!applyBTagSF_) {
-	int binNb = nbThresholds_.size()-1;
-	while (BTags < nbThresholds_[binNb]) binNb--;
-	jbk = {binNjets, binNb, binKin};
-	try {
-	  binCC = toCCbin_.at(jbk);
-	}
-	catch (const std::out_of_range& oor) {
-        // Omitted bins j = 3,4, k = 0,3
-	  if (verbosity_ >= 4) std::cerr << "jpk out of range: " << oor.what() << ": j = " << binNjets
-	  	    << ", b = " << binNb << ", k = " << binKin << ", RA2bin = " << RA2bin << '\n';
-	  return;
-	}
-	if (verbosity_ >= 4) cout << "j = " << binNjets << ", b = " << binNb << ", k = " << binKin << ", binCC = "
-				  << binCC << ", RA2bin = " << RA2bin << endl;
+      int binNb = nbThresholds_.size()-1;
+      while (BTags < nbThresholds_[binNb]) binNb--;
+      std::vector<int> jbk = {binNjets, binNb, binKin};
+      try {
+	binCC = toCCbin_.at(jbk);
+      }
+      catch (const std::out_of_range& oor) {
+      // Omitted bins j = 3,4, k = 0,3
+	if (verbosity_ >= 4) std::cerr << "jbk out of range: " << oor.what() << ": j = " << binNjets
+				       << ", b = " << binNb << ", k = " << binKin << ", RA2bin = " << RA2bin << '\n';
+	return;
+      }
+      if (verbosity_ >= 4) cout << "j = " << binNjets << ", b = " << binNb << ", k = " << binKin << ", binCC = "
+				<< binCC << ", RA2bin = " << RA2bin << endl;
+      if (hName.Contains("jb")) {
+	std::vector<int> jb = {binNjets, binNb};
+	binCCjb = toCCbinjb_.at(jb);
+	h->Fill(Double_t(binCCjb), wt);
+      } else {
 	h->Fill(Double_t(binCC), wt);
+      }
     } else {
       // apply BTagSF to all Nb bins
-	if (verbosity_ >= 4) cout << "Size of input Jets = " << Jets->size()
-				  << ", Jets_hadronFlavor = " << Jets_hadronFlavor->size()
-				  << " Jets_HTMask = " << Jets_HTMask->size() << endl;
-	vector<double> probNb = btagcorr_->GetCorrections(Jets, Jets_hadronFlavor, Jets_HTMask);
-	for (int binNb = 0; binNb < (int) nbThresholds_.size(); ++binNb) {
-	  jbk = {binNjets, binNb, binKin};
-	  try {binCC = toCCbin_.at(jbk);}
-	  catch (const std::out_of_range& oor) {return;}
-	  if (verbosity_ >= 3) cout << "j = " << binNjets << ", NbTags = " << BTags << ", b = " << binNb
-				    << ", b wt = " << probNb[binNb] << ", k = " << binKin << ", binCC = " << binCC << endl;
+      if (verbosity_ >= 4) cout << "Size of input Jets = " << Jets->size()
+				<< ", Jets_hadronFlavor = " << Jets_hadronFlavor->size()
+				<< " Jets_HTMask = " << Jets_HTMask->size() << endl;
+      vector<double> probNb = btagcorr_->GetCorrections(Jets, Jets_hadronFlavor, Jets_HTMask);
+      for (int binNb = 0; binNb < (int) nbThresholds_.size(); ++binNb) {
+	std::vector<int> jbk = {binNjets, binNb, binKin};
+	try {binCC = toCCbin_.at(jbk);}
+	catch (const std::out_of_range& oor) {return;}
+	if (verbosity_ >= 3) cout << "j = " << binNjets << ", NbTags = " << BTags << ", b = " << binNb
+				  << ", b wt = " << probNb[binNb] << ", k = " << binKin << ", binCC = " << binCC << endl;
+	if (hName.Contains("jb")) {
+	  std::vector<int> jb = {binNjets, binNb};
+	  binCCjb = toCCbinjb_.at(jb);
+	  h->Fill(Double_t(binCCjb), wt*probNb[binNb]);
+	} else {
 	  h->Fill(Double_t(binCC), wt*probNb[binNb]);
 	}
+      }
     }  // if apply BTagSF
   }  // if useTreeCCbin
 
@@ -1178,6 +1223,22 @@ RA2bZinvAnalysis::fillCutMaps() {
 
 }  // ======================================================================================
 
+Int_t
+RA2bZinvAnalysis::setBTags() {
+  Int_t BTagsOrig = BTags;
+  if (useDeepCSV_) {
+    BTags = BTagsDeepCSV;
+  } else if (ntupleVersion_ == "V15" && runBlock_.find("2016")==std::string::npos) {
+    // Recompute BTags with a different discriminator threshold
+    BTags = 0;
+    for (size_t j = 0; j < Jets->size(); ++j) {
+      if(!Jets_HTMask->at(j)) continue;
+      if (Jets_bDiscriminatorCSV->at(j) > csvMthreshold_) BTags++;
+    }
+  }
+  return BTagsOrig;
+}  // ======================================================================================
+
 RA2bZinvAnalysis::cutHistos::cutHistos(TChain* chain, TObjArray* forNotify) : forNotify_(forNotify) {
   HTcutf_ = new TTreeFormula("HTcut", HTcut_, chain);  forNotify->Add(HTcutf_);
   MHTcutf_ = new TTreeFormula("MHTcut", MHTcut_, chain);  forNotify->Add(MHTcutf_);
@@ -1380,6 +1441,7 @@ RA2bZinvAnalysis::dumpSelEvIDs(const char* sample, const char* idFileName) {
     fprintf(idFile, "%15u %15u %15llu\n", RunNum, LumiBlockNum, EvtNum);
 
     cleanVars();  // If unskimmed input, copy <var>clean to <var>
+    Int_t BTagsOrig = setBTags();
 
     baselineFormula->GetNdata();  cout << "baseline = " << baselineFormula->EvalInstance(0) << endl;
     HTcutf_->GetNdata();  cout << "HTcut = " << HTcutf_->EvalInstance(0) << endl;
