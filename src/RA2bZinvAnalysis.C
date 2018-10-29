@@ -396,7 +396,9 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
   //   commonCuts_ = "JetID==1&& globalTightHalo2016Filter==1 && HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && eeBadScFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && BadChargedCandidateFilter && BadPFMuonFilter && NVtx > 0";  // Troy revision-;  moved JetID to !isSkim_
   // }
 
+  // When it's available, replace globalTightHalo2016Filter with globalSuperTightHalo2016Filter
   commonCuts_ = "globalTightHalo2016Filter==1 && HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && BadChargedCandidateFilter && BadPFMuonFilter && NVtx > 0";
+  commonCuts_ += " && ecalBadCalibFilter==1";  // Added for 94X
   if (!isMC_) commonCuts_ += " &&  eeBadScFilter==1";
   if (!isSkim_) {
     commonCuts_ += " && JetIDclean";
