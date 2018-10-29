@@ -34,17 +34,18 @@ NelYield = copy.deepcopy(NmuYield); Extrap = copy.deepcopy(NmuYield)
 Stat = copy.deepcopy(NmuYield); MCstat = copy.deepcopy(NmuYield) 
 SysUp = copy.deepcopy(NmuYield); SysDn = copy.deepcopy(NmuYield); 
 SysKin = copy.deepcopy(NmuYield); SysPur = copy.deepcopy(NmuYield)
-
+TTZ = copy.deepcopy(NmuYield)
 for row in rowList:
     NmuYield[row[0]+":"+row[2]].append(int(float(row[4])))
     NelYield[row[0]+":"+row[2]].append(int(float(row[6])))
     Extrap[row[0]+":"+row[2]].append(float(row[8]))
     Stat[row[0]+":"+row[2]].append(float(row[10]))
     MCstat[row[0]+":"+row[2]].append(float(row[12]))
-    SysUp[row[0]+":"+row[2]].append(float(row[14]))
-    SysDn[row[0]+":"+row[2]].append(float(row[16]))
-    SysKin[row[0]+":"+row[2]].append(float(row[18]))
-    SysPur[row[0]+":"+row[2]].append(float(row[20]))
+    TTZ[row[0]+":"+row[2]].append(float(row[14]))
+    SysUp[row[0]+":"+row[2]].append(float(row[16]))
+    SysDn[row[0]+":"+row[2]].append(float(row[18]))
+    SysKin[row[0]+":"+row[2]].append(float(row[20]))
+    SysPur[row[0]+":"+row[2]].append(float(row[22]))
 
 Bin = 0
 
@@ -65,8 +66,8 @@ for nj in Nj:
         sysdn = str(int(round(sum(SysDn[NjNbBin])/len(SysDn[NjNbBin]),3)*100))
         syskin = str(int(sum(SysKin[NjNbBin])/len(SysKin[NjNbBin])*100))
         syspur = str(int(round(sum(SysPur[NjNbBin])/len(SysPur[NjNbBin]),3)*100))
-        
-        print str(Bin)+" & "+nmu+" & "+nel+" & "+extrap+" & "+stat+" & "+syspur+" & $\pm  "+mcstat+"^{ +"+sysup+"}_{ -"+sysdn+"}$ & "+syskin+ " \\\\ "
+        ttz = str(int(round(sum(TTZ[NjNbBin])/len(TTZ[NjNbBin]),3)*100))
+        print str(Bin)+" & "+nmu+" & "+nel+" & "+extrap+" & "+stat+" & "+syspur+" & $\pm  "+mcstat+"^{ +"+sysup+"}_{ -"+sysdn+"}$ & "+ttz+" & "+syskin+ " \\\\ "
 
 
 f.close()

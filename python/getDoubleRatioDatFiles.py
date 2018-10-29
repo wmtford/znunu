@@ -31,8 +31,10 @@ for sample in doSample:
 
     ## include sideband if ldp or hdp
     if(sample=='ldp' or sample=='hdp'):
-        mht_binning = [250.,300.,350.,400.,450.,600.,750,900.]
-        mhtCut = False
+        #mht_binning = [250.,300.,400.,600.,900.]
+        mht_binning = [250.,900.]
+        mht_binning = [300.,350.,400.,450.,600.,750,900.]
+        mhtCut = True
     else:
         mhtCut = True
         mht_binning = [300.,350.,400.,450.,600.,750,900.]
@@ -58,13 +60,13 @@ for sample in doSample:
             1: 0,
             2: 0,
             3: 0,
-            4: 0,
-            5: 0,
-            6: 0,
-            7: 1,
-            8: 1,
-            9: 1,
-            10: 2,
+            4: 1,
+            5: 1,
+            6: 1,
+            7: 2,
+            8: 2,
+            9: 3,
+            10: 3,
             11: 4,
             12: 4,
             13: 4,
@@ -134,7 +136,7 @@ for sample in doSample:
             EdrUp = (max(EdrUp**2-edr**2,0))**0.5
             EdrDown = max(dr_out[1]['NJets'][min(max(nj,1),5)-1][1], dr_out[1]['HT'][ht][1], dr_out[1]['MHT'][mht][1])
             EdrDown = (max(EdrDown**2-edr**2,0))**0.5
-            print str(dr)+" | "+str(edr)+" | "+str(EdrUp)+" | "+str(EdrDown)+" | "+str(pur)+" | "+str(purError/pur)+" | "+str(trig)+" | "+str(trigError/trig)+" | "+str(lepSF)+" | "+str(eLepSF)+" | "+str(btagSF)+" | "+str(btagSFerror) + " | "
+            print str(round(dr,4))+" | "+str(round(edr,4))+" | "+str(round(EdrUp,4))+" | "+str(round(EdrDown,4))+" | "+str(round(pur,4))+" | "+str(round(purError/pur,4))+" | "+str(round(trig,4))+" | "+str(round(trigError/trig,4))+" | "+str(round(lepSF,4))+" | "+str(round(eLepSF,4))+" | "+str(round(btagSF,4))+" | "+str(round(btagSFerror,4)) + " | "
             Bin+=1
 
     print "\a"

@@ -14,8 +14,13 @@ import RA2b
 import ROOT
 
 ########## trigger effs from manuel ##############
-trig_m = (0.988,0.004)
-trig_e = (0.988,0.004)
+########## from Nov 29th RA2b talk  ##############
+#### dimu trigger eff high and flat ##############
+#### diel trigger drops at high HT  ##############
+#### diel HT binning [300-1000,1000+]
+trig_m = [(0.993,0.003)]
+trig_e = [(0.985,0.002),
+          (0.943,0.002)]
 
 ########## run fits to get purity ################
 fit_2j = []
@@ -24,9 +29,9 @@ fit_5jplus = []
 
 # nb=12 is nb>=2
 for nb in [0,1,12]:
-    fit_2j.append(RA2b.getZmassFitPlot(bJetBin=nb,nJetBin=1))
-    fit_3to4j.append(RA2b.getZmassFitPlot(bJetBin=nb,nJetBin=2))
-    fit_5jplus.append(RA2b.getZmassFitPlot(bJetBin=nb,extraCuts='NJets>=5'))
+    fit_2j.append(RA2b.getZmassFitPlot(bJetBin=nb,nJetBin=1,savePlot=True))
+    fit_3to4j.append(RA2b.getZmassFitPlot(bJetBin=nb,nJetBin=2,savePlot=True))
+    fit_5jplus.append(RA2b.getZmassFitPlot(bJetBin=nb,extraCuts='NJets>=5',savePlot=True))
 
 fits = [fit_2j,fit_3to4j,fit_5jplus,fit_5jplus,fit_5jplus]
 
@@ -58,17 +63,34 @@ for nj in range(1,6):
 h_pur_m.Write(h_pur_m.GetName(),2)
 h_pur_e.Write(h_pur_e.GetName(),2)
 
+zDict = {0: '\multirow{3}{*}{\zmm}',
+         1: '\multirow{3}{*}{\zee}',}
+njDict = {0: '& $\\njets=2$        ',
+          1: '& $3\leq\\njets\leq4$',
+          2: '& $\\njets\geq5$     ',}
+for lep in range(2):
+    print '\hline'
+    print zDict[lep],
+    for nj in range(3):
+        print njDict[nj],
+        for nb in range(3):
+            print " & $"+str(round(fits[nj][nb][lep][0],3))+'\pm'+str(round(fits[nj][nb][lep][1],3))+"$",
+        print " \\\\ "
+
 ######### set the trig effs from manuel ############
-h_trig_m1 = effFile.Get("h_trig_m1")
-h_trig_e1 = effFile.Get("h_trig_e1")
+h_trig_m = effFile.Get("h_trig_m1")
+h_trig_e = effFile.Get("h_trig_e2")
 
-h_trig_m1.SetBinContent(1,trig_m[0])
-h_trig_m1.SetBinError(1,trig_m[1])
-h_trig_e1.SetBinContent(1,trig_e[0])
-h_trig_e1.SetBinError(1,trig_e[1])
+for i in range(len(trig_m)):
+    h_trig_m.SetBinContent(1,trig_m[i][0])
+    h_trig_m.SetBinError(1,trig_m[i][1])
 
-h_trig_m1.Write(h_trig_m1.GetName(),2)
-h_trig_m1.Write(h_trig_e1.GetName(),2)
+for i in range(len(trig_e)):
+    h_trig_e.SetBinContent(i+1,trig_e[i][0])
+    h_trig_e.SetBinError(i+1,trig_e[i][1])
+
+h_trig_m.Write(h_trig_m.GetName(),2)
+h_trig_e.Write(h_trig_e.GetName(),2)
 
 effFile.Close()
 

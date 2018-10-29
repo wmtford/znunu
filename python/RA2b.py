@@ -10,7 +10,7 @@ import numpy
 from array import array
 import ROOT
 
-def cmsLumi(pad,  iPeriod=None,  iPosX=None, extraText=None ):
+def cmsLumi(pad,  iPeriod=None,  iPosX=None, extraText=None, cmsText=None):
 
     """ modifed by TM 
     modified form of CMS_lumi
@@ -18,7 +18,8 @@ def cmsLumi(pad,  iPeriod=None,  iPosX=None, extraText=None ):
     Translated in Python by: Joshua Hardenbrook (Princeton)
     Updated by:   Dinko Ferencek (Rutgers) """
 
-    cmsText     = "CMS";
+    if(cmsText==None):
+        cmsText     = "CMS"
     cmsTextFont   = 61  
 
     writeExtraText = True
@@ -312,21 +313,20 @@ def setTdrStyle():
     tdrStyle.cd()
 
 
-def getTreeWeight(File,  doLumi=None,  treeName=None, removeZkfactor=None, getWeight=None, setWeight=None, doNoisy=None):
+def getTreeWeight(File,  doLumi=None,  treeName=None, removeZkfactor=None, getWeight=None, setWeight=None, doNoisy=None, xsec=None):
 
     if(treeName==None):
         treeName="tree"
     if(doLumi==None):
-        doLumi = 36.1
+        doLumi = 35.9
     if(doNoisy==None):
         doNoisy=False
     if(removeZkfactor==None):
         removeZkfactor=False
-    print "Before resetting getWeight = "+str(getWeight)
-    # if(getWeight==None): 
+    # print "Before resetting getWeight = "+str(getWeight)
     if(getWeight is None): 
         getWeight=True
-    print "After resetting getWeight = "+str(getWeight)
+    # print "After resetting getWeight = "+str(getWeight)
     if(setWeight==None): # for manually setting the weight
         setWeight=False
 
@@ -340,27 +340,30 @@ def getTreeWeight(File,  doLumi=None,  treeName=None, removeZkfactor=None, getWe
     if(type(setWeight) is int or type(setWeight) is float):
         weight = setWeight
     else:
-        WeightHist = ROOT.TH1F("WeightHist","WeightHist",1,-10000,10000)
+        WeightHist = ROOT.TH1D("WeightHist","WeightHist",1,-10000,10000)
         tree.Project("WeightHist","Weight");
     
         weight = WeightHist.GetMean()
-        print "wt from WeightHist =    "+str(weight)
+        # print "wt from WeightHist =    "+str(weight)
 
-        print "Before applying getWeight = "+str(getWeight)
-        if(getWeight):
-            xsecHist = ROOT.TH1F("xsecHist","xsecHist",1,0,1000000000)
+        # print "Before applying getWeight = "+str(getWeight)
+        nEventProc = f.Get("nEventProc")
+        nEventNeg = f.Get("nEventNeg")
+
+        if(getWeight and nEventProc):
+            xsecHist = ROOT.TH1D("xsecHist","xsecHist",1,0,1000000000)
             tree.Project("xsecHist","CrossSection")
             xsection = float(xsecHist.GetMean())
-
-            nEventProc = f.Get("nEventProc")
-            nEventNeg = f.Get("nEventNeg")
+            
+            if(xsec!=None):
+                xsection=xsec
 
             nEvents = nEventProc.GetBinContent(1) - 2*nEventNeg.GetBinContent(1)
 
             weight = xsection/nEvents;
             if(weight < 0):
                 weight *= -1;
-            print "wt from L*sigma/Nevts = "+str(weight)
+            # print "wt from L*sigma/Nevts = "+str(weight)
         print "wt applied = "+str(weight)
         sampleLumi = Zkapa/(weight*1000.)
 
@@ -368,26 +371,29 @@ def getTreeWeight(File,  doLumi=None,  treeName=None, removeZkfactor=None, getWe
 
     return weight
 
-def setTreeWeight(File,  doLumi=None,  treeName=None, removeZkfactor=None, getWeight=None, setWeight=None, doNoisy=None):
-    """Sets the weight of a tree to a corresponding lumi. Default lumi is 36.1 ifb"""
+def setTreeWeight(File,  doLumi=None,  treeName=None, removeZkfactor=None, getWeight=None, setWeight=None, doNoisy=None, xsec=None, scaleWeight=None):
+    """Sets the weight of a tree to a corresponding lumi. Default lumi is 35.9 ifb"""
 
     if(treeName==None):
         treeName="tree"
 
-    print "In setTreeWeight, File = "+str(File)
+    # print "In setTreeWeight, File = "+str(File)
     f = ROOT.TFile(File,"update")
     tree = f.Get(treeName)
 
-    print "Before calling getTreeWeight getWeight = "+str(getWeight)+", type(getWeight) = "+str(type(getWeight))
-    weight = getTreeWeight(File, doLumi, treeName, removeZkfactor, getWeight, setWeight, doNoisy)
-  
+    # print "Before calling getTreeWeight getWeight = "+str(getWeight)+", type(getWeight) = "+str(type(getWeight))
+    weight = getTreeWeight(File, doLumi, treeName, removeZkfactor, getWeight, setWeight, doNoisy, xsec)
+
+    if(scaleWeight!=None):
+        weight*=scaleWeight
+
     tree.SetWeight(weight)
     tree.AutoSave() 
 
-def getFileList(sample, doLumi=None, treeLoc=None, treeName=None, removeZkfactor=None):
+def getFileList(sample, doLumi=None, treeLoc=None, treeName=None, removeZkfactor=None, setWeight=None):
 
     if(doLumi==None):
-        doLumi = 36.1
+        doLumi = 35.9
     if(treeLoc==None):
         # treeLoc = "root://cmseos.fnal.gov//store/user/lpcsusyhad/SusyRA2Analysis2015/Skims/Run2ProductionV12"
         treeLoc = "/nfs/data38/cms/wtford/lpcTrees/Skims/Run2ProductionV12"
@@ -462,115 +468,115 @@ def getFileList(sample, doLumi=None, treeLoc=None, treeName=None, removeZkfactor
             fileList.append(treeLoc+"/tree_LDP/tree_T1tttt_1500_100.root")
     elif('sig' in sample):
         if('LDP' not in sample):
-            fileList.append(treeLoc+"/tree_signal/tree_HTMHT_2016B.root")
-            fileList.append(treeLoc+"/tree_signal/tree_HTMHT_2016C.root")
-            fileList.append(treeLoc+"/tree_signal/tree_HTMHT_2016D.root")
-            fileList.append(treeLoc+"/tree_signal/tree_HTMHT_2016E.root")
-            fileList.append(treeLoc+"/tree_signal/tree_HTMHT_2016F.root")
-            fileList.append(treeLoc+"/tree_signal/tree_HTMHT_2016G.root")
-            fileList.append(treeLoc+"/tree_signal/tree_HTMHT_2016H2.root")
-            fileList.append(treeLoc+"/tree_signal/tree_HTMHT_2016H3.root")
+            fileList.append(treeLoc+"/tree_signal/tree_HTMHT_re2016B.root")
+            fileList.append(treeLoc+"/tree_signal/tree_HTMHT_re2016C.root")
+            fileList.append(treeLoc+"/tree_signal/tree_HTMHT_re2016D.root")
+            fileList.append(treeLoc+"/tree_signal/tree_HTMHT_re2016E.root")
+            fileList.append(treeLoc+"/tree_signal/tree_HTMHT_re2016F.root")
+            fileList.append(treeLoc+"/tree_signal/tree_HTMHT_re2016G.root")
+            fileList.append(treeLoc+"/tree_signal/tree_HTMHT_re2016H2.root")
+            fileList.append(treeLoc+"/tree_signal/tree_HTMHT_re2016H3.root")
         if( ('LDP' in sample) or ('IDP' in sample)):
-            fileList.append(treeLoc+"/tree_LDP/tree_HTMHT_2016B.root")
-            fileList.append(treeLoc+"/tree_LDP/tree_HTMHT_2016C.root")
-            fileList.append(treeLoc+"/tree_LDP/tree_HTMHT_2016D.root")
-            fileList.append(treeLoc+"/tree_LDP/tree_HTMHT_2016E.root")
-            fileList.append(treeLoc+"/tree_LDP/tree_HTMHT_2016F.root")
-            fileList.append(treeLoc+"/tree_LDP/tree_HTMHT_2016G.root")
-            fileList.append(treeLoc+"/tree_LDP/tree_HTMHT_2016H2.root")
-            fileList.append(treeLoc+"/tree_LDP/tree_HTMHT_2016H3.root")
+            fileList.append(treeLoc+"/tree_LDP/tree_HTMHT_re2016B.root")
+            fileList.append(treeLoc+"/tree_LDP/tree_HTMHT_re2016C.root")
+            fileList.append(treeLoc+"/tree_LDP/tree_HTMHT_re2016D.root")
+            fileList.append(treeLoc+"/tree_LDP/tree_HTMHT_re2016E.root")
+            fileList.append(treeLoc+"/tree_LDP/tree_HTMHT_re2016F.root")
+            fileList.append(treeLoc+"/tree_LDP/tree_HTMHT_re2016G.root")
+            fileList.append(treeLoc+"/tree_LDP/tree_HTMHT_re2016H2.root")
+            fileList.append(treeLoc+"/tree_LDP/tree_HTMHT_re2016H3.root")
     elif(sample.startswith('zmm')):
         if('LDP' not in sample):
-            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_2016B.root") 
-            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_2016C.root") 
-            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_2016D.root") 
-            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_2016E.root") 
-            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_2016F.root") 
-            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_2016G.root") 
-            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_2016H2.root") 
-            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_2016H3.root") 
+            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_re2016B.root") 
+            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_re2016C.root") 
+            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_re2016D.root") 
+            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_re2016E.root") 
+            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_re2016F.root") 
+            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_re2016G.root") 
+            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_re2016H2.root") 
+            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_re2016H3.root") 
         if( ('LDP' in sample) or ('IDP' in sample)):
-            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_2016B.root") 
-            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_2016C.root") 
-            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_2016D.root") 
-            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_2016E.root") 
-            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_2016F.root") 
-            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_2016G.root") 
-            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_2016H2.root") 
-            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_2016H3.root") 
+            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_re2016B.root") 
+            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_re2016C.root") 
+            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_re2016D.root") 
+            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_re2016E.root") 
+            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_re2016F.root") 
+            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_re2016G.root") 
+            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_re2016H2.root") 
+            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_re2016H3.root") 
     elif(sample.startswith('zee')):
         if('LDP' not in sample):
-            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_2016B.root") 
-            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_2016C.root") 
-            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_2016D.root") 
-            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_2016E.root") 
-            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_2016F.root") 
-            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_2016G.root") 
-            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_2016H2.root") 
-            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_2016H3.root") 
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_re2016B.root") 
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_re2016C.root") 
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_re2016D.root") 
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_re2016E.root") 
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_re2016F.root") 
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_re2016G.root") 
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_re2016H2.root") 
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_re2016H3.root") 
         if( ('LDP' in sample) or ('IDP' in sample)):
-            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_2016B.root") 
-            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_2016C.root") 
-            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_2016D.root") 
-            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_2016E.root") 
-            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_2016F.root") 
-            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_2016G.root") 
-            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_2016H2.root") 
-            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_2016H3.root") 
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_re2016B.root") 
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_re2016C.root") 
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_re2016D.root") 
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_re2016E.root") 
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_re2016F.root") 
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_re2016G.root") 
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_re2016H2.root") 
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_re2016H3.root") 
     elif(sample.startswith('zll')):
         if('LDP' not in sample):
-            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_2016B.root")
-            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_2016B.root") 
-            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_2016C.root")
-            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_2016C.root") 
-            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleMuon_2016D.root") 
-            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_2016D.root") 
-            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_2016E.root")
-            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_2016E.root") 
-            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_2016F.root")
-            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_2016F.root") 
-            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleMuon_2016G.root") 
-            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_2016G.root") 
-            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_2016H2.root")
-            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_2016H2.root") 
-            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleMuon_2016H3.root") 
-            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_2016H3.root") 
+            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_re2016B.root")
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_re2016B.root") 
+            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_re2016C.root")
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_re2016C.root") 
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleMuon_re2016D.root") 
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_re2016D.root") 
+            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_re2016E.root")
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_re2016E.root") 
+            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_re2016F.root")
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_re2016F.root") 
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleMuon_re2016G.root") 
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_re2016G.root") 
+            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_SingleMuon_re2016H2.root")
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_re2016H2.root") 
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleMuon_re2016H3.root") 
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_SingleElectron_re2016H3.root") 
         if( ('LDP' in sample) or ('IDP' in sample)):
-            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_2016B.root")
-            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_2016B.root") 
-            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_2016C.root")
-            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_2016C.root") 
-            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleMuon_2016D.root") 
-            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_2016D.root") 
-            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_2016E.root")
-            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_2016E.root") 
-            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_2016F.root")
-            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_2016F.root") 
-            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleMuon_2016G.root") 
-            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_2016G.root") 
-            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_2016H2.root")
-            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_2016H2.root") 
-            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleMuon_2016H3.root") 
-            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_2016H3.root") 
+            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_re2016B.root")
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_re2016B.root") 
+            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_re2016C.root")
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_re2016C.root") 
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleMuon_re2016D.root") 
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_re2016D.root") 
+            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_re2016E.root")
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_re2016E.root") 
+            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_re2016F.root")
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_re2016F.root") 
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleMuon_re2016G.root") 
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_re2016G.root") 
+            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_SingleMuon_re2016H2.root")
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_re2016H2.root") 
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleMuon_re2016H3.root") 
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_SingleElectron_re2016H3.root") 
     elif(sample.startswith('photon')):
         if('LDP' not in sample):
-            fileList.append(treeLoc+"/tree_GJet_CleanVars/tree_SinglePhoton_2016B.root") 
-            fileList.append(treeLoc+"/tree_GJet_CleanVars/tree_SinglePhoton_2016C.root") 
-            fileList.append(treeLoc+"/tree_GJet_CleanVars/tree_SinglePhoton_2016D.root") 
-            fileList.append(treeLoc+"/tree_GJet_CleanVars/tree_SinglePhoton_2016E.root") 
-            fileList.append(treeLoc+"/tree_GJet_CleanVars/tree_SinglePhoton_2016F.root") 
-            fileList.append(treeLoc+"/tree_GJet_CleanVars/tree_SinglePhoton_2016G.root") 
-            fileList.append(treeLoc+"/tree_GJet_CleanVars/tree_SinglePhoton_2016H2.root") 
-            fileList.append(treeLoc+"/tree_GJet_CleanVars/tree_SinglePhoton_2016H3.root") 
+            fileList.append(treeLoc+"/tree_GJet_CleanVars/tree_SinglePhoton_re2016B.root") 
+            fileList.append(treeLoc+"/tree_GJet_CleanVars/tree_SinglePhoton_re2016C.root") 
+            fileList.append(treeLoc+"/tree_GJet_CleanVars/tree_SinglePhoton_re2016D.root") 
+            fileList.append(treeLoc+"/tree_GJet_CleanVars/tree_SinglePhoton_re2016E.root") 
+            fileList.append(treeLoc+"/tree_GJet_CleanVars/tree_SinglePhoton_re2016F.root") 
+            fileList.append(treeLoc+"/tree_GJet_CleanVars/tree_SinglePhoton_re2016G.root") 
+            fileList.append(treeLoc+"/tree_GJet_CleanVars/tree_SinglePhoton_re2016H2.root") 
+            fileList.append(treeLoc+"/tree_GJet_CleanVars/tree_SinglePhoton_re2016H3.root") 
         if( ('LDP' in sample) or ('IDP' in sample)):
-            fileList.append(treeLoc+"/tree_GJetLDP_CleanVars/tree_SinglePhoton_2016B.root") 
-            fileList.append(treeLoc+"/tree_GJetLDP_CleanVars/tree_SinglePhoton_2016C.root") 
-            fileList.append(treeLoc+"/tree_GJetLDP_CleanVars/tree_SinglePhoton_2016D.root") 
-            fileList.append(treeLoc+"/tree_GJetLDP_CleanVars/tree_SinglePhoton_2016E.root") 
-            fileList.append(treeLoc+"/tree_GJetLDP_CleanVars/tree_SinglePhoton_2016F.root") 
-            fileList.append(treeLoc+"/tree_GJetLDP_CleanVars/tree_SinglePhoton_2016G.root") 
-            fileList.append(treeLoc+"/tree_GJetLDP_CleanVars/tree_SinglePhoton_2016H2.root") 
-            fileList.append(treeLoc+"/tree_GJetLDP_CleanVars/tree_SinglePhoton_2016H3.root") 
+            fileList.append(treeLoc+"/tree_GJetLDP_CleanVars/tree_SinglePhoton_re2016B.root") 
+            fileList.append(treeLoc+"/tree_GJetLDP_CleanVars/tree_SinglePhoton_re2016C.root") 
+            fileList.append(treeLoc+"/tree_GJetLDP_CleanVars/tree_SinglePhoton_re2016D.root") 
+            fileList.append(treeLoc+"/tree_GJetLDP_CleanVars/tree_SinglePhoton_re2016E.root") 
+            fileList.append(treeLoc+"/tree_GJetLDP_CleanVars/tree_SinglePhoton_re2016F.root") 
+            fileList.append(treeLoc+"/tree_GJetLDP_CleanVars/tree_SinglePhoton_re2016G.root") 
+            fileList.append(treeLoc+"/tree_GJetLDP_CleanVars/tree_SinglePhoton_re2016H2.root") 
+            fileList.append(treeLoc+"/tree_GJetLDP_CleanVars/tree_SinglePhoton_re2016H3.root") 
     elif('zinv' in sample):
         if('LDP' not in sample):
             setTreeWeight(treeLoc+"/tree_signal/tree_ZJetsToNuNu_HT-100to200.root", doLumi, treeName, removeZkfactor)
@@ -608,74 +614,122 @@ def getFileList(sample, doLumi=None, treeLoc=None, treeName=None, removeZkfactor
             setTreeWeight(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-100to200.root", doLumi, treeName, removeZkfactor)
             setTreeWeight(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-200to400.root", doLumi, treeName, removeZkfactor)
             setTreeWeight(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-400to600.root", doLumi, treeName, removeZkfactor)
-            setTreeWeight(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-600toInf.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-600to800.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf.root", doLumi, treeName, removeZkfactor)
             fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-100to200.root") 
             fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-200to400.root") 
             fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-400to600.root") 
-            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-600toInf.root") 
+            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-600to800.root") 
+            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200.root") 
+            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500.root") 
+            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf.root") 
         if( ('LDP' in sample) or ('IDP' in sample)):
             setTreeWeight(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-100to200.root", doLumi, treeName, removeZkfactor)
             setTreeWeight(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-200to400.root", doLumi, treeName, removeZkfactor)
             setTreeWeight(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-400to600.root", doLumi, treeName, removeZkfactor)
-            setTreeWeight(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-600toInf.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-600to800.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf.root", doLumi, treeName, removeZkfactor)
             fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-100to200.root") 
             fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-200to400.root") 
             fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-400to600.root") 
-            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-600toInf.root") 
+            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-600to800.root") 
+            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200.root") 
+            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500.root") 
+            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf.root") 
     elif('dyee' in sample):
         if('LDP' not in sample):
             setTreeWeight(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-100to200.root", doLumi, treeName, removeZkfactor)
             setTreeWeight(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-200to400.root", doLumi, treeName, removeZkfactor)
             setTreeWeight(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-400to600.root", doLumi, treeName, removeZkfactor)
-            setTreeWeight(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-600toInf.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-600to800.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf.root", doLumi, treeName, removeZkfactor)
             fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-100to200.root") 
             fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-200to400.root") 
             fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-400to600.root") 
-            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-600toInf.root") 
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-600to800.root") 
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200.root") 
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500.root") 
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf.root") 
         if( ('LDP' in sample) or ('IDP' in sample)):
             setTreeWeight(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-100to200.root", doLumi, treeName, removeZkfactor)
             setTreeWeight(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-200to400.root", doLumi, treeName, removeZkfactor)
             setTreeWeight(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-400to600.root", doLumi, treeName, removeZkfactor)
-            setTreeWeight(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-600toInf.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-600to800.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf.root", doLumi, treeName, removeZkfactor)
             fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-100to200.root") 
             fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-200to400.root") 
             fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-400to600.root") 
-            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-600toInf.root") 
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-600to800.root") 
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200.root") 
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500.root") 
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf.root") 
     elif('dyll' in sample):
         if('LDP' not in sample):
             setTreeWeight(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-100to200.root", doLumi, treeName, removeZkfactor)
             setTreeWeight(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-200to400.root", doLumi, treeName, removeZkfactor)
             setTreeWeight(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-400to600.root", doLumi, treeName, removeZkfactor)
-            setTreeWeight(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-600toInf.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-600to800.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf.root", doLumi, treeName, removeZkfactor)
             setTreeWeight(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-100to200.root", doLumi, treeName, removeZkfactor)
             setTreeWeight(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-200to400.root", doLumi, treeName, removeZkfactor)
             setTreeWeight(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-400to600.root", doLumi, treeName, removeZkfactor)
-            setTreeWeight(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-600toInf.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-600to800.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf.root", doLumi, treeName, removeZkfactor)
             fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-100to200.root") 
             fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-200to400.root") 
             fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-400to600.root") 
-            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-600toInf.root") 
+            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-600to800.root") 
+            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200.root") 
+            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500.root") 
+            fileList.append(treeLoc+"/tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf.root") 
             fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-100to200.root") 
             fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-200to400.root") 
             fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-400to600.root") 
-            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-600toInf.root") 
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-600to800.root") 
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200.root") 
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500.root") 
+            fileList.append(treeLoc+"/tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf.root") 
         if( ('LDP' in sample) or ('IDP' in sample)):
             setTreeWeight(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-100to200.root", doLumi, treeName, removeZkfactor)
             setTreeWeight(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-200to400.root", doLumi, treeName, removeZkfactor)
             setTreeWeight(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-400to600.root", doLumi, treeName, removeZkfactor)
-            setTreeWeight(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-600toInf.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-600to800.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf.root", doLumi, treeName, removeZkfactor)
             setTreeWeight(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-100to200.root", doLumi, treeName, removeZkfactor)
             setTreeWeight(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-200to400.root", doLumi, treeName, removeZkfactor)
             setTreeWeight(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-400to600.root", doLumi, treeName, removeZkfactor)
-            setTreeWeight(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-600toInf.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-600to800.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500.root", doLumi, treeName, removeZkfactor)
+            setTreeWeight(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf.root", doLumi, treeName, removeZkfactor)
             fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-100to200.root") 
             fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-200to400.root") 
             fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-400to600.root") 
-            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-600toInf.root") 
+            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-600to800.root") 
+            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200.root") 
+            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500.root") 
+            fileList.append(treeLoc+"/tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf.root") 
             fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-100to200.root") 
             fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-200to400.root") 
             fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-400to600.root") 
-            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-600toInf.root") 
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-600to800.root") 
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200.root") 
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500.root") 
+            fileList.append(treeLoc+"/tree_DYeLDP_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf.root") 
     elif('gjets' in sample):
         if('new' in sample):
             setTreeWeight(treeLoc+"/tree_GJet_CleanVars/tree_GJets_DR-0p4_HT-100to200.root", doLumi, treeName, setWeight=2.48331699336*doLumi/7.63)
@@ -1373,7 +1427,7 @@ def getFileList(sample, doLumi=None, treeLoc=None, treeName=None, removeZkfactor
 
     return fileList
 
-def getChain(sample, doLumi=None, treeName=None, doProof=None, treeLoc=None, removeZkfactor=None):
+def getChain(sample, doLumi=None, treeName=None, doProof=None, treeLoc=None, removeZkfactor=None,setWeight=None):
     """ returns sample TChain
     sample options:
     zmm: Z->mumu data
@@ -1394,7 +1448,7 @@ def getChain(sample, doLumi=None, treeName=None, doProof=None, treeLoc=None, rem
     zinv: Z->nunu MC
     """    
     if(doLumi==None):
-        doLumi = 36.1
+        doLumi = 35.9
     if(doProof==None):
         doProof = False
     if(treeLoc==None):
@@ -1412,7 +1466,7 @@ def getChain(sample, doLumi=None, treeName=None, doProof=None, treeLoc=None, rem
 
     chain = ROOT.TChain("tree")
 
-    files = getFileList(sample, doLumi, treeLoc, treeName, removeZkfactor)
+    files = getFileList(sample, doLumi, treeLoc, treeName, removeZkfactor,setWeight)
 
     for f in files:
         print "f = "+str(f)
@@ -1428,13 +1482,15 @@ def getChain(sample, doLumi=None, treeName=None, doProof=None, treeLoc=None, rem
 
     return chain
   
-def getCuts(code, nJetBin=None, bJetBin=None, kinBin=None, trig=None, dphiCut=None, extraCuts=None, applyMassCut=None, applyPtCut=None, applyHTCut=None, applyMHTCut=None, applyNJetsCut=None, applySF=None, njSplit=None, applyPuWeight=None, extraWeight=None):
+def getCuts(code, nJetBin=None, bJetBin=None, kinBin=None, trig=None, dphiCut=None, extraCuts=None, applyMassCut=None, applyPtCut=None, applyHTCut=None, applyMHTCut=None, applyNJetsCut=None, applySF=None, njSplit=None, applyPuWeight=None, extraWeight=None, noCuts=None, applyMinDeltaRCut=None, useBTagsSF=None, applyISRWeight=None):
 
     cuts = ROOT.TCut("")
 
     #####################################################################
     # set defaults and initialize 
     #####################################################################
+    if(noCuts==None):
+        noCuts=False
     if(nJetBin==None):
         nJetBin=-1
     if(bJetBin==None):
@@ -1464,7 +1520,14 @@ def getCuts(code, nJetBin=None, bJetBin=None, kinBin=None, trig=None, dphiCut=No
         njSplit=False
     if(applyPuWeight is not True):
         applyPuWeight=False
-    
+    if(applyMinDeltaRCut==None):
+        applyMinDeltaRCut=True
+    if(useBTagsSF==None):
+        useBTagsSF=False
+    if(applyISRWeight==None):
+        applyISRWeight=False
+
+    # trig = -1
     #####################################################################
     # end set defaults and initialize 
     #####################################################################
@@ -1494,6 +1557,7 @@ def getCuts(code, nJetBin=None, bJetBin=None, kinBin=None, trig=None, dphiCut=No
         3: "NJets>=5&&NJets<=6",
         4: "NJets>=7&&NJets<=8",
         5: "NJets>=9",
+        345: "NJets>=5",
         -1:"NJets>=2",
     }
     if(njSplit==True):
@@ -1509,20 +1573,29 @@ def getCuts(code, nJetBin=None, bJetBin=None, kinBin=None, trig=None, dphiCut=No
             -1:"NJets>=2",
         }
         
+    bJetSuffix = ''
+    if(useBTagsSF==True):
+        bJetSuffix = 'SF'
     bJetCuts = {
-        0: "BTags==0",
-        1: "BTags==1",
-        2: "BTags==2",
-        3: "BTags>=3",
-        -1:"BTags>=0",
-        11:"BTags>=1",
-        12:"BTags>=2",
+        0: 'BTags'+bJetSuffix+'==0',
+        1: 'BTags'+bJetSuffix+'==1',
+        2: 'BTags'+bJetSuffix+'==2',
+        3: 'BTags'+bJetSuffix+'>=3',
+        -1:'BTags'+bJetSuffix+'>=0',
+        11:'BTags'+bJetSuffix+'>=1',
+        12:'BTags'+bJetSuffix+'>=2',
     }
     bJetCutsSF = {
-        0: "BTagsSF[0]*(1)",
-        1: "BTagsSF[1]*(1)",
-        2: "BTagsSF[2]*(1)",
-        3: "BTagsSF[3]*(1)",
+        0: "BTagsProbSF[0]*(1)",
+        1: "BTagsProbSF[1]*(1)",
+        2: "BTagsProbSF[2]*(1)",
+        3: "BTagsProbSF[3]*(1)",
+        4: "BTagsProbSF[4]*(1)",
+        5: "BTagsProbSF[5]*(1)",
+        6: "BTagsProbSF[6]*(1)",
+        7: "BTagsProbSF[7]*(1)",
+        8: "BTagsProbSF[8]*(1)",
+        9: "BTagsProbSF[9]*(1)",
         -1:"(1)",
     }
     ## sig and hdp are identical
@@ -1534,25 +1607,30 @@ def getCuts(code, nJetBin=None, bJetBin=None, kinBin=None, trig=None, dphiCut=No
     }
 
     # 0 = sig, 1 = dimuon, 2 = dielectron, 3 = dilepton, 4 = photon, 5 = photonqcd, 6 = ttZ->nunu
-    codeList = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    codeList = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
     if(type(code) is str):
-        codeList = ["sig","zmm","zee","zll","photon","photonqcd","ttz","slm","sle"]
+        codeList = ["sig","zmm","zee","zll","photon","photonqcd","ttz","slm","sle","sig_fast","sl_fast"]
 
     Zcuts = {
         codeList[0]: "@Muons.size()==0&&@Electrons.size()==0&&isoElectronTracks==0&&isoMuonTracks==0&&isoPionTracks==0",
-        codeList[1]: "@Muons.size()==2&&@Electrons.size()==0&&isoElectronTracks==0&&isoPionTracks==0&&(@Photons.size()==0)&&isoMuonTracks==0",
-        codeList[2]: "@Muons.size()==0&&@Electrons.size()==2&&isoMuonTracks==0&&isoPionTracks==0&&(@Photons.size()==0)&&isoElectronTracks==0",
+        # codeList[1]: "@Muons.size()==2&&@Electrons.size()==0&&isoElectronTracks==0&&isoPionTracks==0",  # Troy mod+
+        # codeList[2]: "@Muons.size()==0&&@Electrons.size()==2&&isoMuonTracks==0&&isoPionTracks==0",  # Troy mod+
+        codeList[1]: "@Muons.size()==2&&@Electrons.size()==0&&isoElectronTracks==0&&isoPionTracks==0&&(@Photons.size()==0)&&isoMuonTracks==0",  # Troy mod-
+        codeList[2]: "@Muons.size()==0&&@Electrons.size()==2&&isoMuonTracks==0&&isoPionTracks==0&&(@Photons.size()==0)&&isoElectronTracks==0",  # Troy mod-
         codeList[3]: "((@Muons.size()==2&&@Electrons.size()==0&&isoElectronTracks==0&&isoPionTracks==0)||(@Muons.size()==0&&@Electrons.size()==2&&isoMuonTracks==0&&isoPionTracks==0))",
         #codeList[4]: "(Sum$(Photons.Pt())>=200)&&(@Photons.size()==1)&&@Muons.size()==0&&@Electrons.size()==0&&isoElectronTracks==0&&isoMuonTracks==0&&isoPionTracks==0",
         #codeList[4]: "Sum$(photon_nonPrompt)==0&&Photons[0].Pt()>=200&&Sum$(photon_fullID)==1&&@Muons.size()==0&&@Electrons.size()==0&&isoElectronTracks==0&&isoMuonTracks==0&&isoPionTracks==0",
         # codeList[4]: "Sum$(photon_nonPrompt)==0&&Photons[0].Pt()>=200&&Sum$(photon_fullID)==1&&@Muons.size()==0&&@Electrons.size()==0&&isoElectronTracks==0&&isoMuonTracks==0&&isoPionTracks==0",
         # codeList[5]: "Sum$(photon_nonPrompt)==1&&Photons[0].Pt()>=200&&Sum$(photon_fullID)==1&&@Muons.size()==0&&@Electrons.size()==0&&isoElectronTracks==0&&isoMuonTracks==0&&isoPionTracks==0",
         codeList[4]: "Sum$(Photons_nonPrompt)==0&&Sum$(Photons_fullID)==1&&(@Photons.size()==1)&&@Muons.size()==0&&@Electrons.size()==0&&isoElectronTracks==0&&isoMuonTracks==0&&isoPionTracks==0",
-        codeList[5]: "Sum$(Photons_nonPrompt)!=0&&Photons[0].Pt()>=200&&@Muons.size()==0&&@Electrons.size()==0&&isoElectronTracks==0&&isoMuonTracks==0&&isoPionTracks==0",
+        codeList[5]: "Sum$(Photons_nonPrompt)!=0&&@Muons.size()==0&&@Electrons.size()==0&&isoElectronTracks==0&&isoMuonTracks==0&&isoPionTracks==0",  # Troy mod+
+        # codeList[5]: "Sum$(Photons_nonPrompt)!=0&&Photons[0].Pt()>=200&&@Muons.size()==0&&@Electrons.size()==0&&isoElectronTracks==0&&isoMuonTracks==0&&isoPionTracks==0",  # Troy mod-
         codeList[6]: "@Muons.size()==0&&@Electrons.size()==0&&isoElectronTracks==0&&isoMuonTracks==0&&isoPionTracks==0&&(@GenMuons.size()==0&&@GenElectrons.size()==0&&@GenTaus.size()==0)",
         codeList[7]: "@Muons.size()==1&&@Electrons.size()==0&&isoElectronTracks==0&&isoPionTracks==0",
         codeList[8]: "@Muons.size()==0&&@Electrons.size()==1&&isoMuonTracks==0&&isoPionTracks==0",
+        codeList[9]: "@Muons.size()==0&&@Electrons.size()==0&&isoElectronTracks==0&&isoMuonTracks==0&&isoPionTracks==0",
+        codeList[10]: "((@Muons.size()==0&&@Electrons.size()==1&&isoMuonTracks==0&&isoPionTracks==0)||(@Muons.size()==1&&@Electrons.size()==0&&isoElectronTracks==0&&isoPionTracks==0))",
     }
 
     # define other cuts
@@ -1571,15 +1649,28 @@ def getCuts(code, nJetBin=None, bJetBin=None, kinBin=None, trig=None, dphiCut=No
     #commonCuts = "(JetID==1&&CSCTightHaloFilter==1&&globalTightHalo2016Filter && HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && eeBadScFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && BadChargedCandidateFilter && NVtx > 0)"
     #commonCuts = "(JetID==1)"
 
-#(Data.globalTightHalo2016Filter==1 && Data.HBHENoiseFilter==1 && Data.HBHEIsoNoiseFilter==1 && Data.eeBadScFilter==1 && Data.EcalDeadCellTriggerPrimitiveFilter==1 && Data.BadChargedCandidateFilter && Data.BadPFMuonFilter && Data.JetID && Data.NVtx > 0
+    commonCuts = ""
 
     if(trig==-1):
         commonCuts = "JetID==1 && HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && eeBadScFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && NVtx > 0"
+    #     if code=='sig_fast':
+    #         commonCuts = "NVtx > 0"
+    #     #commonCuts = "globalTightHalo2016Filter==1 && HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && eeBadScFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && BadChargedCandidateFilter && BadPFMuonFilter && NVtx > 0"
     else:
         commonCuts = "JetID==1 && globalTightHalo2016Filter==1 && HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && eeBadScFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && BadChargedCandidateFilter && BadPFMuonFilter && NVtx > 0"
 
-    if(code=='photon' and trig==-1):
-        cuts += "madMinPhotonDeltaR>=0.4"
+    # if(trig==-1):
+    #     commonCuts = "NVtx > 0 && (HT5/HT)<2."
+    # else:
+    #     commonCuts = "globalTightHalo2016Filter==1 && HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && eeBadScFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && BadChargedCandidateFilter && BadPFMuonFilter && NVtx > 0 && (HT5/HT)<2."
+
+    # commonCuts = "globalTightHalo2016Filter==1 && HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && eeBadScFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && BadChargedCandidateFilter && BadPFMuonFilter && NVtx > 0"
+
+    # commonCuts = "(JetID==1&& HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && eeBadScFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && BadChargedCandidateFilter && NVtx > 0 && PFCaloMETRatio < 5)"
+    # commonCuts = "(JetID==1&& HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && BadChargedCandidateFilter && NVtx > 0 && BadPFMuonFilter && PFCaloMETRatio < 5)"
+
+    # if(code=='photon' and trig==-1 and applyMinDeltaRCut==True):
+    #     cuts += "madMinPhotonDeltaR>=0.4"
         
 
     trigCuts = ""
@@ -1600,18 +1691,16 @@ def getCuts(code, nJetBin=None, bJetBin=None, kinBin=None, trig=None, dphiCut=No
     #####################################################################
     # add up cuts
     #####################################################################
-    if(extraCuts!=None):
-        cuts+=extraCuts
     if(applyHTCut==True):
         cuts+="HT>=300"
     else:
-        cuts+="HT>=250"
+        cuts+="HT>=300"
     if(applyMHTCut==True):
         cuts+="MHT>=300"
     else:
-        cuts+="MHT>=250"
+        cuts+="MHT>=300"
     if(applyNJetsCut==True):
-        cuts+="NJets>=3"
+        cuts+="NJets>=2"
     else:
         cuts+="NJets>=2"
 
@@ -1627,11 +1716,22 @@ def getCuts(code, nJetBin=None, bJetBin=None, kinBin=None, trig=None, dphiCut=No
         cuts*=bJetCutsSF[bJetBin]
     else:
         cuts+=bJetCuts[bJetBin]
+
+    if(noCuts==True):
+        cuts = ROOT.TCut("")
+    if(extraCuts!=None):
+        cuts+=extraCuts
     if(applyPuWeight):
         cuts*="puWeight*(1)"
+    if(applyISRWeight):
+        cuts*="ISR"
     if(type(extraWeight) is str):
+        ROOT.v5.TFormula.SetMaxima(100000,1000,1000)
         extraWeight+='*(1)'
         cuts*=extraWeight
+    # if(trig==-1):
+    #     cuts*="Weight*1000.*35.9"
+
     #####################################################################
     # end add up cuts
     #####################################################################
@@ -1640,58 +1740,180 @@ def getCuts(code, nJetBin=None, bJetBin=None, kinBin=None, trig=None, dphiCut=No
 
     return cuts
 
+def getHF(hist, index, doError=False):
+    
+    if doError:
+        return hist.GetBinError(index)
+    else:
+        return hist.GetBinContent(index)
+
 # use for double ratio
 # scales yields by efficiency 
 # but does not add in the uncertainty
-def getEffWeights(sample):
+def getEffWeights(sample, doEffError=None):
     effWeights = ""
     
+    effMap = range(4,14)+range(17,27)+range(30,40)+range(43,53)+range(56,66)+range(69,79)+range(82,92)+range(95,105)+range(108,118)+range(121,131)+range(134,144)+range(146,154)+range(156,164)+range(166,174)+range(176,184)+range(186,194)+range(196,204)+range(206,214)+range(216,224)
+
     effFile = ROOT.TFile.Open("../plots/histograms/effHists.root", "read")
     effFileSFm = ROOT.TFile.Open("../plots/histograms/SFcorrections.Muons.root", "read")
     effFileSFe = ROOT.TFile.Open("../plots/histograms/SFcorrections.Electrons.root", "read")
     effFileSFg = ROOT.TFile.Open("../plots/histograms/SFcorrections.Photons.root", "read")
+    #effFileFrag = ROOT.TFile.Open("../plots/histograms/fragmentation.09122016.root", "read")
+    # effFileFrag = ROOT.TFile.Open("../plots/histograms/fragmentation.11022017.root", "read")
     effFileFrag = ROOT.TFile.Open("../plots/histograms/fragmentation.root", "read")
+    # effFileSL = ROOT.TFile.Open("../plots/histograms/aveWeight.root", "read")
+    # effFileSimon = ROOT.TFile.Open("../plots/histograms/LLPrediction.root", "read")
+    # effFileSimonQCD = ROOT.TFile.Open("../plots/histograms/LLPrediction_QCD_LDP.root", "read")
 
-    if(sample=='zmm'):
+    # if ('sle' in sample or 'slm' in sample):
+    #     ROOT.v5.TFormula.SetMaxima(10000,1000,1000)
+
+    #     codeIndex = 0
+    #     if 'topW' in sample:
+    #         codeIndex=1
+    #     code1 = ['_data','_MC']
+    #     code2 = ['', '_MC']
+    #     totalPred_LL_MC = effFileSL.Get("totalPred_LL"+code1[codeIndex])
+    #     totalPred_LL_MC_QCD = effFileSL.Get("totalPred_LL"+code1[codeIndex]+"_QCD")
+    #     if doEffError=='isoTrkUp':
+    #         totalPred_LL_MC = effFileSimon.Get("Prediction"+code1[codeIndex]+"/totalPredIsoTrackSysUp_LL"+code2[codeIndex])
+    #         totalPred_LL_MC_QCD = effFileSimonQCD.Get("Prediction"+code1[codeIndex]+"/totalPredIsoTrackSysUp_LL"+code2[codeIndex])
+    #     if doEffError=='isoTrkDn':
+    #         totalPred_LL_MC = effFileSimon.Get("Prediction"+code1[codeIndex]+"/totalPredIsoTrackSysDown_LL"+code2[codeIndex])
+    #         totalPred_LL_MC_QCD = effFileSimonQCD.Get("Prediction"+code1[codeIndex]+"/totalPredIsoTrackSysDown_LL"+code2[codeIndex])
+
+    #     if doEffError=='MTWUp':
+    #         totalPred_LL_MC = effFileSimon.Get("Prediction"+code1[codeIndex]+"/totalPredMTWSysUp_LL"+code2[codeIndex])
+    #         totalPred_LL_MC_QCD = effFileSimonQCD.Get("Prediction"+code1[codeIndex]+"/totalPredMTWSysUp_LL"+code2[codeIndex])
+    #     if doEffError=='MTWDn':
+    #         totalPred_LL_MC = effFileSimon.Get("Prediction"+code1[codeIndex]+"/totalPredMTWSysDown_LL"+code2[codeIndex])
+    #         totalPred_LL_MC_QCD = effFileSimonQCD.Get("Prediction"+code1[codeIndex]+"/totalPredMTWSysDown_LL"+code2[codeIndex])
+
+    #     if doEffError=='PurityUp':
+    #         totalPred_LL_MC = effFileSimon.Get("Prediction"+code1[codeIndex]+"/totalPredPuritySysUp_LL"+code2[codeIndex])
+    #         totalPred_LL_MC_QCD = effFileSimonQCD.Get("Prediction"+code1[codeIndex]+"/totalPredPuritySysUp_LL"+code2[codeIndex])
+    #     if doEffError=='PurityDn':
+    #         totalPred_LL_MC = effFileSimon.Get("Prediction"+code1[codeIndex]+"/totalPredPuritySysDown_LL"+code2[codeIndex])
+    #         totalPred_LL_MC_QCD = effFileSimonQCD.Get("Prediction"+code1[codeIndex]+"/totalPredPuritySysDown_LL"+code2[codeIndex])
+
+    #     if doEffError=='MuIsoUp':
+    #         totalPred_LL_MC = effFileSimon.Get("Prediction"+code1[codeIndex]+"/totalPredMuIsoSysUp_LL"+code2[codeIndex])
+    #         totalPred_LL_MC_QCD = effFileSimonQCD.Get("Prediction"+code1[codeIndex]+"/totalPredMuIsoSysUp_LL"+code2[codeIndex])
+    #     if doEffError=='MuIsoDn':
+    #         totalPred_LL_MC = effFileSimon.Get("Prediction"+code1[codeIndex]+"/totalPredMuIsoSysDown_LL"+code2[codeIndex])
+    #         totalPred_LL_MC_QCD = effFileSimonQCD.Get("Prediction"+code1[codeIndex]+"/totalPredMuIsoSysDown_LL"+code2[codeIndex])
+
+    #     if doEffError=='ElecIsoUp':
+    #         totalPred_LL_MC = effFileSimon.Get("Prediction"+code1[codeIndex]+"/totalPredElecIsoSysUp_LL"+code2[codeIndex])
+    #         totalPred_LL_MC_QCD = effFileSimonQCD.Get("Prediction"+code1[codeIndex]+"/totalPredElecIsoSysUp_LL"+code2[codeIndex])
+    #     if doEffError=='ElecIsoDn':
+    #         totalPred_LL_MC = effFileSimon.Get("Prediction"+code1[codeIndex]+"/totalPredElecIsoSysDown_LL"+code2[codeIndex])
+    #         totalPred_LL_MC_QCD = effFileSimonQCD.Get("Prediction"+code1[codeIndex]+"/totalPredElecIsoSysDown_LL"+code2[codeIndex])
+
+    #     if doEffError=='MuRecoUp':
+    #         totalPred_LL_MC = effFileSimon.Get("Prediction"+code1[codeIndex]+"/totalPredMuRecoSysUp_LL"+code2[codeIndex])
+    #         totalPred_LL_MC_QCD = effFileSimonQCD.Get("Prediction"+code1[codeIndex]+"/totalPredMuRecoSysUp_LL"+code2[codeIndex])
+    #     if doEffError=='MuRecoDn':
+    #         totalPred_LL_MC = effFileSimon.Get("Prediction"+code1[codeIndex]+"/totalPredMuRecoSysDown_LL"+code2[codeIndex])
+    #         totalPred_LL_MC_QCD = effFileSimonQCD.Get("Prediction"+code1[codeIndex]+"/totalPredMuRecoSysDown_LL"+code2[codeIndex])
+
+    #     if doEffError=='ElecRecoUp':
+    #         totalPred_LL_MC = effFileSimon.Get("Prediction"+code1[codeIndex]+"/totalPredElecRecoSysUp_LL"+code2[codeIndex])
+    #         totalPred_LL_MC_QCD = effFileSimonQCD.Get("Prediction"+code1[codeIndex]+"/totalPredElecRecoSysUp_LL"+code2[codeIndex])
+    #     if doEffError=='ElecRecoDn':
+    #         totalPred_LL_MC = effFileSimon.Get("Prediction"+code1[codeIndex]+"/totalPredElecRecoSysDown_LL"+code2[codeIndex])
+    #         totalPred_LL_MC_QCD = effFileSimonQCD.Get("Prediction"+code1[codeIndex]+"/totalPredElecRecoSysDown_LL"+code2[codeIndex])
+
+    #     if doEffError=='DiLepContributionUp':
+    #         totalPred_LL_MC = effFileSimon.Get("Prediction"+code1[codeIndex]+"/totalPredDiLepContributionSysUp_LL"+code2[codeIndex])
+    #         totalPred_LL_MC_QCD = effFileSimonQCD.Get("Prediction"+code1[codeIndex]+"/totalPredDiLepContributionSysUp_LL"+code2[codeIndex])
+    #     if doEffError=='DiLepContributionDn':
+    #         totalPred_LL_MC = effFileSimon.Get("Prediction"+code1[codeIndex]+"/totalPredDiLepContributionSysDown_LL"+code2[codeIndex])
+    #         totalPred_LL_MC_QCD = effFileSimonQCD.Get("Prediction"+code1[codeIndex]+"/totalPredDiLepContributionSysDown_LL"+code2[codeIndex])
+
+
+    #     if doEffError=='LepAccUp':
+    #         totalPred_LL_MC = effFileSimon.Get("Prediction"+code1[codeIndex]+"/totalPredLepAccSysUp_LL"+code2[codeIndex])
+    #         totalPred_LL_MC_QCD = effFileSimonQCD.Get("Prediction"+code1[codeIndex]+"/totalPredLepAccSysUp_LL"+code2[codeIndex])
+    #     if doEffError=='LepAccDn':
+    #         totalPred_LL_MC = effFileSimon.Get("Prediction"+code1[codeIndex]+"/totalPredLepAccSysDown_LL"+code2[codeIndex])
+    #         totalPred_LL_MC_QCD = effFileSimonQCD.Get("Prediction"+code1[codeIndex]+"/totalPredLepAccSysDown_LL"+code2[codeIndex])
+
+
+    #     effWeights='( (DeltaPhi1>0.5&&DeltaPhi2>0.5&&DeltaPhi3>0.3&&DeltaPhi4>0.3)*('
+    #     for binIter in range(1,175):
+    #         effWeights+='(RA2bin=='+str(binIter)+')*'+str(totalPred_LL_MC.GetBinContent(binIter))+'+'
+    #     effWeights=effWeights[:-1]
+    #     effWeights+=')+(DeltaPhi1<0.5||DeltaPhi2<0.5||DeltaPhi3<0.3||DeltaPhi4<0.3)*('
+    #     for binIter in range(1,175):
+    #         effWeights+='(RA2bin=='+str(binIter)+')*'+str(totalPred_LL_MC_QCD.GetBinContent(effMap[binIter-1]))+'+'
+    #     effWeights=effWeights[:-1]
+    #     effWeights+='))'
+
+    # if('fast' in sample):
+    #     sigEffs = [1.0, 1.0, 1.0, 1.00] ## MHT 250,300,350,500+
+    #     effWeights = "(0.99)*((MHT<300)*"+str(sigEffs[0])+"+(MHT>=300&&MHT<350)*"+str(sigEffs[1])+"+(MHT>=350&&MHT<500)*"+str(sigEffs[2])+"+(MHT>=500)*"+str(sigEffs[3])+")"
+
+    if('zmm' in sample):
         h_pur_m = effFile.Get("h_pur_m")
-        effWeights="((NJets==2)*((BTags==0)*"+str(h_pur_m.GetBinContent(1))+"+(BTags==1)*"+str(h_pur_m.GetBinContent(2))+"+(BTags==2)*"+str(h_pur_m.GetBinContent(3))+")+(NJets>=3&&NJets<=4)*((BTags==0)*"+str(h_pur_m.GetBinContent(4))+"+(BTags==1)*"+str(h_pur_m.GetBinContent(5))+"+(BTags==2)*"+str(h_pur_m.GetBinContent(6))+"+(BTags>=3)*"+str(h_pur_m.GetBinContent(7))+")+(NJets>=5&&NJets<=6)*((BTags==0)*"+str(h_pur_m.GetBinContent(8))+"+(BTags==1)*"+str(h_pur_m.GetBinContent(9))+"+(BTags==2)*"+str(h_pur_m.GetBinContent(10))+"+(BTags>=3)*"+str(h_pur_m.GetBinContent(11))+")+(NJets>=7&&NJets<=8)*((BTags==0)*"+str(h_pur_m.GetBinContent(12))+"+(BTags==1)*"+str(h_pur_m.GetBinContent(13))+"+(BTags==2)*"+str(h_pur_m.GetBinContent(14))+"+(BTags>=3)*"+str(h_pur_m.GetBinContent(15))+")+(NJets>=9)*((BTags==0)*"+str(h_pur_m.GetBinContent(16))+"+(BTags==1)*"+str(h_pur_m.GetBinContent(17))+"+(BTags==2)*"+str(h_pur_m.GetBinContent(18))+"+(BTags>=3)*"+str(h_pur_m.GetBinContent(19))+"))"
-    if(sample=='zee'):
+        effWeights="((NJets==2)*((BTags==0)*"+str(getHF(h_pur_m,1,doEffError))+"+(BTags==1)*"+str(getHF(h_pur_m,2,doEffError))+"+(BTags==2)*"+str(getHF(h_pur_m,3,doEffError))+")+(NJets>=3&&NJets<=4)*((BTags==0)*"+str(getHF(h_pur_m,4,doEffError))+"+(BTags==1)*"+str(getHF(h_pur_m,5,doEffError))+"+(BTags==2)*"+str(getHF(h_pur_m,6,doEffError))+"+(BTags>=3)*"+str(getHF(h_pur_m,7,doEffError))+")+(NJets>=5&&NJets<=6)*((BTags==0)*"+str(getHF(h_pur_m,8,doEffError))+"+(BTags==1)*"+str(getHF(h_pur_m,9,doEffError))+"+(BTags==2)*"+str(getHF(h_pur_m,10,doEffError))+"+(BTags>=3)*"+str(getHF(h_pur_m,11,doEffError))+")+(NJets>=7&&NJets<=8)*((BTags==0)*"+str(getHF(h_pur_m,12,doEffError))+"+(BTags==1)*"+str(getHF(h_pur_m,13,doEffError))+"+(BTags==2)*"+str(getHF(h_pur_m,14,doEffError))+"+(BTags>=3)*"+str(getHF(h_pur_m,15,doEffError))+")+(NJets>=9)*((BTags==0)*"+str(getHF(h_pur_m,16,doEffError))+"+(BTags==1)*"+str(getHF(h_pur_m,17,doEffError))+"+(BTags==2)*"+str(getHF(h_pur_m,18,doEffError))+"+(BTags>=3)*"+str(getHF(h_pur_m,19,doEffError))+"))"
+    if('zee' in sample):
         h_pur_e = effFile.Get("h_pur_e")
-        effWeights="((NJets==2)*((BTags==0)*"+str(h_pur_e.GetBinContent(1))+"+(BTags==1)*"+str(h_pur_e.GetBinContent(2))+"+(BTags==2)*"+str(h_pur_e.GetBinContent(3))+")+(NJets>=3&&NJets<=4)*((BTags==0)*"+str(h_pur_e.GetBinContent(4))+"+(BTags==1)*"+str(h_pur_e.GetBinContent(5))+"+(BTags==2)*"+str(h_pur_e.GetBinContent(6))+"+(BTags>=3)*"+str(h_pur_e.GetBinContent(7))+")+(NJets>=5&&NJets<=6)*((BTags==0)*"+str(h_pur_e.GetBinContent(8))+"+(BTags==1)*"+str(h_pur_e.GetBinContent(9))+"+(BTags==2)*"+str(h_pur_e.GetBinContent(10))+"+(BTags>=3)*"+str(h_pur_e.GetBinContent(11))+")+(NJets>=7&&NJets<=8)*((BTags==0)*"+str(h_pur_e.GetBinContent(12))+"+(BTags==1)*"+str(h_pur_e.GetBinContent(13))+"+(BTags==2)*"+str(h_pur_e.GetBinContent(14))+"+(BTags>=3)*"+str(h_pur_e.GetBinContent(15))+")+(NJets>=9)*((BTags==0)*"+str(h_pur_e.GetBinContent(16))+"+(BTags==1)*"+str(h_pur_e.GetBinContent(17))+"+(BTags==2)*"+str(h_pur_e.GetBinContent(18))+"+(BTags>=3)*"+str(h_pur_e.GetBinContent(19))+"))"
-    if(sample=='zll'):
+        effWeights="((NJets==2)*((BTags==0)*"+str(getHF(h_pur_e,1,doEffError))+"+(BTags==1)*"+str(getHF(h_pur_e,2,doEffError))+"+(BTags==2)*"+str(getHF(h_pur_e,3,doEffError))+")+(NJets>=3&&NJets<=4)*((BTags==0)*"+str(getHF(h_pur_e,4,doEffError))+"+(BTags==1)*"+str(getHF(h_pur_e,5,doEffError))+"+(BTags==2)*"+str(getHF(h_pur_e,6,doEffError))+"+(BTags>=3)*"+str(getHF(h_pur_e,7,doEffError))+")+(NJets>=5&&NJets<=6)*((BTags==0)*"+str(getHF(h_pur_e,8,doEffError))+"+(BTags==1)*"+str(getHF(h_pur_e,9,doEffError))+"+(BTags==2)*"+str(getHF(h_pur_e,10,doEffError))+"+(BTags>=3)*"+str(getHF(h_pur_e,11,doEffError))+")+(NJets>=7&&NJets<=8)*((BTags==0)*"+str(getHF(h_pur_e,12,doEffError))+"+(BTags==1)*"+str(getHF(h_pur_e,13,doEffError))+"+(BTags==2)*"+str(getHF(h_pur_e,14,doEffError))+"+(BTags>=3)*"+str(getHF(h_pur_e,15,doEffError))+")+(NJets>=9)*((BTags==0)*"+str(getHF(h_pur_e,16,doEffError))+"+(BTags==1)*"+str(getHF(h_pur_e,17,doEffError))+"+(BTags==2)*"+str(getHF(h_pur_e,18,doEffError))+"+(BTags>=3)*"+str(getHF(h_pur_e,19,doEffError))+"))"
+    if('zll' in sample):
         h_pur_m = effFile.Get("h_pur_m")
-        effWeights="((NJets==2)*((BTags==0)*"+str(h_pur_m.GetBinContent(1))+"+(BTags==1)*"+str(h_pur_m.GetBinContent(2))+"+(BTags==2)*"+str(h_pur_m.GetBinContent(3))+")+(NJets>=3&&NJets<=4)*((BTags==0)*"+str(h_pur_m.GetBinContent(4))+"+(BTags==1)*"+str(h_pur_m.GetBinContent(5))+"+(BTags==2)*"+str(h_pur_m.GetBinContent(6))+"+(BTags>=3)*"+str(h_pur_m.GetBinContent(7))+")+(NJets>=5&&NJets<=6)*((BTags==0)*"+str(h_pur_m.GetBinContent(8))+"+(BTags==1)*"+str(h_pur_m.GetBinContent(9))+"+(BTags==2)*"+str(h_pur_m.GetBinContent(10))+"+(BTags>=3)*"+str(h_pur_m.GetBinContent(11))+")+(NJets>=7&&NJets<=8)*((BTags==0)*"+str(h_pur_m.GetBinContent(12))+"+(BTags==1)*"+str(h_pur_m.GetBinContent(13))+"+(BTags==2)*"+str(h_pur_m.GetBinContent(14))+"+(BTags>=3)*"+str(h_pur_m.GetBinContent(15))+")+(NJets>=9)*((BTags==0)*"+str(h_pur_m.GetBinContent(16))+"+(BTags==1)*"+str(h_pur_m.GetBinContent(17))+"+(BTags==2)*"+str(h_pur_m.GetBinContent(18))+"+(BTags>=3)*"+str(h_pur_m.GetBinContent(19))+"))"
-    if(sample=='photon'):
+        effWeights="((NJets==2)*((BTags==0)*"+str(getHF(h_pur_m,1,doEffError))+"+(BTags==1)*"+str(getHF(h_pur_m,2,doEffError))+"+(BTags==2)*"+str(getHF(h_pur_m,3,doEffError))+")+(NJets>=3&&NJets<=4)*((BTags==0)*"+str(getHF(h_pur_m,4,doEffError))+"+(BTags==1)*"+str(getHF(h_pur_m,5,doEffError))+"+(BTags==2)*"+str(getHF(h_pur_m,6,doEffError))+"+(BTags>=3)*"+str(getHF(h_pur_m,7,doEffError))+")+(NJets>=5&&NJets<=6)*((BTags==0)*"+str(getHF(h_pur_m,8,doEffError))+"+(BTags==1)*"+str(getHF(h_pur_m,9,doEffError))+"+(BTags==2)*"+str(getHF(h_pur_m,10,doEffError))+"+(BTags>=3)*"+str(getHF(h_pur_m,11,doEffError))+")+(NJets>=7&&NJets<=8)*((BTags==0)*"+str(getHF(h_pur_m,12,doEffError))+"+(BTags==1)*"+str(getHF(h_pur_m,13,doEffError))+"+(BTags==2)*"+str(getHF(h_pur_m,14,doEffError))+"+(BTags>=3)*"+str(getHF(h_pur_m,15,doEffError))+")+(NJets>=9)*((BTags==0)*"+str(getHF(h_pur_m,16,doEffError))+"+(BTags==1)*"+str(getHF(h_pur_m,17,doEffError))+"+(BTags==2)*"+str(getHF(h_pur_m,18,doEffError))+"+(BTags>=3)*"+str(getHF(h_pur_m,19,doEffError))+"))"
+    if('photon' in sample):
         ROOT.v5.TFormula.SetMaxima(10000,1000,1000)
         h_pur_eb = effFile.Get("h_pur_eb")
         h_pur_ec = effFile.Get("h_pur_ec")
-        g_frag = effFileFrag.Get("bin46_intHT_f")
+        g_frag = effFileFrag.Get("bin46_NJets789")
         fragVector = g_frag.GetY()
-        effWeights = "((NJets==2)*((HT>=300&&HT<500&&MHT>=300&&MHT<350)*"+str(fragVector[0])+"+(HT>=500&&HT<1000&&MHT>=300&&MHT<350)*"+str(fragVector[1])+"+(HT>=1000&&MHT>=300&&MHT<350)*"+str(fragVector[2])+"+(HT>=350&&HT<500&&MHT>=350&&MHT<500)*"+str(fragVector[3])+"+(HT>=500&&HT<1000&&MHT>=350&&MHT<500)*"+str(fragVector[4])+"+(HT>=1000&&MHT>=350&&MHT<500)*"+str(fragVector[5])+"+(HT>=500&&HT<1000&&MHT>=500&&MHT<750)*"+str(fragVector[6])+"+(HT>=1000&&MHT>=500&&MHT<750)*"+str(fragVector[7])+"+(HT>=750&&HT<1500&&MHT>=750)*"+str(fragVector[8])+"+(HT>=1500&&MHT>=750)*"+str(fragVector[9])+")+(NJets>=3&&NJets<=4)*((HT>=300&&HT<500&&MHT>=300&&MHT<350)*"+str(fragVector[10])+"+(HT>=500&&HT<1000&&MHT>=300&&MHT<350)*"+str(fragVector[11])+"+(HT>=1000&&MHT>=300&&MHT<350)*"+str(fragVector[12])+"+(HT>=350&&HT<500&&MHT>=350&&MHT<500)*"+str(fragVector[13])+"+(HT>=500&&HT<1000&&MHT>=350&&MHT<500)*"+str(fragVector[14])+"+(HT>=1000&&MHT>=350&&MHT<500)*"+str(fragVector[15])+"+(HT>=500&&HT<1000&&MHT>=500&&MHT<750)*"+str(fragVector[16])+"+(HT>=1000&&MHT>=500&&MHT<750)*"+str(fragVector[17])+"+(HT>=750&&HT<1500&&MHT>=750)*"+str(fragVector[18])+"+(HT>=1500&&MHT>=750)*"+str(fragVector[19])+")+(NJets>=5&&NJets<=6)*((HT>=300&&HT<500&&MHT>=300&&MHT<350)*"+str(fragVector[20])+"+(HT>=500&&HT<1000&&MHT>=300&&MHT<350)*"+str(fragVector[21])+"+(HT>=1000&&MHT>=300&&MHT<350)*"+str(fragVector[22])+"+(HT>=350&&HT<500&&MHT>=350&&MHT<500)*"+str(fragVector[23])+"+(HT>=500&&HT<1000&&MHT>=350&&MHT<500)*"+str(fragVector[24])+"+(HT>=1000&&MHT>=350&&MHT<500)*"+str(fragVector[25])+"+(HT>=500&&HT<1000&&MHT>=500&&MHT<750)*"+str(fragVector[26])+"+(HT>=1000&&MHT>=500&&MHT<750)*"+str(fragVector[27])+"+(HT>=750&&HT<1500&&MHT>=750)*"+str(fragVector[28])+"+(HT>=1500&&MHT>=750)*"+str(fragVector[29])+")+(NJets>=7&&NJets<=8)*((HT>=300&&HT<500&&MHT>=300&&MHT<350)*"+str(fragVector[30])+"+(HT>=500&&HT<1000&&MHT>=300&&MHT<350)*"+str(fragVector[30])+"+(HT>=1000&&MHT>=300&&MHT<350)*"+str(fragVector[31])+"+(HT>=350&&HT<500&&MHT>=350&&MHT<500)*"+str(fragVector[32])+"+(HT>=500&&HT<1000&&MHT>=350&&MHT<500)*"+str(fragVector[32])+"+(HT>=1000&&MHT>=350&&MHT<500)*"+str(fragVector[33])+"+(HT>=500&&HT<1000&&MHT>=500&&MHT<750)*"+str(fragVector[34])+"+(HT>=1000&&MHT>=500&&MHT<750)*"+str(fragVector[35])+"+(HT>=750&&HT<1500&&MHT>=750)*"+str(fragVector[36])+"+(HT>=1500&&MHT>=750)*"+str(fragVector[37])+")+(NJets>=9)*((HT>=300&&HT<500&&MHT>=300&&MHT<350)*"+str(fragVector[38])+"+(HT>=500&&HT<1000&&MHT>=300&&MHT<350)*"+str(fragVector[38])+"+(HT>=1000&&MHT>=300&&MHT<350)*"+str(fragVector[39])+"+(HT>=350&&HT<500&&MHT>=350&&MHT<500)*"+str(fragVector[40])+"+(HT>=500&&HT<1000&&MHT>=350&&MHT<500)*"+str(fragVector[40])+"+(HT>=1000&&MHT>=350&&MHT<500)*"+str(fragVector[41])+"+(HT>=500&&HT<1000&&MHT>=500&&MHT<750)*"+str(fragVector[42])+"+(HT>=1000&&MHT>=500&&MHT<750)*"+str(fragVector[43])+"+(HT>=750&&HT<1500&&MHT>=750)*"+str(fragVector[44])+"+(HT>=1500&&MHT>=750)*"+str(fragVector[45])+"))*( (Photons_isEB==1)*((MHT<225)*"+str(h_pur_eb.GetBinContent(1))+"+(MHT>=225&&MHT<250)*"+str(h_pur_eb.GetBinContent(2))+"+(MHT>=250&&MHT<300)*"+str(h_pur_eb.GetBinContent(3))+"+(MHT>=300&&MHT<350)*"+str(h_pur_eb.GetBinContent(4))+"+(MHT>=350&&MHT<=500)*"+str(h_pur_eb.GetBinContent(5))+"+(MHT>=500)*"+str(h_pur_eb.GetBinContent(6))+") + (Photons_isEB==0)*((MHT<225)*"+str(h_pur_ec.GetBinContent(1))+"+(MHT>=225&&MHT<250)*"+str(h_pur_ec.GetBinContent(2))+"+(MHT>=250&&MHT<300)*"+str(h_pur_ec.GetBinContent(3))+"+(MHT>=300&&MHT<350)*"+str(h_pur_ec.GetBinContent(4))+"+(MHT>=350&&MHT<=500)*"+str(h_pur_ec.GetBinContent(5))+"+(MHT>=500)*"+str(h_pur_ec.GetBinContent(6))+"))"
-    if(sample=='dymm'):
+        g_fragLDP = effFileFrag.Get("bin59_NJets789")
+        fragVectorLDP = g_fragLDP.GetY()
+        nomBin = 0
+        if("LDP" in sample):
+            for i in range(3,13)+range(16,26)+range(29,39)+range(41,49)+range(51,59):
+                #fragVector[nomBin] = fragVectorLDP[i]
+                fragVector[nomBin] = 0.825
+                nomBin+=1
+        effWeights = "((NJets==2)*((HT<500&&MHT<350)*"+str(fragVector[0])+"+(HT>=500&&HT<1000&&MHT<350)*"+str(fragVector[1])+"+(HT>=1000&&MHT<350)*"+str(fragVector[2])+"+(HT<500&&MHT>=350&&MHT<500)*"+str(fragVector[3])+"+(HT>=500&&HT<1000&&MHT>=350&&MHT<500)*"+str(fragVector[4])+"+(HT>=1000&&MHT>=350&&MHT<500)*"+str(fragVector[5])+"+(HT<1000&&MHT>=500&&MHT<750)*"+str(fragVector[6])+"+(HT>=1000&&MHT>=500&&MHT<750)*"+str(fragVector[7])+"+(HT<1500&&MHT>=750)*"+str(fragVector[8])+"+(HT>=1500&&MHT>=750)*"+str(fragVector[9])+")+(NJets>=3&&NJets<=4)*((HT<500&&MHT<350)*"+str(fragVector[10])+"+(HT>=500&&HT<1000&&MHT<350)*"+str(fragVector[11])+"+(HT>=1000&&MHT<350)*"+str(fragVector[12])+"+(HT<500&&MHT>=350&&MHT<500)*"+str(fragVector[13])+"+(HT>=500&&HT<1000&&MHT>=350&&MHT<500)*"+str(fragVector[14])+"+(HT>=1000&&MHT>=350&&MHT<500)*"+str(fragVector[15])+"+(HT<1000&&MHT>=500&&MHT<750)*"+str(fragVector[16])+"+(HT>=1000&&MHT>=500&&MHT<750)*"+str(fragVector[17])+"+(HT<1500&&MHT>=750)*"+str(fragVector[18])+"+(HT>=1500&&MHT>=750)*"+str(fragVector[19])+")+(NJets>=5&&NJets<=6)*((HT<500&&MHT<350)*"+str(fragVector[20])+"+(HT>=500&&HT<1000&&MHT<350)*"+str(fragVector[21])+"+(HT>=1000&&MHT<350)*"+str(fragVector[22])+"+(HT<500&&MHT>=350&&MHT<500)*"+str(fragVector[23])+"+(HT>=500&&HT<1000&&MHT>=350&&MHT<500)*"+str(fragVector[24])+"+(HT>=1000&&MHT>=350&&MHT<500)*"+str(fragVector[25])+"+(HT<1000&&MHT>=500&&MHT<750)*"+str(fragVector[26])+"+(HT>=1000&&MHT>=500&&MHT<750)*"+str(fragVector[27])+"+(HT<1500&&MHT>=750)*"+str(fragVector[28])+"+(HT>=1500&&MHT>=750)*"+str(fragVector[29])+")+(NJets>=7&&NJets<=8)*((HT<500&&MHT<350)*"+str(fragVector[30])+"+(HT>=500&&HT<1000&&MHT<350)*"+str(fragVector[30])+"+(HT>=1000&&MHT<350)*"+str(fragVector[31])+"+(HT<500&&MHT>=350&&MHT<500)*"+str(fragVector[32])+"+(HT>=500&&HT<1000&&MHT>=350&&MHT<500)*"+str(fragVector[32])+"+(HT>=1000&&MHT>=350&&MHT<500)*"+str(fragVector[33])+"+(HT<1000&&MHT>=500&&MHT<750)*"+str(fragVector[34])+"+(HT>=1000&&MHT>=500&&MHT<750)*"+str(fragVector[35])+"+(HT<1500&&MHT>=750)*"+str(fragVector[36])+"+(HT>=1500&&MHT>=750)*"+str(fragVector[37])+")+(NJets>=9)*((HT<500&&MHT<350)*"+str(fragVector[38])+"+(HT>=500&&HT<1000&&MHT<350)*"+str(fragVector[38])+"+(HT>=1000&&MHT<350)*"+str(fragVector[39])+"+(HT<500&&MHT>=350&&MHT<500)*"+str(fragVector[40])+"+(HT>=500&&HT<1000&&MHT>=350&&MHT<500)*"+str(fragVector[40])+"+(HT>=1000&&MHT>=350&&MHT<500)*"+str(fragVector[41])+"+(HT<1000&&MHT>=500&&MHT<750)*"+str(fragVector[42])+"+(HT>=1000&&MHT>=500&&MHT<750)*"+str(fragVector[43])+"+(HT<1500&&MHT>=750)*"+str(fragVector[44])+"+(HT>=1500&&MHT>=750)*"+str(fragVector[45])+"))*( (Photons_isEB==1)*((MHT<225)*"+str(h_pur_eb.GetBinContent(1))+"+(MHT>=225&&MHT<250)*"+str(h_pur_eb.GetBinContent(2))+"+(MHT>=250&&MHT<300)*"+str(h_pur_eb.GetBinContent(3))+"+(MHT>=300&&MHT<350)*"+str(h_pur_eb.GetBinContent(4))+"+(MHT>=350&&MHT<=500)*"+str(h_pur_eb.GetBinContent(5))+"+(MHT>=500)*"+str(h_pur_eb.GetBinContent(6))+") + (Photons_isEB==0)*((MHT<225)*"+str(h_pur_ec.GetBinContent(1))+"+(MHT>=225&&MHT<250)*"+str(h_pur_ec.GetBinContent(2))+"+(MHT>=250&&MHT<300)*"+str(h_pur_ec.GetBinContent(3))+"+(MHT>=300&&MHT<350)*"+str(h_pur_ec.GetBinContent(4))+"+(MHT>=350&&MHT<=500)*"+str(h_pur_ec.GetBinContent(5))+"+(MHT>=500)*"+str(h_pur_ec.GetBinContent(6))+"))"
+    if('dymm' in sample):
         h_trig_m = effFile.Get("h_trig_m1")
         h_SF_m = effFileSFm.Get("h_MHT")
         effWeights = "("+str(h_trig_m.GetBinContent(1))+")*((MHT<400)*"+str(h_SF_m.GetBinContent(1))+"+(MHT>=400&&MHT<500)*"+str(h_SF_m.GetBinContent(2))+"+(MHT>=500&&MHT<600)*"+str(h_SF_m.GetBinContent(3))+"+(MHT>=600&&MHT<700)*"+str(h_SF_m.GetBinContent(4))+"+(MHT>=700&&MHT<800)*"+str(h_SF_m.GetBinContent(5))+"+(MHT>=800&&MHT<900)*"+str(h_SF_m.GetBinContent(6))+"+(MHT>=900&&MHT<1000)*"+str(h_SF_m.GetBinContent(7))+"+(MHT>=1000&&MHT<1100)*"+str(h_SF_m.GetBinContent(8))+"+(MHT>=1100&&MHT<1200)*"+str(h_SF_m.GetBinContent(9))+"+(MHT>=1200)*"+str(h_SF_m.GetBinContent(10))+")"
-    if(sample=='dyee'):
-        h_trig_e = effFile.Get("h_trig_e1")
+    if('dyee' in sample):
+        h_trig_e = effFile.Get("h_trig_e2")
         h_SF_e = effFileSFe.Get("h_MHT")
-        effWeights = "("+str(h_trig_e.GetBinContent(1))+")*((MHT<400)*"+str(h_SF_e.GetBinContent(1))+"+(MHT>=400&&MHT<500)*"+str(h_SF_e.GetBinContent(2))+"+(MHT>=500&&MHT<600)*"+str(h_SF_e.GetBinContent(3))+"+(MHT>=600&&MHT<700)*"+str(h_SF_e.GetBinContent(4))+"+(MHT>=700&&MHT<800)*"+str(h_SF_e.GetBinContent(5))+"+(MHT>=800&&MHT<900)*"+str(h_SF_e.GetBinContent(6))+"+(MHT>=900&&MHT<1000)*"+str(h_SF_e.GetBinContent(7))+"+(MHT>=1000&&MHT<1100)*"+str(h_SF_e.GetBinContent(8))+"+(MHT>=1100&&MHT<1200)*"+str(h_SF_e.GetBinContent(9))+"+(MHT>=1200)*"+str(h_SF_e.GetBinContent(10))+")"
-    if(sample=='dyll'):
+        effWeights = "((HT<1000)*"+str(h_trig_e.GetBinContent(1))+"+(HT>=1000)*"+str(h_trig_e.GetBinContent(2))+")*((MHT<400)*"+str(h_SF_e.GetBinContent(1))+"+(MHT>=400&&MHT<500)*"+str(h_SF_e.GetBinContent(2))+"+(MHT>=500&&MHT<600)*"+str(h_SF_e.GetBinContent(3))+"+(MHT>=600&&MHT<700)*"+str(h_SF_e.GetBinContent(4))+"+(MHT>=700&&MHT<800)*"+str(h_SF_e.GetBinContent(5))+"+(MHT>=800&&MHT<900)*"+str(h_SF_e.GetBinContent(6))+"+(MHT>=900&&MHT<1000)*"+str(h_SF_e.GetBinContent(7))+"+(MHT>=1000&&MHT<1100)*"+str(h_SF_e.GetBinContent(8))+"+(MHT>=1100&&MHT<1200)*"+str(h_SF_e.GetBinContent(9))+"+(MHT>=1200)*"+str(h_SF_e.GetBinContent(10))+")"
+    if('dyll' in sample):
         h_trig_m = effFile.Get("h_trig_m1")
         h_SF_m = effFileSFm.Get("h_MHT")
         h_trig_e = effFile.Get("h_trig_e1")
         h_SF_e = effFileSFe.Get("h_MHT")
         effWeights = "(("+str(h_trig_m.GetBinContent(1))+")*((MHT<350)*"+str(h_SF_m.GetBinContent(1))+"+(MHT>=350&&MHT<450)*"+str(h_SF_m.GetBinContent(2))+"+(MHT>=450&&MHT<550)*"+str(h_SF_m.GetBinContent(3))+"+(MHT>=550&&MHT<650)*"+str(h_SF_m.GetBinContent(4))+"+(MHT>=650&&MHT<750)*"+str(h_SF_m.GetBinContent(5))+"+(MHT>=750&&MHT<850)*"+str(h_SF_m.GetBinContent(6))+"+(MHT>=850&&MHT<950)*"+str(h_SF_m.GetBinContent(7))+"+(MHT>=950&&MHT<1050)*"+str(h_SF_m.GetBinContent(8))+"+(MHT>=1050&&MHT<1150)*"+str(h_SF_m.GetBinContent(9))+"+(MHT>=1150)*"+str(h_SF_m.GetBinContent(10))+")+("+str(h_trig_e.GetBinContent(1))+")*((MHT<350)*"+str(h_SF_e.GetBinContent(1))+"+(MHT>=350&&MHT<450)*"+str(h_SF_e.GetBinContent(2))+"+(MHT>=450&&MHT<550)*"+str(h_SF_e.GetBinContent(3))+"+(MHT>=550&&MHT<650)*"+str(h_SF_e.GetBinContent(4))+"+(MHT>=650&&MHT<750)*"+str(h_SF_e.GetBinContent(5))+"+(MHT>=750&&MHT<850)*"+str(h_SF_e.GetBinContent(6))+"+(MHT>=850&&MHT<950)*"+str(h_SF_e.GetBinContent(7))+"+(MHT>=950&&MHT<1050)*"+str(h_SF_e.GetBinContent(8))+"+(MHT>=1050&&MHT<1150)*"+str(h_SF_e.GetBinContent(9))+"+(MHT>=1150)*"+str(h_SF_e.GetBinContent(10))+"))"
-    if(sample=='gjets' or sample=='gjetsqcd' or sample=='ttgjets'):
+    if('gjets' in sample):
         #h_SF_g = effFile.Get("h_SF_g1")
         h_SF_g = effFileSFg.Get("h_MHT")
         h_trig_eb = effFile.Get("h_trig_eb")
         h_trig_ec = effFile.Get("h_trig_ec")
-        effWeights = "((MHT<400)*"+str(h_SF_g.GetBinContent(1))+"+(MHT>=400&&MHT<500)*"+str(h_SF_g.GetBinContent(2))+"+(MHT>=500&&MHT<600)*"+str(h_SF_g.GetBinContent(3))+"+(MHT>=600&&MHT<700)*"+str(h_SF_g.GetBinContent(4))+"+(MHT>=700&&MHT<800)*"+str(h_SF_g.GetBinContent(5))+"+(MHT>=800&&MHT<900)*"+str(h_SF_g.GetBinContent(6))+"+(MHT>=900&&MHT<1000)*"+str(h_SF_g.GetBinContent(7))+"+(MHT>=1000&&MHT<1100)*"+str(h_SF_g.GetBinContent(8))+"+(MHT>=1100&&MHT<1200)*"+str(h_SF_g.GetBinContent(9))+"+(MHT>=1200)*"+str(h_SF_g.GetBinContent(10))+")*( (Photons_isEB==1)*((MHT<300)*"+str(h_trig_eb.GetBinContent(1))+"+(MHT>=300&&MHT<350)*"+str(h_trig_eb.GetBinContent(2))+"+(MHT>=350&&MHT<500)*"+str(h_trig_eb.GetBinContent(3))+"+(MHT>=500&&MHT<750)*"+str(h_trig_eb.GetBinContent(4))+"+(MHT>=750)*"+str(h_trig_eb.GetBinContent(5))+")+(Photons_isEB==0)*((MHT<300)*"+str(h_trig_ec.GetBinContent(1))+"+(MHT>=300&&MHT<350)*"+str(h_trig_ec.GetBinContent(2))+"+(MHT>=350&&MHT<500)*"+str(h_trig_ec.GetBinContent(3))+"+(MHT>=500&&MHT<750)*"+str(h_trig_ec.GetBinContent(4))+"+(MHT>=750)*"+str(h_trig_ec.GetBinContent(5))+"))"
+        # for i in range(1,5):
+        #     h_trig_eb.SetBinContent(i,1.)
+        #     h_trig_ec.SetBinContent(i,1.)
+        # for i in range(1,11):
+        #     h_SF_g.SetBinContent(i,1.)
+
+        effWeights = "(((MHT<400)*"+str(h_SF_g.GetBinContent(1))+"+(MHT>=400&&MHT<500)*"+str(h_SF_g.GetBinContent(2))+"+(MHT>=500&&MHT<600)*"+str(h_SF_g.GetBinContent(3))+"+(MHT>=600&&MHT<700)*"+str(h_SF_g.GetBinContent(4))+"+(MHT>=700&&MHT<800)*"+str(h_SF_g.GetBinContent(5))+"+(MHT>=800&&MHT<900)*"+str(h_SF_g.GetBinContent(6))+"+(MHT>=900&&MHT<1000)*"+str(h_SF_g.GetBinContent(7))+"+(MHT>=1000&&MHT<1100)*"+str(h_SF_g.GetBinContent(8))+"+(MHT>=1100&&MHT<1200)*"+str(h_SF_g.GetBinContent(9))+"+(MHT>=1200)*"+str(h_SF_g.GetBinContent(10))+")*( (Photons_isEB==1)*((MHT<300)*"+str(h_trig_eb.GetBinContent(1))+"+(MHT>=300&&MHT<350)*"+str(h_trig_eb.GetBinContent(2))+"+(MHT>=350&&MHT<500)*"+str(h_trig_eb.GetBinContent(3))+"+(MHT>=500&&MHT<750)*"+str(h_trig_eb.GetBinContent(4))+"+(MHT>=750)*"+str(h_trig_eb.GetBinContent(5))+")+(Photons_isEB==0)*((MHT<300)*"+str(h_trig_ec.GetBinContent(1))+"+(MHT>=300&&MHT<350)*"+str(h_trig_ec.GetBinContent(2))+"+(MHT>=350&&MHT<500)*"+str(h_trig_ec.GetBinContent(3))+"+(MHT>=500&&MHT<750)*"+str(h_trig_ec.GetBinContent(4))+"+(MHT>=750)*"+str(h_trig_ec.GetBinContent(5))+"))*(1./(min(HT,900)*0.00009615+0.9071)))"
+        # effWeights = "(((MHT<400)*"+str(h_SF_g.GetBinContent(1))+"+(MHT>=400&&MHT<500)*"+str(h_SF_g.GetBinContent(2))+"+(MHT>=500&&MHT<600)*"+str(h_SF_g.GetBinContent(3))+"+(MHT>=600&&MHT<700)*"+str(h_SF_g.GetBinContent(4))+"+(MHT>=700&&MHT<800)*"+str(h_SF_g.GetBinContent(5))+"+(MHT>=800&&MHT<900)*"+str(h_SF_g.GetBinContent(6))+"+(MHT>=900&&MHT<1000)*"+str(h_SF_g.GetBinContent(7))+"+(MHT>=1000&&MHT<1100)*"+str(h_SF_g.GetBinContent(8))+"+(MHT>=1100&&MHT<1200)*"+str(h_SF_g.GetBinContent(9))+"+(MHT>=1200)*"+str(h_SF_g.GetBinContent(10))+")*( (Photons_isEB==1)*((MHT<300)*"+str(h_trig_eb.GetBinContent(1))+"+(MHT>=300&&MHT<350)*"+str(h_trig_eb.GetBinContent(2))+"+(MHT>=350&&MHT<500)*"+str(h_trig_eb.GetBinContent(3))+"+(MHT>=500&&MHT<750)*"+str(h_trig_eb.GetBinContent(4))+"+(MHT>=750)*"+str(h_trig_eb.GetBinContent(5))+")+(Photons_isEB==0)*((MHT<300)*"+str(h_trig_ec.GetBinContent(1))+"+(MHT>=300&&MHT<350)*"+str(h_trig_ec.GetBinContent(2))+"+(MHT>=350&&MHT<500)*"+str(h_trig_ec.GetBinContent(3))+"+(MHT>=500&&MHT<750)*"+str(h_trig_ec.GetBinContent(4))+"+(MHT>=750)*"+str(h_trig_ec.GetBinContent(5))+"))*((min(HT,900)*0.00009615+0.9071)))"
+        # effWeights = "(((MHT<400)*"+str(h_SF_g.GetBinContent(1))+"+(MHT>=400&&MHT<500)*"+str(h_SF_g.GetBinContent(2))+"+(MHT>=500&&MHT<600)*"+str(h_SF_g.GetBinContent(3))+"+(MHT>=600&&MHT<700)*"+str(h_SF_g.GetBinContent(4))+"+(MHT>=700&&MHT<800)*"+str(h_SF_g.GetBinContent(5))+"+(MHT>=800&&MHT<900)*"+str(h_SF_g.GetBinContent(6))+"+(MHT>=900&&MHT<1000)*"+str(h_SF_g.GetBinContent(7))+"+(MHT>=1000&&MHT<1100)*"+str(h_SF_g.GetBinContent(8))+"+(MHT>=1100&&MHT<1200)*"+str(h_SF_g.GetBinContent(9))+"+(MHT>=1200)*"+str(h_SF_g.GetBinContent(10))+")*( (Photons_isEB==1)*((MHT<300)*"+str(h_trig_eb.GetBinContent(1))+"+(MHT>=300&&MHT<350)*"+str(h_trig_eb.GetBinContent(2))+"+(MHT>=350&&MHT<500)*"+str(h_trig_eb.GetBinContent(3))+"+(MHT>=500&&MHT<750)*"+str(h_trig_eb.GetBinContent(4))+"+(MHT>=750)*"+str(h_trig_eb.GetBinContent(5))+")+(Photons_isEB==0)*((MHT<300)*"+str(h_trig_ec.GetBinContent(1))+"+(MHT>=300&&MHT<350)*"+str(h_trig_ec.GetBinContent(2))+"+(MHT>=350&&MHT<500)*"+str(h_trig_ec.GetBinContent(3))+"+(MHT>=500&&MHT<750)*"+str(h_trig_ec.GetBinContent(4))+"+(MHT>=750)*"+str(h_trig_ec.GetBinContent(5))+"))*(1./(min(HT,900)*0.0001502+0.8939)))"
+        # effWeights = "(((MHT<400)*"+str(h_SF_g.GetBinContent(1))+"+(MHT>=400&&MHT<500)*"+str(h_SF_g.GetBinContent(2))+"+(MHT>=500&&MHT<600)*"+str(h_SF_g.GetBinContent(3))+"+(MHT>=600&&MHT<700)*"+str(h_SF_g.GetBinContent(4))+"+(MHT>=700&&MHT<800)*"+str(h_SF_g.GetBinContent(5))+"+(MHT>=800&&MHT<900)*"+str(h_SF_g.GetBinContent(6))+"+(MHT>=900&&MHT<1000)*"+str(h_SF_g.GetBinContent(7))+"+(MHT>=1000&&MHT<1100)*"+str(h_SF_g.GetBinContent(8))+"+(MHT>=1100&&MHT<1200)*"+str(h_SF_g.GetBinContent(9))+"+(MHT>=1200)*"+str(h_SF_g.GetBinContent(10))+")*( (Photons_isEB==1)*((MHT<300)*"+str(h_trig_eb.GetBinContent(1))+"+(MHT>=300&&MHT<350)*"+str(h_trig_eb.GetBinContent(2))+"+(MHT>=350&&MHT<500)*"+str(h_trig_eb.GetBinContent(3))+"+(MHT>=500&&MHT<750)*"+str(h_trig_eb.GetBinContent(4))+"+(MHT>=750)*"+str(h_trig_eb.GetBinContent(5))+")+(Photons_isEB==0)*((MHT<300)*"+str(h_trig_ec.GetBinContent(1))+"+(MHT>=300&&MHT<350)*"+str(h_trig_ec.GetBinContent(2))+"+(MHT>=350&&MHT<500)*"+str(h_trig_ec.GetBinContent(3))+"+(MHT>=500&&MHT<750)*"+str(h_trig_ec.GetBinContent(4))+"+(MHT>=750)*"+str(h_trig_ec.GetBinContent(5))+"))*(1./((min(HT,900)*0.000147171623458)+0.914129300925)))"
+        # effWeights = "(((MHT<400)*"+str(h_SF_g.GetBinContent(1))+"+(MHT>=400&&MHT<500)*"+str(h_SF_g.GetBinContent(2))+"+(MHT>=500&&MHT<600)*"+str(h_SF_g.GetBinContent(3))+"+(MHT>=600&&MHT<700)*"+str(h_SF_g.GetBinContent(4))+"+(MHT>=700&&MHT<800)*"+str(h_SF_g.GetBinContent(5))+"+(MHT>=800&&MHT<900)*"+str(h_SF_g.GetBinContent(6))+"+(MHT>=900&&MHT<1000)*"+str(h_SF_g.GetBinContent(7))+"+(MHT>=1000&&MHT<1100)*"+str(h_SF_g.GetBinContent(8))+"+(MHT>=1100&&MHT<1200)*"+str(h_SF_g.GetBinContent(9))+"+(MHT>=1200)*"+str(h_SF_g.GetBinContent(10))+")*( (Photons_isEB==1)*((MHT<300)*"+str(h_trig_eb.GetBinContent(1))+"+(MHT>=300&&MHT<350)*"+str(h_trig_eb.GetBinContent(2))+"+(MHT>=350&&MHT<500)*"+str(h_trig_eb.GetBinContent(3))+"+(MHT>=500&&MHT<750)*"+str(h_trig_eb.GetBinContent(4))+"+(MHT>=750)*"+str(h_trig_eb.GetBinContent(5))+")+(Photons_isEB==0)*((MHT<300)*"+str(h_trig_ec.GetBinContent(1))+"+(MHT>=300&&MHT<350)*"+str(h_trig_ec.GetBinContent(2))+"+(MHT>=350&&MHT<500)*"+str(h_trig_ec.GetBinContent(3))+"+(MHT>=500&&MHT<750)*"+str(h_trig_ec.GetBinContent(4))+"+(MHT>=750)*"+str(h_trig_ec.GetBinContent(5))+"))*(1./((NJets*0.0182547537971)+0.934130815067)))"
+        # effWeights = "((MHT<400)*"+str(h_SF_g.GetBinContent(1))+"+(MHT>=400&&MHT<500)*"+str(h_SF_g.GetBinContent(2))+"+(MHT>=500&&MHT<600)*"+str(h_SF_g.GetBinContent(3))+"+(MHT>=600&&MHT<700)*"+str(h_SF_g.GetBinContent(4))+"+(MHT>=700&&MHT<800)*"+str(h_SF_g.GetBinContent(5))+"+(MHT>=800&&MHT<900)*"+str(h_SF_g.GetBinContent(6))+"+(MHT>=900&&MHT<1000)*"+str(h_SF_g.GetBinContent(7))+"+(MHT>=1000&&MHT<1100)*"+str(h_SF_g.GetBinContent(8))+"+(MHT>=1100&&MHT<1200)*"+str(h_SF_g.GetBinContent(9))+"+(MHT>=1200)*"+str(h_SF_g.GetBinContent(10))+")*( (Photons_isEB==1)*((MHT<300)*"+str(h_trig_eb.GetBinContent(1))+"+(MHT>=300&&MHT<350)*"+str(h_trig_eb.GetBinContent(2))+"+(MHT>=350&&MHT<500)*"+str(h_trig_eb.GetBinContent(3))+"+(MHT>=500&&MHT<750)*"+str(h_trig_eb.GetBinContent(4))+"+(MHT>=750)*"+str(h_trig_eb.GetBinContent(5))+")+(Photons_isEB==0)*((MHT<300)*"+str(h_trig_ec.GetBinContent(1))+"+(MHT>=300&&MHT<350)*"+str(h_trig_ec.GetBinContent(2))+"+(MHT>=350&&MHT<500)*"+str(h_trig_ec.GetBinContent(3))+"+(MHT>=500&&MHT<750)*"+str(h_trig_ec.GetBinContent(4))+"+(MHT>=750)*"+str(h_trig_ec.GetBinContent(5))+"))"
 
     return effWeights
 
-def getDist(sample, dist, distRange=None, nBins=None, doVarBinning=None, binning=None, extraCuts=None, nJetBin=None, bJetBin=None, kinBin=None, dphiCut=None, applyMassCut=None, applyPtCut=None, applyHTCut=None, applyMHTCut=None, applyNJetsCut=None, doLumi=None, removeZkfactor=None, doNoisy=None, doProof=None, treeLoc=None, applyEffs=None, treeName=None, applySF=None, applyPuWeight=None,extraWeight=None):
+def getDist(sample, dist, distRange=None, nBins=None, doVarBinning=None, binning=None, extraCuts=None, nJetBin=None, bJetBin=None, kinBin=None, dphiCut=None, applyMassCut=None, applyPtCut=None, applyHTCut=None, applyMHTCut=None, applyNJetsCut=None, doLumi=None, removeZkfactor=None, doNoisy=None, doProof=None, treeLoc=None, applyEffs=None, treeName=None, applySF=None, applyPuWeight=None,extraWeight=None,applyMinDeltaRCut=None,applyISRWeight=None, doEffError=None,noCuts=None,setWeight=None):
 
     ###############################################################################        
     # set default parameters
@@ -1700,6 +1922,10 @@ def getDist(sample, dist, distRange=None, nBins=None, doVarBinning=None, binning
     ###############################################################################        
     ## distribution binning, try to set as many defaults as possible ###
     ## if plotting something not below, you must give binning ###
+    if(binning!=None):
+        doVarBinning=True
+    if(noCuts==None):
+        noCuts=False
     if(dist=='ZCandidates.M()'  or "min(ZCandidates.M()" in dist):
         if(applyMassCut==None):
             applyMassCut=False
@@ -1831,11 +2057,14 @@ def getDist(sample, dist, distRange=None, nBins=None, doVarBinning=None, binning
             nBins=14
         if(binning==None):
             binning=[0.,50.,100.,150.,200.,250.,300.,350.,400.,450.,500.,600.,800.,1200.]
-
+    if(nBins==None):
+        nBins = len(binning)
+    if(distRange==None):
+        distRange = [binning[0],binning[len(binning)-1]]
     ## end distribution binning 
     ###############################################################################        
     if(doLumi==None):
-        doLumi = 36.1
+        doLumi = 35.9
     if(removeZkfactor==None and ('zinv' in sample or 'dy' in sample)):
        removeZkfactor=True
     elif(removeZkfactor==None):
@@ -1860,7 +2089,7 @@ def getDist(sample, dist, distRange=None, nBins=None, doVarBinning=None, binning
         else:
             dphiCut='sig'
     if(dphiCut=='ldp'):
-        if('LDP' not in sample):
+        if not (('LDP' in sample) or ('IDP' in sample)):
             sample+='LDP'
     if(treeLoc==None):
         treeLoc = "/nfs/data38/cms/wtford/lpcTrees/Skims/Run2ProductionV12"
@@ -1870,35 +2099,36 @@ def getDist(sample, dist, distRange=None, nBins=None, doVarBinning=None, binning
         treeName = "tree"
     if(applySF==None):
         applySF=False
-
+    if(doEffError==None):
+        doEffError=False
     nBins=int(nBins)
 
     ###############################################################################        
     # end set default parameters
     ###############################################################################        
 
-    chain = getChain(sample, doLumi, treeName, doProof, treeLoc, removeZkfactor)
+    chain = getChain(sample, doLumi, treeName, doProof, treeLoc, removeZkfactor,setWeight)
 
     #############################################################################
-    # define unique root TH1F 
+    # define unique root TH1D 
     #############################################################################
 
     plotlabel = "plot_"+str(sample)+"_"+str(re.sub('[^a-zA-Z0-9-_*.\.]','', dist))
     
     hIter = 1
-    while(type(ROOT.gROOT.FindObject(plotlabel+"_"+str(hIter)))==ROOT.TH1F):
+    while(type(ROOT.gROOT.FindObject(plotlabel+"_"+str(hIter)))==ROOT.TH1D):
         hIter+=1
         
     plotlabel+="_"+str(hIter)
 
-    plot = ROOT.TH1F(plotlabel,plotlabel,nBins,distRange[0],distRange[1])  
+    plot = ROOT.TH1D(plotlabel,plotlabel,nBins,distRange[0],distRange[1])  
     if(doVarBinning):
         plot.Delete()
         binning_f = array('f',binning)
-        plot = ROOT.TH1F(plotlabel,plotlabel,len(binning)-1,binning_f)
+        plot = ROOT.TH1D(plotlabel,plotlabel,len(binning)-1,binning_f)
 
     #################################################################################
-    # end define unique root TH1F 
+    # end define unique root TH1D 
     #################################################################################
 
     #################################################################################
@@ -1950,18 +2180,38 @@ def getDist(sample, dist, distRange=None, nBins=None, doVarBinning=None, binning
         'ttgjets' : 'photon',
         'gjetsqcd' : 'photonqcd',
     }
+
+
+    if(('IDP' in sample) or ('LDP' in sample)):
+        sample = sample[:-3]
+
+    # # troy mod+
     if(sample == 'zmm'):
-        trig = (22, 23, 29, 17)
+        trig = (22, 23, 29, 18, 20)
     elif(sample == 'zee'):
-        trig = (6, 7, 12, 3)
+        trig = (6, 7, 11, 12, 3, 4)
     elif(sample == 'zll'):
-        trig = (22, 23, 29, 17, 6, 7, 12, 3)
+        trig = (22, 23, 29, 18, 20, 6, 7, 11, 12, 3, 4)
     elif(sample == 'photon'):
-        trig = 51
-    elif(sample == 'sig'):
-        trig = (29,33)
+        trig = 52
+    elif(sample == 'sig' or sample == 'sle' or sample == 'slm'):
+        trig = (42,43,44,46,47,48)
     else:
         trig = -1
+
+    # troy mod-
+    # if(sample == 'zmm'):
+    #     trig = (22, 23, 29, 17)
+    # elif(sample == 'zee'):
+    #     trig = (6, 7, 12, 3)
+    # elif(sample == 'zll'):
+    #     trig = (22, 23, 29, 17, 6, 7, 12, 3)
+    # elif(sample == 'photon'):
+    #     trig = 51
+    # elif(sample == 'sig'):
+    #     trig = (29,33)
+    # else:
+    #     trig = -1
 
     ExtraFilters = ROOT.TCut("")
     extraCuts = ROOT.TCut(extraCuts)
@@ -1971,18 +2221,18 @@ def getDist(sample, dist, distRange=None, nBins=None, doVarBinning=None, binning
         applySF = False
 
     extraCuts+=ExtraFilters
+    # print sample
 
-    if(('IDP' in sample) or ('LDP' in sample)):
-        sample = sample[:-3]
+    sampleCutCode = sample
 
-    cuts = getCuts(cutCode[sample], nJetBin, bJetBin, kinBin, trig, dphiCut, extraCuts, applyMassCut, applyPtCut, applyHTCut, applyMHTCut, applyNJetsCut, applySF, applyPuWeight=applyPuWeight,extraWeight=extraWeight)
+    cuts = getCuts(cutCode[sampleCutCode], nJetBin, bJetBin, kinBin, trig, dphiCut, extraCuts, applyMassCut, applyPtCut, applyHTCut, applyMHTCut, applyNJetsCut, applySF, applyPuWeight=applyPuWeight,extraWeight=extraWeight,applyMinDeltaRCut=applyMinDeltaRCut, applyISRWeight=applyISRWeight,noCuts=noCuts) 
 
     #################################################################################
     # determine sample cut code for getCuts, trigger, and additional filters/cuts
     ###############################################################################
 
     if(applyEffs):
-        cuts*=getEffWeights(sample)
+        cuts*=getEffWeights(sample,doEffError)
 
     chain.Project(str(plotlabel),dist,str(cuts))
 
@@ -2055,7 +2305,7 @@ def getRemovedBins(njRange=None, nbRange=None, kinRange=None, njSplit=None):
 # 25 ttZ->nunu
 # 30 All bg MC
 
-def getHist(sample, njRange=None, nbRange=None, kinRange=None, doLumi=None, removeZkfactor=None, doNoisy=None, doProof=None, dphiCut=None, treeLoc=None, applyEffs=None, treeName=None, applyMassCut=None, applyPtCut=None, applyHTCut=None, applyMHTCut=None, applyNJetsCut=None, applySF=None, extraCuts=None, doStandalone=None, njSplit=None, applyPuWeight=None, extraWeight=None):
+def getHist(sample, njRange=None, nbRange=None, kinRange=None, doLumi=None, removeZkfactor=None, doNoisy=None, doProof=None, dphiCut=None, treeLoc=None, applyEffs=None, treeName=None, applyMassCut=None, applyPtCut=None, applyHTCut=None, applyMHTCut=None, applyNJetsCut=None, applySF=None, extraCuts=None, doStandalone=None, njSplit=None, applyPuWeight=None, extraWeight=None,noCuts=None, applyISRWeight=None, doEffError=None):
 
     # timer
     start_time = time.time()
@@ -2064,6 +2314,8 @@ def getHist(sample, njRange=None, nbRange=None, kinRange=None, doLumi=None, remo
     # set default parameters
     ###############################################################################        
     
+    if(noCuts==None):
+        noCuts=False
     if(njSplit==None):
         njSplit=False
     if(njSplit==True):
@@ -2088,7 +2340,7 @@ def getHist(sample, njRange=None, nbRange=None, kinRange=None, doLumi=None, remo
     elif(type(kinRange) is int):
         kinRange = range(kinRange,kinRange+1)
     if(doLumi==None):
-        doLumi = 36.1
+        doLumi = 35.9
     if(removeZkfactor==None and ('zinv' in sample or 'dy' in sample)):
        removeZkfactor=True
     elif(removeZkfactor==None):
@@ -2124,6 +2376,8 @@ def getHist(sample, njRange=None, nbRange=None, kinRange=None, doLumi=None, remo
             puhist = pufile.Get("pu_weights_down")
     if(extraCuts==None):
         extraCuts=""
+    if(doEffError==None):
+        doEffError=False
 
     ###############################################################################        
     # end set default parameters
@@ -2143,7 +2397,7 @@ def getHist(sample, njRange=None, nbRange=None, kinRange=None, doLumi=None, remo
     #################################################################################
 
     #############################################################################
-    # define unique root TH1F 
+    # define unique root TH1D 
     #############################################################################
 
     removedBins = getRemovedBins(njRange, nbRange, kinRange, njSplit)
@@ -2155,15 +2409,15 @@ def getHist(sample, njRange=None, nbRange=None, kinRange=None, doLumi=None, remo
     plotlabel = "plot_"+str(sample)+"_nj"+str(len(njRange))+"_nb"+str(len(nbRange))+"_kin"+str(len(kinRange))
     
     hIter = 1
-    while(type(ROOT.gROOT.FindObject(plotlabel+"_"+str(hIter)))==ROOT.TH1F):
+    while(type(ROOT.gROOT.FindObject(plotlabel+"_"+str(hIter)))==ROOT.TH1D):
         hIter+=1
         
     plotlabel+="_"+str(hIter)
   
-    plot = ROOT.TH1F(plotlabel,plotlabel,nbins,0.5,nbins+0.5)
+    plot = ROOT.TH1D(plotlabel,plotlabel,nbins,0.5,nbins+0.5)
 
     #################################################################################
-    # end define unique root TH1F 
+    # end define unique root TH1D 
     #################################################################################
 
     #################################################################################
@@ -2217,18 +2471,37 @@ def getHist(sample, njRange=None, nbRange=None, kinRange=None, doLumi=None, remo
         'gjetsqcd' : 'photonqcd',
     }
 
+    # # troy mod+
     if(sample == 'zmm'):
-        trig = (22, 23, 29, 17)
+        trig = (22, 23, 29, 18, 20)
     elif(sample == 'zee'):
-        trig = (6, 7, 12, 3)
+        trig = (6, 7, 11, 12, 3, 4)
     elif(sample == 'zll'):
-        trig = (22, 23, 29, 17, 6, 7, 12, 3)
+        trig = (22, 23, 29, 18, 20, 6, 7, 11, 12, 3, 4)
     elif(sample == 'photon'):
-        trig = 51
-    elif(sample == 'sig'):
-        trig = (29,33)
+        trig = 52
+    elif(sample == 'sig' or sample == 'sle' or sample == 'slm'):
+        trig = (42,43,44,46,47,48)
     else:
         trig = -1
+
+    # troy mod-
+    # if(sample == 'zmm'):
+    #     trig = (22, 23, 29, 17)
+    # elif(sample == 'zee'):
+    #     trig = (6, 7, 12, 3)
+    # elif(sample == 'zll'):
+    #     trig = (22, 23, 29, 17, 6, 7, 12, 3)
+    # elif(sample == 'photon'):
+    #     trig = 51
+    # elif(sample == 'sig'):
+    #     trig = (29,33)
+    # else:
+    #     trig = -1
+
+
+    if(('IDP' in sample) or ('LDP' in sample)):
+        sample = sample[:-3]
 
     ExtraFilters = extraCuts
 
@@ -2249,15 +2522,13 @@ def getHist(sample, njRange=None, nbRange=None, kinRange=None, doLumi=None, remo
 
     ecplotlabel = "eventCount"
     hIter = 1
-    while(type(ROOT.gROOT.FindObject(ecplotlabel+"_"+str(hIter)))==ROOT.TH1F):
+    while(type(ROOT.gROOT.FindObject(ecplotlabel+"_"+str(hIter)))==ROOT.TH1D):
         hIter+=1
 
     ecplotlabel+="_"+str(hIter)
 
-    EventCount = ROOT.TH1F(ecplotlabel,ecplotlabel,1,0,1000)
-
-    if(('IDP' in sample) or ('LDP' in sample)):
-        sample = sample[:-3]
+    EventCount = ROOT.TH1D(ecplotlabel,ecplotlabel,1,-1,1000)
+    sampleCutCode = sample
 
     if (puhist is not None):
         ROOT.v5.TFormula.SetMaxima(10000,1000,1000)
@@ -2269,7 +2540,7 @@ def getHist(sample, njRange=None, nbRange=None, kinRange=None, doLumi=None, remo
             customPuWeight += "((TrueNumInteractions>="+str(xlow)+"&&TrueNumInteractions<"+str(xhigh)+")*"+str(puhist.GetBinContent(nv))+")+"
         customPuWeight += "((TrueNumInteractions>="+str(puhist.GetBinLowEdge(NpuBins))+")*"+str(puhist.GetBinContent(NpuBins))+")"
 
-    print "applyEffs = "+str(applyEffs)+", "+str(type(applyEffs))+", puhist = "+str(puhist)+", "+str(type(puhist))
+    # print "applyEffs = "+str(applyEffs)+", "+str(type(applyEffs))+", puhist = "+str(puhist)+", "+str(type(puhist))
     Bin = 1
     uncutBin = 0
     for nj in njRange:
@@ -2279,10 +2550,11 @@ def getHist(sample, njRange=None, nbRange=None, kinRange=None, doLumi=None, remo
                 if(uncutBin in avoidBins):
                     continue
 
-                cuts = getCuts(cutCode[sample], nj, nb, kin, trig, dphiCut, ExtraFilters, applyMassCut, applyPtCut, applyHTCut, applyMHTCut, applyNJetsCut, applySF,njSplit=njSplit,applyPuWeight=applyPuWeight,extraWeight=extraWeight)
-                print str(Bin)+": "+str(cuts)
+                cuts = getCuts(cutCode[sampleCutCode], nj, nb, kin, trig, dphiCut, ExtraFilters, applyMassCut, applyPtCut, applyHTCut, applyMHTCut, applyNJetsCut, applySF,njSplit=njSplit,applyPuWeight=applyPuWeight,extraWeight=extraWeight,noCuts=noCuts)
+                if (Bin == 1):
+                    print str(Bin)+": "+str(cuts)
                 if(applyEffs):
-                    cuts*=getEffWeights(sample)
+                    cuts*=getEffWeights(sample,doEffError)
                 if (puhist is not None):
                     cuts *= customPuWeight
 
@@ -2343,7 +2615,7 @@ def getFudgeHist(val=None, error=None, njRange=None, njSplit=None, nbRange=None,
     elif(type(kinFudge) is int):
         kinFudge = range(kinFudge,kinFudge+1)
     #############################################################################
-    # define unique root TH1F 
+    # define unique root TH1D 
     #############################################################################
     removedBins = getRemovedBins(njRange, nbRange, kinRange, njSplit)
     subtractBins = removedBins[0]
@@ -2354,15 +2626,15 @@ def getFudgeHist(val=None, error=None, njRange=None, njSplit=None, nbRange=None,
     plotlabel = "fudgeplot_nj"+str(len(njRange))+"_nb"+str(len(nbRange))+"_kin"+str(len(kinRange))
     
     hIter = 1
-    while(type(ROOT.gROOT.FindObject(plotlabel+"_"+str(hIter)))==ROOT.TH1F):
+    while(type(ROOT.gROOT.FindObject(plotlabel+"_"+str(hIter)))==ROOT.TH1D):
         hIter+=1
         
     plotlabel+="_"+str(hIter)
   
-    hFudge = ROOT.TH1F(plotlabel,plotlabel,nbins,0.5,nbins+0.5)
+    hFudge = ROOT.TH1D(plotlabel,plotlabel,nbins,0.5,nbins+0.5)
 
     #################################################################################
-    # end define unique root TH1F 
+    # end define unique root TH1D 
     #################################################################################
 
     Bin=1
@@ -2410,7 +2682,7 @@ def get0bPrediction(samples, njRange=None, njSplit=None, nbRange=None, kinRange=
     if(type(samples) is not list):
         samples = [samples]
     #############################################################################
-    # define unique root TH1F 
+    # define unique root TH1D 
     #############################################################################
 
     removedBins = getRemovedBins(njRange, nbRange, kinRange, njSplit)
@@ -2425,15 +2697,15 @@ def get0bPrediction(samples, njRange=None, njSplit=None, nbRange=None, kinRange=
     plotlabel = "extrapplot_"+str(samples[0])+"_nj"+str(len(njRange))+"_nb"+str(len(nbRange))+"_kin"+str(len(kinRange))
     
     hIter = 1
-    while(type(ROOT.gROOT.FindObject(plotlabel+"_"+str(hIter)))==ROOT.TH1F):
+    while(type(ROOT.gROOT.FindObject(plotlabel+"_"+str(hIter)))==ROOT.TH1D):
         hIter+=1
         
     plotlabel+="_"+str(hIter)
   
-    hPred = ROOT.TH1F(plotlabel,plotlabel,nbins,0.5,nbins+0.5)
+    hPred = ROOT.TH1D(plotlabel,plotlabel,nbins,0.5,nbins+0.5)
 
     #################################################################################
-    # end define unique root TH1F 
+    # end define unique root TH1D 
     #################################################################################
 
     hlist = []
@@ -2508,7 +2780,7 @@ def getExtrapolation(samples, njFactorRange=None, doFactorization=None, njRange=
     if(type(samples) is not list):
         samples = [samples]
     #############################################################################
-    # define unique root TH1F 
+    # define unique root TH1D 
     #############################################################################
 
     removedBins = getRemovedBins(njRange, nbRange, kinRange, njSplit)
@@ -2520,15 +2792,15 @@ def getExtrapolation(samples, njFactorRange=None, doFactorization=None, njRange=
     plotlabel = "extrapplot_"+str(samples[0])+"_nj"+str(len(njRange))+"_nb"+str(len(nbRange))+"_kin"+str(len(kinRange))
     
     hIter = 1
-    while(type(ROOT.gROOT.FindObject(plotlabel+"_"+str(hIter)))==ROOT.TH1F):
+    while(type(ROOT.gROOT.FindObject(plotlabel+"_"+str(hIter)))==ROOT.TH1D):
         hIter+=1
         
     plotlabel+="_"+str(hIter)
   
-    hExtrap = ROOT.TH1F(plotlabel,plotlabel,nbins,0.5,nbins+0.5)
+    hExtrap = ROOT.TH1D(plotlabel,plotlabel,nbins,0.5,nbins+0.5)
 
     #################################################################################
-    # end define unique root TH1F 
+    # end define unique root TH1D 
     #################################################################################
 
     hlist = []
@@ -2640,7 +2912,7 @@ def getBinomialCorrection(prob=None, njFactorRange=None, njRange=None, njSplit=N
         else:
             njData=range(1,5)
     #############################################################################
-    # define unique root TH1F 
+    # define unique root TH1D 
     #############################################################################
 
     removedBins = getRemovedBins(njRange, nbRange, kinRange, njSplit)
@@ -2652,15 +2924,15 @@ def getBinomialCorrection(prob=None, njFactorRange=None, njRange=None, njSplit=N
     plotlabel = "binomplot_nj"+str(len(njRange))+"_nb"+str(len(nbRange))+"_kin"+str(len(kinRange))
     
     hIter = 1
-    while(type(ROOT.gROOT.FindObject(plotlabel+"_"+str(hIter)))==ROOT.TH1F):
+    while(type(ROOT.gROOT.FindObject(plotlabel+"_"+str(hIter)))==ROOT.TH1D):
         hIter+=1
         
     plotlabel+="_"+str(hIter)
   
-    hCorr = ROOT.TH1F(plotlabel,plotlabel,nbins,0.5,nbins+0.5)
+    hCorr = ROOT.TH1D(plotlabel,plotlabel,nbins,0.5,nbins+0.5)
 
     #################################################################################
-    # end define unique root TH1F 
+    # end define unique root TH1D 
     #################################################################################
 
 
@@ -2783,7 +3055,7 @@ def mergeHist(hist,njRange=None,nbRange=None,kinRange=None):
 
     plotlabel = hist.GetTitle()+'_merge'
     hIter = 1
-    while(type(ROOT.gROOT.FindObject(plotlabel+"_"+str(hIter)))==ROOT.TH1F):
+    while(type(ROOT.gROOT.FindObject(plotlabel+"_"+str(hIter)))==ROOT.TH1D):
         hIter+=1
         
     plotlabel+="_"+str(hIter)
@@ -2797,7 +3069,7 @@ def mergeHist(hist,njRange=None,nbRange=None,kinRange=None):
 
     nbins = len(kinRange)*len(njRange)*len(nbRange)-subtractBins
 
-    h1 = ROOT.TH1F(plotlabel,plotlabel,nbins,0.5,nbins+0.5)
+    h1 = ROOT.TH1D(plotlabel,plotlabel,nbins,0.5,nbins+0.5)
     
     splitDict = {
         1: [1],
@@ -2866,12 +3138,21 @@ def setError(hist, error=None, njRange=None, nbRange=None, kinRange=None, njSet=
         elif(type(kinSet) is int):
             kinSet=range(kinSet,kinSet+1)
 
+        removedBins = getRemovedBins()
+        subtractBins = removedBins[0]
+        avoidBins = removedBins[1]
+
+        Bin = 1
+        uncutBin=0
         for nj in njRange:
             for nb in nbRange:
                 for kin in kinRange:
-                    Bin = kin + nb*len(kinRange) + (nj-1)*len(nbRange)*len(kinRange)
+                    uncutBin+=1
+                    if(uncutBin in avoidBins):
+                        continue
                     if( (nj in njSet) and (nb in nbSet) and (kin in kinSet)):
                         h1.SetBinError(Bin,error)
+                    Bin+=1
     return h1
 
 def addFractionalError(hist, njSplit=None, njRange=None, nbRange=None, kinRange=None, njError=None, nbError=None, kinError=None):
@@ -2954,7 +3235,7 @@ def getRatioHist(numHist, denomHist, doFlip=None):
     if(doFlip==None):
         doFlip=False
         
-    h = ROOT.TH1F()
+    h = ROOT.TH1D()
 
     if(doFlip):
         h = denomHist.Clone()
@@ -2965,13 +3246,16 @@ def getRatioHist(numHist, denomHist, doFlip=None):
 
     return h
 
-def getDiffHist(obsHist, expHist, doFlip=None, divide=None):
+def getDiffHist(obsHist, expHist, doFlip=None, divide=None, setZero=None):
     if(doFlip==None):
         doFlip=False
         
     if(divide==None):
         divide=True
-    h = ROOT.TH1F()
+    if('TGraph' in str(type(expHist))):
+        h = ROOT.TGraphAsymmErrors()
+    else:
+        h = ROOT.TH1D()
 
     if(doFlip):
         h = expHist.Clone()
@@ -2979,35 +3263,82 @@ def getDiffHist(obsHist, expHist, doFlip=None, divide=None):
         if(divide):
             h.Divide(obsHist)
     else:
-        h = obsHist.Clone()
-        h.Add(expHist,-1)
-        if(divide):
-            h.Divide(expHist)
+        if('TGraph' in str(type(expHist))):
+            for i in range(1,obsHist.GetNbinsX()+1):
+                binWidth = obsHist.GetBinWidth(1)
+                binStart = (obsHist.GetBinLowEdge(1)+obsHist.GetBinLowEdge(2))/2.
+                expVal = expHist.Eval(binWidth*(i-1)+binStart)
+                if expVal==0:
+                    expVal=1.
+                val = obsHist.GetBinContent(i)/expVal-1
+                if(obsHist.GetBinContent(i)>0):
+                    errDn = (val+1)*( (obsHist.GetBinError(i)/obsHist.GetBinContent(i))**2+(expHist.GetErrorYhigh(i-1)/expVal)**2 )**0.5
+                    errUp = (val+1)*( (obsHist.GetBinError(i)/obsHist.GetBinContent(i))**2+(expHist.GetErrorYlow(i-1)/expVal)**2 )**0.5
+                if(setZero==True and val==-1):
+                    continue
+                h.SetPointEYhigh(i-1, errUp)
+                h.SetPointEYlow(i-1,  errDn)
+                h.SetPoint(i-1,binWidth*(i-1)+binStart,val)
+               
+        else:
+            h = obsHist.Clone()
+            h2 = setError(expHist)
+            h.Add(h2,-1)
+            if(divide):
+                h.Divide(expHist)
+
     return h
 
     #h_dr = getRatioHist(zll_r,pho_r)
     #g_dr = ROOT.TGraphAsymmErrors(h_dr)
 
-def getPullHist(postHist, preHist, doFlip=None):
+def getPullHist(dataHist, predHist, doFlip=None, setZero=None):
     if(doFlip==None):
         doFlip=False
+    if(setZero==None):
+        setZero=False
         
-    h = ROOT.TH1F()
-    sig = ROOT.TH1F('sig','sig',preHist.GetNbinsX(),preHist.GetBinLowEdge(1),preHist.GetBinLowEdge(preHist.GetNbinsX()+1))
-    for i in range(1,preHist.GetNbinsX()+1):
-        sig.SetBinContent(i,preHist.GetBinError(i))
+    # h = ROOT.TH1D()
+    # sig = ROOT.TH1D('sig','sig',preHist.GetNbinsX(),preHist.GetBinLowEdge(1),preHist.GetBinLowEdge(preHist.GetNbinsX()+1))
+    # for i in range(1,preHist.GetNbinsX()+1):
+    #     sig.SetBinContent(i,preHist.GetBinError(i))
 
-    if(doFlip):
-        h = preHist.Clone()
-        h.Add(postHist,-1)
-        h.Divide(sig)
-    else:
-        h = postHist.Clone()
-        h.Add(preHist,-1)
-        h.Divide(sig)
+    # if(doFlip):
+    #     h = preHist.Clone()
+    #     h.Add(postHist,-1)
+    #     h.Divide(sig)
+    # else:
+    #     h = postHist.Clone()
+    #     h.Add(preHist,-1)
+    #     h.Divide(sig)
 
-    for i in range(1,preHist.GetNbinsX()+1):
-        h.SetBinError(i,0.)
+    # for i in range(1,preHist.GetNbinsX()+1):
+    #     h.SetBinError(i,0.)
+
+    h = dataHist.Clone()
+    for i in range(1, h.GetNbinsX()+1):
+        if 'TGraph' in str(type(predHist)):
+            binWidth = h.GetBinWidth(1)
+            binStart = (h.GetBinLowEdge(1)+h.GetBinLowEdge(2))/2.
+            predVal = predHist.Eval(binWidth*(i-1)+binStart)
+            num = dataHist.GetBinContent(i)-predVal
+            if(num>0):
+                predErr = predHist.GetErrorYhigh(i-1)
+            else:
+                predErr = predHist.GetErrorYlow(i-1)
+        else:
+            predVal = predHist.GetBinContent(i)
+            predErr = predHist.GetBinError(i)
+            num = dataHist.GetBinContent(i)-predVal
+
+        denom = (predVal+predErr**2)**0.5
+        
+        if setZero:
+            if(dataHist.GetBinContent(i)==0):
+                num = 0
+
+        h.SetBinContent(i, num/denom)
+        h.SetBinError(i, 0)
 
     return h
 
@@ -3064,13 +3395,33 @@ def getRatioGraph(numHist,denomHist,ratioHist=None,doFlip=None,cg=None,doClopper
 
     return g_r
 
-def getPlotAndRatio(numHists, denomHists=None, bottomPlots=None, doStack=None, Title=None, xTitle=None, yTitle=None, doCMSlumi=None, iPos=None, iPeriod=None, extraText=None, ratioTitle=None, ratioMin=None, ratioMax=None, doLogy=None, doFlip=None, doDiff=None, doPull=None, makeLeg=None, legList=None, legCoords=None, textCoords=None, canvasSize=None, canvasName=None, numColors=None, denomColor=None, numMarkers=None, denomMarker=None, markerSize=None, lineWidth=None, numDrawStyles=None, denomDrawStyle=None, drawErrorBand=None, stackColors=None, axisTitleSize=None, drawVerticalLines=None, drawHorizontalLine=None, statBox=None, drawText=None, text=None, setMax=None, setMin=None, doClosureStyle=None,errorBandColor=None,errorBandFillStyle=None,legHeader=None,nDivRatio=None,doNumFill=None, hLineVal=None, hLineColors=None,nDivX=None,ratioGridx=None,ratioGridy=None,topGridx=None,topGridy=None,doRatio=None,numFillStyles=None,numFillColors=None):
+def addGraphs(grList, binning):
+    
+    graph = ROOT.TGraphAsymmErrors()
+
+    for i in range(grList[0].GetN()):
+        val = 0.
+        ehi = 0.
+        elo = 0.
+        for gr in grList:
+            val+=gr.Eval(binning[i])
+            ehi+=gr.GetErrorYhigh(i)**2
+            elo+=gr.GetErrorYlow(i)**2
+        graph.SetPoint(i, binning[i], val)
+        graph.SetPointEYhigh(i, ehi**0.5)
+        graph.SetPointEYlow(i,  elo**0.5)
+        graph.SetPointEXhigh(i, binning[0])
+        graph.SetPointEXlow(i, binning[0])
+
+    return graph
+
+def getPlotAndRatio(numHists, denomHists=None, bottomPlots=None, doStack=None, Title=None, xTitle=None, yTitle=None, doCMSlumi=None, iPos=None, iPeriod=None, extraText=None, ratioTitle=None, ratioMin=None, ratioMax=None, doLogy=None, doFlip=None, doDiff=None, doPull=None, makeLeg=None, legList=None, legCoords=None, textCoords=None, canvasSize=None, canvasName=None, numColors=None, denomColor=None, numMarkers=None, denomMarker=None, markerSize=None, lineWidth=None, numDrawStyles=None, denomDrawStyle=None, drawErrorBand=None, stackColors=None, axisTitleSize=None, drawVerticalLines=None, drawHorizontalLine=None, statBox=None, drawText=None, text=None, setMax=None, setMin=None, doClosureStyle=None,errorBandColor=None,errorBandFillStyle=None,legHeader=None,nDivRatio=None,doNumFill=None, hLineVal=None, hLineColors=None,nDivX=None,ratioGridx=None,ratioGridy=None,topGridx=None,topGridy=None,doRatio=None,numFillStyles=None,numFillColors=None, drawSigText=None, errorBandHist=None,nDivY=None,numLineWidth=None,order=None):
 
     ROOT.gROOT.Reset()
 
     setTdrStyle()
 
-    denomHist = ROOT.TH1F
+    denomHist = ROOT.TH1D
 
     #####################################################################
     # set defaults and initialize 
@@ -3081,15 +3432,18 @@ def getPlotAndRatio(numHists, denomHists=None, bottomPlots=None, doStack=None, T
         doRatio=True
     if(doClosureStyle==None):
         doClosureStyle=False
-    if type(numHists) is ROOT.TH1F:
+    if (type(numHists) is ROOT.TH1D or type(denomHists) is ROOT.TH1F):
         numHists = [numHists]
-    if type(denomHists) is ROOT.TH1F:
+    if (type(denomHists) is ROOT.TH1D or type(denomHists) is ROOT.TH1F):
         denomHist = denomHists
         doStack=False
-    else:
-        denomHist = denomHists[0].Clone()
-        for i in range(1,len(denomHists)):
-            denomHist.Add(denomHists[i])
+    elif type(denomHists) is list:
+        if (type(denomHists[0]) is ROOT.TH1D or type(denomHists[0]) is ROOT.TH1F):
+            denomHist = denomHists[0].Clone()
+            for i in range(1,len(denomHists)):
+                denomHist.Add(denomHists[i])
+        elif 'TGraph' in str(type(denomHists[0])):
+            denomHist = numHists[0].Clone()
         if(doStack==None):
             doStack=True
     if(Title==None):
@@ -3110,7 +3464,7 @@ def getPlotAndRatio(numHists, denomHists=None, bottomPlots=None, doStack=None, T
     if(doDiff==None):
         doDiff = False
     if(doDiff==True and ratioTitle==None):
-        ratioTitle = "#frac{obs-exp}{exp}"
+        ratioTitle = "#frac{Obs.-Exp.}{Exp.}"
     if(ratioTitle==None):
         ratioTitle = "Ratio"
     if(doDiff==True and ratioMin==None):
@@ -3157,6 +3511,8 @@ def getPlotAndRatio(numHists, denomHists=None, bottomPlots=None, doStack=None, T
             markerSize=1.2
     if(lineWidth==None):
         lineWidth=2
+    if(numLineWidth==None):
+        numLineWidth=1
     if(denomDrawStyle==None):
         denomDrawStyle="HIST"
     if(denomDrawStyle=="HIST"):
@@ -3220,6 +3576,8 @@ def getPlotAndRatio(numHists, denomHists=None, bottomPlots=None, doStack=None, T
         nDivRatio=5
     if(nDivX==None):
         nDivX=510
+    if(nDivY==None):
+        nDivY=510
     if(ratioGridx==None):
         ratioGridx=False
     if(ratioGridy==None):
@@ -3353,7 +3711,7 @@ def getPlotAndRatio(numHists, denomHists=None, bottomPlots=None, doStack=None, T
             numHistsRatio[i].GetYaxis().SetTitleOffset(0.033/(1.0*axisTitleSize))
             numHistsRatio[i].GetYaxis().SetNdivisions(nDivRatio)
             numHistsRatio[i].GetXaxis().SetNdivisions(nDivX)
-            numHistsRatio[i].SetLineWidth(lineWidth)
+            numHistsRatio[i].SetLineWidth(numLineWidth)
             numHistsRatio[i].SetLineColor(numColors[i])
             numHistsRatio[i].SetMarkerStyle(numMarkers[i])
             numHistsRatio[i].SetMarkerSize(markerSize)
@@ -3389,7 +3747,8 @@ def getPlotAndRatio(numHists, denomHists=None, bottomPlots=None, doStack=None, T
                 numHistsRatio[i].Draw(numDrawStyles[i]+'same')
             else:
                 numHistsRatio[i].GetXaxis().SetLimits(denomHist.GetBinLowEdge(1),denomHist.GetBinLowEdge(denomHist.GetNbinsX()+1))
-                numHistsRatio[i].Draw('ap same')
+                numHistsRatio[i].Draw('ae0p same')
+                # numHistsRatio[i].Draw('ap same')
             
 
     # draw lines 
@@ -3450,6 +3809,7 @@ def getPlotAndRatio(numHists, denomHists=None, bottomPlots=None, doStack=None, T
     denomHist.SetLineWidth(lineWidth)
     denomHist.SetLineColor(denomColor)
     denomHist.SetMarkerStyle(denomMarker)
+    denomHist.GetYaxis().SetNdivisions(nDivY)
     denomHist.SetMarkerSize(markerSize)
     denomHist.SetMarkerColor(denomColor)
     denomHist.GetYaxis().SetLabelSize(0.8*axisTitleSize)
@@ -3476,7 +3836,8 @@ def getPlotAndRatio(numHists, denomHists=None, bottomPlots=None, doStack=None, T
         hs.GetHistogram().SetTitle(Title+";;"+yTitle)
         hs.GetHistogram().GetYaxis().SetLabelSize(0.8*axisTitleSize)
 
-    errorBandHist = denomHist.Clone()
+    if(errorBandHist == None):
+        errorBandHist = denomHist.Clone()
     errorBandHist.SetLineColor(denomColor)
     errorBandHist.SetFillColor(errorBandColor)
     #errorBandHist.SetFillStyle(3018)
@@ -3492,7 +3853,7 @@ def getPlotAndRatio(numHists, denomHists=None, bottomPlots=None, doStack=None, T
     Max = denomHist.GetBinContent(denomHist.FindFirstBinAbove(0))
     for i in range(len(numHists)):
         numHists[i].SetStats(statBox)
-        numHists[i].SetLineWidth(lineWidth)
+        numHists[i].SetLineWidth(numLineWidth)
         numHists[i].SetLineColor(numColors[i])
         numHists[i].SetMarkerStyle(numMarkers[i])
         numHists[i].SetMarkerSize(markerSize)
@@ -3533,9 +3894,20 @@ def getPlotAndRatio(numHists, denomHists=None, bottomPlots=None, doStack=None, T
         Max = setMax
         denomHist.SetMaximum(setMax)
         #errorBandHist.SetMaximum(Max)
+        if(doStack==True): # goofy ROOT THStack max min issue
+            if(not doLogy):
+                hs.SetMaximum(Max/(1+ROOT.gStyle.GetHistTopMargin()))
+            else:
+                hs.SetMaximum(Max/(1+0.2*ROOT.TMath.Log10(Max/Min)))
     if(setMin is not None):
         Min = setMin
         denomHist.SetMinimum(setMin)
+        if(doStack==True): # goofy ROOT THStack max min issue
+            if(not doLogy):
+                hs.SetMinimum(Min)
+            else:
+                hs.SetMinimum(Min*(1+0.5*ROOT.TMath.Log10(Max/Min)))
+
         #errorBandHist.SetMinimum(setMin)
     #####################################################################
     # build legend
@@ -3544,23 +3916,27 @@ def getPlotAndRatio(numHists, denomHists=None, bottomPlots=None, doStack=None, T
     leg = pad_2.BuildLegend(legCoords[0],legCoords[1],legCoords[2],legCoords[3], "")  
 
     if(len(legList)>0):
+        if order==None:
+            order = range(len(legList))
         leg.Delete()
         leg = ROOT.TLegend(legCoords[0],legCoords[1],legCoords[2],legCoords[3], "","brNDC")
-        for i in range(len(legList)):
+        for i in order:
+            if('skip' in legList[i] or 'Skip' in legList[i] or 'SKIP' in legList[i]):
+                continue
             if(i>=len(numHists)):
                 if(doStack==True):
                     leg.AddEntry(denomHists[i-len(denomHists)], legList[i],'f')
                 elif(drawErrorBand==True):
                     leg.AddEntry(errorBandHist, legList[i], 'fl')
-                elif(denomDrawStyle=='HIST'):
+                elif(denomDrawStyle=='HIST' or denomDrawStyle=='hist'):
                     leg.AddEntry(denomHist, legList[i], 'l')
                 else:
                     leg.AddEntry(denomHist, legList[i], 'ep')
             else:
-                if(numDrawStyles[i]=='HIST' or numDrawStyles[i]=='eHIST'):
+                if(numDrawStyles[i]=='HIST' or numDrawStyles[i]=='eHIST' or numDrawStyles[i]=='hist'):
                     leg.AddEntry(numHists[i], legList[i],'l')
                 else:
-                    leg.AddEntry(numHists[i], legList[i],numDrawStyles[i])
+                    leg.AddEntry(numHists[i], legList[i],'p')
     leg.SetBorderSize(1)
     leg.SetFillStyle(1001) 
     leg.SetFillColor(0) 
@@ -3625,7 +4001,7 @@ def getPlotAndRatio(numHists, denomHists=None, bottomPlots=None, doStack=None, T
     if(doCMSlumi):
         cmsLumi(pad_2, iPeriod, iPos, extraText)
 
-    return canvas
+    return (canvas,pad_1,pad_2)
 
 def getDevSyst(hists, binSplit=None, doFlip=None):
 
@@ -3667,7 +4043,7 @@ def getDevSyst(hists, binSplit=None, doFlip=None):
         histName+=str(cIter)
         canvasList.append(ROOT.TCanvas(canvasName, canvasName, 0, 0, 600, 600))
 
-        hList.append(ROOT.TH1F(histName+str(i),histName+str(i),len(binSplit[i]),binSplit[i][0]-0.5,binSplit[i][len(binSplit[i])-1]+0.5))
+        hList.append(ROOT.TH1D(histName+str(i),histName+str(i),len(binSplit[i]),binSplit[i][0]-0.5,binSplit[i][len(binSplit[i])-1]+0.5))
 
         for j in range(1,len(binSplit[i])+1):
             hList[i].SetBinContent(j,h1.GetBinContent(binSplit[i][j-1]))
@@ -3738,7 +4114,7 @@ def getDoubleRatioGraph(dist, binning=None, extraCuts=None, nJetBin=None, bJetBi
         do20=False
     if(do20):
         if(doLumi==None):
-            doLumi=36.10
+            doLumi=35.9
     if(dist=='HT'):
         if(binning==None):
             #binning=[300,400,500.,650.,800.,1000.,1200.,1600.]
@@ -3754,7 +4130,7 @@ def getDoubleRatioGraph(dist, binning=None, extraCuts=None, nJetBin=None, bJetBi
         if(applyNJetsCut==None):
             applyNJetsCut=False
         if(binning==None):
-            binning=[1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5,9.5]
+            binning=[1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5]
             #binning=[1.5,2.5,4.5,6.5,9.5]
             #binning=[2.5,3.5,4.5,5.5,6.5,7.5]
     if(dist=='BTags'):
@@ -3762,7 +4138,7 @@ def getDoubleRatioGraph(dist, binning=None, extraCuts=None, nJetBin=None, bJetBi
         if(binning==None):
             binning=[-0.5,0.5,1.5,2.5,3.5]
     if(doLumi==None):
-        doLumi = 36.1
+        doLumi = 35.9
     if(removeZkfactor==None):
        removeZkfactor=True
     if(doNoisy==None):
@@ -3804,6 +4180,8 @@ def getDoubleRatioGraph(dist, binning=None, extraCuts=None, nJetBin=None, bJetBi
     sampleSuffix = ''
     if(dphiCut=='ldp'):
         sampleSuffix='LDP'
+    if(dphiCut=='none'):
+        sampleSuffix='IDP'
     if(doDiMu==None):
         doDiMu=True
     if(doDiEl==None):
@@ -4000,7 +4378,7 @@ def getDoubleRatioFit(hist, func, returnDiff=False):
 
     #    for bin in range(nbins+2): # JFH 09-Oct-15    
     for bin in range(mbins+1): # JFH 09-Oct-15    
-        hists[bin] = ROOT.TH1F("bin"+str(bin), "bin"+str(bin), 1000,-5.0,5.0)
+        hists[bin] = ROOT.TH1D("bin"+str(bin), "bin"+str(bin), 1000,-5.0,5.0)
         if bin == 0:
             # binLowEdge = hist.GetBinLowEdge(bin+1)
             binLowEdge = hist.GetX().__getitem__(bin)
@@ -4170,8 +4548,8 @@ def getDoubleRatioPlot(dr_graphs, Title=None, xTitle=None, yTitle=None, doCMSlum
         ROOT.gStyle.SetOptFit(0000)
         nbins = graph.GetXaxis().GetNbins()
         xlow = graph.GetXaxis().GetBinLowEdge(1)
-        if(xlow==0.0):
-            xlow = -0.5
+        # if(xlow==0.0):
+        #     xlow = -0.5
         xhigh = graph.GetXaxis().GetBinUpEdge(nbins)
 
         #meanDR = graph.GetMean(2)
@@ -4194,7 +4572,7 @@ def getDoubleRatioPlot(dr_graphs, Title=None, xTitle=None, yTitle=None, doCMSlum
         fitGraph[1].Draw('l same')
         fitGraph[2].Draw('l same')
         line[it].Draw('l same')
-        graph.Draw('p same')
+        graph.Draw('e0p same')
 
         graph.SetMarkerStyle(20)
         graph.SetLineColor(1)
@@ -4289,7 +4667,7 @@ def getDoubleRatioPlot(dr_graphs, Title=None, xTitle=None, yTitle=None, doCMSlum
             h_bin4 = getDist("photon","MHT",distRange=[750,1500],doVarBinning=False)
             bin4 = h_bin4.GetMean()
             h_bin5 = getDist("photon","MHT",distRange=[250,300],doVarBinning=False,applyMHTCut=False)
-            bin5 = h_bin4.GetMean()
+            bin5 = h_bin5.GetMean()
 
             error1D.append(((fitGraph[2].Eval(bin1)-fitGraph[0].Eval(bin1))/line[it].Eval(bin1),(fitGraph[0].Eval(bin1)-fitGraph[1].Eval(bin1))/line[it].Eval(bin1)))
             error1D.append(((fitGraph[2].Eval(bin2)-fitGraph[0].Eval(bin2))/line[it].Eval(bin2),(fitGraph[0].Eval(bin2)-fitGraph[1].Eval(bin2))/line[it].Eval(bin2)))
@@ -4384,7 +4762,7 @@ def getDoubleRatioPlot(dr_graphs, Title=None, xTitle=None, yTitle=None, doCMSlum
     return [(drVal,drErr),errorDict]
 
 
-def getZmassFitPlot(fitFunc=None, dataSet=None, mcSet=None, plotMC=None, doDiMu=None, doDiEl=None, doDiLep=None, getShapeFromLoose=None, nBins=None, distRange=None, nJetBin=None, bJetBin=None, kinBin=None, doVarBinning=None, binning=None, extraCuts=None, dphiCut=None, doLumi=None, do20=None, doCMSlumi=None, iPos=None, iPeriod=None, extraText=None, keepCanvas=None, drawText=None, text=None, textCoords=None, drawText2=None, text2=None, textCoords2=None):
+def getZmassFitPlot(fitFunc=None, dataSet=None, mcSet=None, plotMC=None, doDiMu=None, doDiEl=None, doDiLep=None, getShapeFromLoose=None, nBins=None, distRange=None, nJetBin=None, bJetBin=None, kinBin=None, doVarBinning=None, binning=None, extraCuts=None, dphiCut=None, doLumi=None, do20=None, doCMSlumi=None, iPos=None, iPeriod=None, extraText=None, keepCanvas=None, drawText=None, text=None, textCoords=None, drawText2=None, text2=None, textCoords2=None, savePlot=None):
     """getZmassFitPlot() returns diMu and diEl mass plots (canvas's) incuding 
     fits to dataset bin with bJetBin, nJetBin, or kinBin, default is -1 (inclusive)
     set doDiLep=True if you want to merge mumu ee mass distributions
@@ -4396,6 +4774,8 @@ def getZmassFitPlot(fitFunc=None, dataSet=None, mcSet=None, plotMC=None, doDiMu=
 
     setTdrStyle()
     
+    if(savePlot==None):
+        savePlot=False
     if(fitFunc==None):
         fitFunc='V'
     if(keepCanvas==None):
@@ -4406,11 +4786,11 @@ def getZmassFitPlot(fitFunc=None, dataSet=None, mcSet=None, plotMC=None, doDiMu=
     if(do20):
         sampleSuffix='20'
         if(doLumi==None):
-            doLumi=36.10
+            doLumi=35.9
         if(extraText==None):
             extraText="Simulation"
     if(text==None):
-        text = "arXiv:1602.06581"
+        text = "arXiv:1704.07781"
     elif(drawText==None):
         drawText = True
     if(drawText==None):
@@ -4444,7 +4824,7 @@ def getZmassFitPlot(fitFunc=None, dataSet=None, mcSet=None, plotMC=None, doDiMu=
     if(doVarBinning==None):
         doVarBinning=False
     if(doLumi==None):
-        doLumi=36.1
+        doLumi=35.9
     if(binning==None):
         binning=[60.,70.,80.,90.,100.,110.,120.]
     if(extraCuts==None):
@@ -4602,6 +4982,8 @@ def getZmassFitPlot(fitFunc=None, dataSet=None, mcSet=None, plotMC=None, doDiMu=
     canvas = []
     purityList = []
 
+    jDict = {0: 'dimu', 1: 'diel'}
+
     j = -1 
     for data in dataSet:
         j+=1
@@ -4674,6 +5056,12 @@ def getZmassFitPlot(fitFunc=None, dataSet=None, mcSet=None, plotMC=None, doDiMu=
             'DG': 0.9478,
             'TG': 0.9505,
         }
+        # correctionFactor = {
+        #     'CB': 1.,
+        #     'V': 1.,
+        #     'DG': 1.,
+        #     'TG': 1.,
+        # }
 
         for key in data:
 
@@ -4776,13 +5164,14 @@ def getZmassFitPlot(fitFunc=None, dataSet=None, mcSet=None, plotMC=None, doDiMu=
             canvas.append(ROOT.TCanvas(canvasName, canvasName, 20+it*600, j*600, 500,500))
 
             canvas[it+2*j].SetRightMargin(0.05)
+            canvas[it+2*j].SetLeftMargin(0.18)
 
             if(plotMC):
                 if(key == keyList[len(keyList)-1]):
                     mcSet[j].Draw("HIST")
                     mcSet[j].GetXaxis().SetTitle(xTitle)
                     mcSet[j].GetYaxis().SetTitle(yTitle)
-                    mcSet[j].GetYaxis().SetTitleOffset(1.3)
+                    mcSet[j].GetYaxis().SetTitleOffset(1.5)
                     if(data[key].GetMaximum()>mcSet[j].GetMaximum()):
                         mcSet[j].SetMaximum(1.25*data[key].GetMaximum())
                     ROOT.SetOwnership(mcSet[j], 0)
@@ -4821,10 +5210,10 @@ def getZmassFitPlot(fitFunc=None, dataSet=None, mcSet=None, plotMC=None, doDiMu=
                 leg1.SetFillStyle(1001)
                 # leg1.SetFillColor(ROOT.kWhite) 
                 leg1.SetFillColor(0) 
-                leg1.AddEntry(mcList[0],"Drell-Yan MC","f")
-                leg1.AddEntry(mcList[1],"t#bar{t}Z MC","f")
-                leg1.AddEntry(mcList[2],"VV MC","f")
-                leg1.AddEntry(mcList[3],"t#bar{t} MC","f")
+                leg1.AddEntry(mcList[0],"Drell-Yan Sim","f")
+                leg1.AddEntry(mcList[1],"t#bar{t}Z Sim","f")
+                leg1.AddEntry(mcList[2],"VV Sim","f")
+                leg1.AddEntry(mcList[3],"t#bar{t} Sim","f")
                 leg1.AddEntry(data[key], dataStr, "p")
                 leg1.AddEntry(frame[key].findObject("fit"), "Fit to "+dataStr, "l")
 
@@ -4847,6 +5236,9 @@ def getZmassFitPlot(fitFunc=None, dataSet=None, mcSet=None, plotMC=None, doDiMu=
 
             cmsLumi(canvas[it+2*j], iPeriod, iPos, extraText)
  
+            if(savePlot and it==1):
+                canvas[it+2*j].SaveAs('../plots/massPlots/'+jDict[j]+'_nj'+str(nJetBin)+'_nb'+str(bJetBin)+'.pdf')
+
             it+=1
 
     for c in canvas:
