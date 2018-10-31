@@ -129,6 +129,7 @@ private:
   BTagCorrector* btagcorr_;
   std::vector< std::vector<double> > kinThresholds_;
   std::vector<int> nJetThresholds_;
+  std::vector<int> nJet1Thresholds_;
   std::vector<int> nbThresholds_;
   unsigned kinSize_;
   TString isoSFlepTksVeto_;
@@ -181,7 +182,7 @@ private:
   string_map minDphiCutMap_;
   string_map MHTCutMap_;
   string_map sampleKeyMap_;
-  ivector_map toCCbin_, toCCbinjb_;
+  ivector_map toCCbin_, toCCbinSpl_, toCCbinjb_;
   std::vector<const char*> activeBranches_;
 
   void Init(const std::string& cfg_filename="");

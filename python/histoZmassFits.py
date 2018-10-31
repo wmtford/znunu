@@ -10,7 +10,7 @@ ROOT.gROOT.SetBatch(1)
 
 singleOutFile = True
 doMumu = True
-doEe = False
+doEe = True
 removeDYkfactor = False
 MCscaleM = 1
 MCscaleE = 1
@@ -20,10 +20,10 @@ print "removeDYkfactor = "+str(removeDYkfactor)
 period = 5  # 2016
 lumimm = 35.9
 lumiee = lumimm
-DataFileM = ROOT.TFile('../outputs/histsDYmm_2016v15.root')
+DataFileM = ROOT.TFile('../outputs/histsDY_2016v15.root')
 # DataFileM = ROOT.TFile('../outputs/histsDY_2016v12.root')
-DataFileE = ROOT.TFile('../outputs/histsDY_2016v12_skimCuts.root')  # Until we have v15 ee skims
-# DataFileE = DataFileM
+# DataFileE = ROOT.TFile('../outputs/histsDY_2016v12_skimCuts.root')  # Until we have v15 ee skims
+DataFileE = DataFileM
 MCfile = ROOT.TFile('../outputs/histsDYMC_2016v12_skimCuts.root')
 # MCfile = ROOT.TFile('../outputs/histsDYMC_2016v12.root')
 # MCfile = ROOT.TFile('../outputs/histsDYMC_2016v12_puWt.root')

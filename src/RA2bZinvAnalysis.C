@@ -198,31 +198,46 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
     kinThresholds_.push_back({500, 500, 1000});
     kinThresholds_.push_back({750, 750, 1500});
     kinThresholds_.push_back({250, 300, 500, 1000}); // QCD control bins
+    nJet1Thresholds_ = {2, 3, 4, 5, 6, 7, 8, 9};  // for Nb/0b extrapolation
     nJetThresholds_ = {2, 3, 5, 7, 9};
     nbThresholds_ = {0, 1, 2, 3};
 
-    Int_t binjbk = 0, binjb = 0;
-    for (unsigned j = 0; j < nJetThresholds_.size(); ++j) {
-      for (unsigned b = 0; b < nbThresholds_.size(); ++b) {
-	if (nbThresholds_[b] > nJetThresholds_[j]) continue;  // Exclude (Njets0, Nb3)
-	std::vector<int> jb = {int(j), int(b)};
+  } // era 2016
+
+  //  The following loop fills the binning maps
+  //  toCCbin_ for the main analysis NJet, Nb, (HT, MHT) histogram
+  //  toCCbinSpl_ with one NJet value per NJet bin, for Nb/0b extrapolation
+  //  toCCbinjb_ for kinematics-integrated NJet, Nb histogram
+  Int_t binJbk = 0, binjbk = 0, binjb = 0;
+  unsigned j = 0;
+  for (unsigned J = 0; J < nJet1Thresholds_.size(); ++J) {
+    for (unsigned b = 0; b < nbThresholds_.size(); ++b) {
+      if (nbThresholds_[b] > nJetThresholds_[j]) continue;  // Exclude Nb > NJets
+      std::vector<int> jb = {int(j), int(b)};
+      if (nJet1Thresholds_[J] == nJetThresholds_[j]) {
 	binjb++;
 	toCCbinjb_[jb] = binjb;
-	unsigned mmax = deltaPhi_ == TString("nominal") ? kinThresholds_.size()-1 : kinThresholds_.size();
-	int k = -1;
-	for (unsigned m = 0; m < mmax; ++m) {
-	  for (unsigned h = 1; h < kinThresholds_[m].size(); ++h) {
-	    k++;
-	    if (j > 2 && (m < 2 || m == kinThresholds_.size()-1) && h == 1) continue;   // Exclude (Njets3,4; HT0,3,(6))
+      }
+      unsigned mmax = deltaPhi_ == TString("nominal") ? kinThresholds_.size()-1 : kinThresholds_.size();
+      int k = -1;
+      for (unsigned m = 0; m < mmax; ++m) {
+	for (unsigned h = 1; h < kinThresholds_[m].size(); ++h) {
+	  k++;
+	  if (j > 2 && (m < 2 || m == kinThresholds_.size()-1) && h == 1) continue;   // Exclude (Njets3,4; HT0,3,(6))
+	  std::vector<int> Jbk = {int(J), int(b), k};
+	  binJbk++;
+	  toCCbinSpl_[Jbk] = binJbk;
+	  if (nJet1Thresholds_[J] == nJetThresholds_[j]) {
 	    std::vector<int> jbk = {int(j), int(b), k};
 	    binjbk++;
 	    toCCbin_[jbk] = binjbk;
-	    // cout << "Filling toCCbin; j = " << j << ", b = "  << b << ", k = " << k << ", bin = " << bin << endl;
+	    // cout << "Filling toCCbin; j = " << j << ", b = "  << b << ", k = " << k << ", bin = " << toCCbin_[jbk] << endl;
 	  }
 	}
       }
     }
-  } // era 2016
+    if (J+1 < nJet1Thresholds_.size() && j+1 < nJetThresholds_.size() && nJet1Thresholds_[J+1] == nJetThresholds_[j+1]) j++;
+  }
 
   kinSize_ = 0;
   int mmax = (deltaPhi_ == TString("nominal")) ? kinThresholds_.size() -1 : kinThresholds_.size();
@@ -570,14 +585,11 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
     	if (btagcorr_) btagcorr_->SetEffs(thisFile);
 	if (verbosity_ >= 1) cout << "Current file in chain: " << thisFile->GetName() << endl;
       }
-      countInFile = 0;
-    }
-    chain->GetEntry(entry);
-    countInFile++;
-    if (countInFile == 1) {
+      chain->GetEntry(entry);  // Pull in tree variables for reinitialization
       checkActiveTrigPrescales(sample);
       if (isMC_ && verbosity_ >= 1) cout << "MC weight for this file is " << Weight << endl;
     }
+    chain->GetEntry(entry);
     cleanVars();  // If unskimmed input, copy <var>clean to <var>
     Int_t BTagsOrig = setBTags();
     // if (countInFile <= 100) cout << "BTagsOrig, BTags, BTagsDeepCSV = " << BTagsOrig << ", " << BTags << ", " << BTagsDeepCSV << endl;
@@ -647,7 +659,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   Int_t MaxBins = toCCbin_.size();
   cout << "MaxBins = " << MaxBins << endl;
   hCC.NbinsX = MaxBins;  hCC.rangeX.first = 0.5;  hCC.rangeX.second = MaxBins+0.5;
-  hCC.axisTitles.first = "Analysis bin";  hCC.axisTitles.second = "Events / bin";
+  hCC.axisTitles.first = "Njets, Nb, (HT, MHT)";  hCC.axisTitles.second = "Events / bin";
   hCC.filler1D = &RA2bZinvAnalysis::fillCC;
   histograms.push_back(&hCC);
 
@@ -656,9 +668,18 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   Int_t MaxBinsjb = toCCbinjb_.size();
   cout << "MaxBinsjb = " << MaxBinsjb << endl;
   hCCjb.NbinsX = MaxBinsjb;  hCCjb.rangeX.first = 0.5;  hCCjb.rangeX.second = MaxBinsjb+0.5;
-  hCCjb.axisTitles.first = "Njets, Nb bin";  hCCjb.axisTitles.second = "Events / bin";
+  hCCjb.axisTitles.first = "Njets, Nb";  hCCjb.axisTitles.second = "Events / bin";
   hCCjb.filler1D = &RA2bZinvAnalysis::fillCC;
   histograms.push_back(&hCCjb);
+
+  histConfig hCCspl;
+  hCCspl.name = TString("hCCspl_") + sample;  hCCspl.title = "Cut & count, NJet split";
+  Int_t MaxBinsSpl = toCCbinSpl_.size();
+  cout << "MaxBinsSpl = " << MaxBinsSpl << endl;
+  hCCspl.NbinsX = MaxBinsSpl;  hCCspl.rangeX.first = 0.5;  hCCspl.rangeX.second = MaxBinsSpl+0.5;
+  hCCspl.axisTitles.first = "Njets, Nb, (HT, MHT)";  hCCspl.axisTitles.second = "Events / bin";
+  hCCspl.filler1D = &RA2bZinvAnalysis::fillCC;
+  histograms.push_back(&hCCspl);
 
   histConfig hHT;
   hHT.name = TString("hHT_") + sample;  hHT.title = "HT";
@@ -743,65 +764,65 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hTrueNumInt.dvalue = &TrueNumInteractions;
   histograms.push_back(&hTrueNumInt);
 
-  histConfig hZmass_sfLepTksVeto(hZmass);
-  hZmass_sfLepTksVeto.name = TString("hZmass_sfLepTksVeto_") + sample;  hZmass_sfLepTksVeto.title = "Z mass, SF lepton vetoed";
-  hZmass_sfLepTksVeto.omitCuts.push_back(&isoSFlepTksCut_);  hZmass_sfLepTksVeto.addCuts = isoSFlepTksVeto_.Data();
-  histograms.push_back(&hZmass_sfLepTksVeto);
+  // histConfig hZmass_sfLepTksVeto(hZmass);
+  // hZmass_sfLepTksVeto.name = TString("hZmass_sfLepTksVeto_") + sample;  hZmass_sfLepTksVeto.title = "Z mass, SF lepton vetoed";
+  // hZmass_sfLepTksVeto.omitCuts.push_back(&isoSFlepTksCut_);  hZmass_sfLepTksVeto.addCuts = isoSFlepTksVeto_.Data();
+  // histograms.push_back(&hZmass_sfLepTksVeto);
 
-  histConfig hZmass_photonVeto(hZmass);
-  hZmass_photonVeto.name = TString("hZmass_photonVeto_") + sample;  hZmass_photonVeto.title = "Z mass, photon vetoed";
-  hZmass_photonVeto.omitCuts.push_back(&photonVeto_);  hZmass_photonVeto.addCuts = photonCut_.Data();
-  histograms.push_back(&hZmass_photonVeto);
+  // histConfig hZmass_photonVeto(hZmass);
+  // hZmass_photonVeto.name = TString("hZmass_photonVeto_") + sample;  hZmass_photonVeto.title = "Z mass, photon vetoed";
+  // hZmass_photonVeto.omitCuts.push_back(&photonVeto_);  hZmass_photonVeto.addCuts = photonCut_.Data();
+  // histograms.push_back(&hZmass_photonVeto);
 
-  histConfig hGpt;
-  hGpt.name = TString("hGpt_") + sample;  hGpt.title = "Photon Pt";
-  hGpt.NbinsX = 60;  hGpt.rangeX.first = 0;  hGpt.rangeX.second = 3000;
-  hGpt.axisTitles.first = "Pt(gamma) [GeV]";  hGpt.axisTitles.second = "Events / 50 GeV";
-  hGpt.filler1D = &RA2bZinvAnalysis::fillGpt;
-  hGpt.omitCuts.push_back(&photonVeto_);  hGpt.addCuts = photonCut_.Data();
-  histograms.push_back(&hGpt);
+  // histConfig hGpt;
+  // hGpt.name = TString("hGpt_") + sample;  hGpt.title = "Photon Pt";
+  // hGpt.NbinsX = 60;  hGpt.rangeX.first = 0;  hGpt.rangeX.second = 3000;
+  // hGpt.axisTitles.first = "Pt(gamma) [GeV]";  hGpt.axisTitles.second = "Events / 50 GeV";
+  // hGpt.filler1D = &RA2bZinvAnalysis::fillGpt;
+  // hGpt.omitCuts.push_back(&photonVeto_);  hGpt.addCuts = photonCut_.Data();
+  // histograms.push_back(&hGpt);
 
-  histConfig hZGmass;
-  hZGmass.name = TString("hZGmass_") + sample;  hZGmass.title = "Z-gamma mass";
-  hZGmass.NbinsX = 100;  hZGmass.rangeX.first = 0;  hZGmass.rangeX.second = 2000;
-  hZGmass.axisTitles.first = "M(Z gamma) [GeV]";  hZGmass.axisTitles.second = "Events / 20 GeV";
-  hZGmass.filler1D = &RA2bZinvAnalysis::fillZGmass;
-  hZGmass.omitCuts.push_back(&photonVeto_);  hZGmass.addCuts = photonCut_.Data();
-  histograms.push_back(&hZGmass);
+  // histConfig hZGmass;
+  // hZGmass.name = TString("hZGmass_") + sample;  hZGmass.title = "Z-gamma mass";
+  // hZGmass.NbinsX = 100;  hZGmass.rangeX.first = 0;  hZGmass.rangeX.second = 2000;
+  // hZGmass.axisTitles.first = "M(Z gamma) [GeV]";  hZGmass.axisTitles.second = "Events / 20 GeV";
+  // hZGmass.filler1D = &RA2bZinvAnalysis::fillZGmass;
+  // hZGmass.omitCuts.push_back(&photonVeto_);  hZGmass.addCuts = photonCut_.Data();
+  // histograms.push_back(&hZGmass);
 
-  histConfig hZGdRvsM;
-  hZGdRvsM.name = TString("hZGdRvsM_")+sample;
-  hZGdRvsM.title = "Min Delta R vs M(Zgamma) for Z(ll) leptons";
-  hZGdRvsM.NbinsX = 100;  hZGdRvsM.rangeX.first = 0;  hZGdRvsM.rangeX.second = 200;
-  hZGdRvsM.NbinsY = 40;  hZGdRvsM.rangeY.first = 0;  hZGdRvsM.rangeY.second = 0.02;
-  hZGdRvsM.axisTitles.first = "M(Z gamma) [GeV]";  hZGdRvsM.axisTitles.second = "DR(l gamma)";
-  hZGdRvsM.filler2D = &RA2bZinvAnalysis::fillZGdRvsM;
-  hZGdRvsM.omitCuts.push_back(&photonVeto_);  hZGdRvsM.addCuts = photonCut_.Data();
-  histograms.push_back(&hZGdRvsM);
+  // histConfig hZGdRvsM;
+  // hZGdRvsM.name = TString("hZGdRvsM_")+sample;
+  // hZGdRvsM.title = "Min Delta R vs M(Zgamma) for Z(ll) leptons";
+  // hZGdRvsM.NbinsX = 100;  hZGdRvsM.rangeX.first = 0;  hZGdRvsM.rangeX.second = 200;
+  // hZGdRvsM.NbinsY = 40;  hZGdRvsM.rangeY.first = 0;  hZGdRvsM.rangeY.second = 0.02;
+  // hZGdRvsM.axisTitles.first = "M(Z gamma) [GeV]";  hZGdRvsM.axisTitles.second = "DR(l gamma)";
+  // hZGdRvsM.filler2D = &RA2bZinvAnalysis::fillZGdRvsM;
+  // hZGdRvsM.omitCuts.push_back(&photonVeto_);  hZGdRvsM.addCuts = photonCut_.Data();
+  // histograms.push_back(&hZGdRvsM);
 
-  histConfig hGJdR;
-  hGJdR.name = TString("hGJdR_") + sample;  hGJdR.title = "min DR(photon-jet)";
-  hGJdR.NbinsX = 200;  hGJdR.rangeX.first = 0;  hGJdR.rangeX.second = 4;
-  hGJdR.axisTitles.first = "Delta R";  hGJdR.axisTitles.second = "Events / 0.02";
-  hGJdR.filler1D = &RA2bZinvAnalysis::fillGJdR;
-  hGJdR.omitCuts.push_back(&photonVeto_);  hGJdR.addCuts = photonCut_.Data();
-  histograms.push_back(&hGJdR);
+  // histConfig hGJdR;
+  // hGJdR.name = TString("hGJdR_") + sample;  hGJdR.title = "min DR(photon-jet)";
+  // hGJdR.NbinsX = 200;  hGJdR.rangeX.first = 0;  hGJdR.rangeX.second = 4;
+  // hGJdR.axisTitles.first = "Delta R";  hGJdR.axisTitles.second = "Events / 0.02";
+  // hGJdR.filler1D = &RA2bZinvAnalysis::fillGJdR;
+  // hGJdR.omitCuts.push_back(&photonVeto_);  hGJdR.addCuts = photonCut_.Data();
+  // histograms.push_back(&hGJdR);
 
-  histConfig hGLdRnoPixelSeed;
-  hGLdRnoPixelSeed.name = TString("hGLdRnoPixelSeed_") + sample;  hGLdRnoPixelSeed.title = "min DR(photon-lepton), noPixelSeed";
-  hGLdRnoPixelSeed.NbinsX = 200;  hGLdRnoPixelSeed.rangeX.first = 0;  hGLdRnoPixelSeed.rangeX.second = 4;
-  hGLdRnoPixelSeed.axisTitles.first = "Delta R";  hGLdRnoPixelSeed.axisTitles.second = "Events / 0.02";
-  hGLdRnoPixelSeed.filler1D = &RA2bZinvAnalysis::fillGLdRnoPixelSeed;
-  hGLdRnoPixelSeed.omitCuts.push_back(&photonVeto_);  hGLdRnoPixelSeed.addCuts = photonCut_.Data();
-  histograms.push_back(&hGLdRnoPixelSeed);
+  // histConfig hGLdRnoPixelSeed;
+  // hGLdRnoPixelSeed.name = TString("hGLdRnoPixelSeed_") + sample;  hGLdRnoPixelSeed.title = "min DR(photon-lepton), noPixelSeed";
+  // hGLdRnoPixelSeed.NbinsX = 200;  hGLdRnoPixelSeed.rangeX.first = 0;  hGLdRnoPixelSeed.rangeX.second = 4;
+  // hGLdRnoPixelSeed.axisTitles.first = "Delta R";  hGLdRnoPixelSeed.axisTitles.second = "Events / 0.02";
+  // hGLdRnoPixelSeed.filler1D = &RA2bZinvAnalysis::fillGLdRnoPixelSeed;
+  // hGLdRnoPixelSeed.omitCuts.push_back(&photonVeto_);  hGLdRnoPixelSeed.addCuts = photonCut_.Data();
+  // histograms.push_back(&hGLdRnoPixelSeed);
 
-  histConfig hGLdRpixelSeed;
-  hGLdRpixelSeed.name = TString("hGLdRpixelSeed_") + sample;  hGLdRpixelSeed.title = "min DR(photon-lepton), pixelSeed";
-  hGLdRpixelSeed.NbinsX = 200;  hGLdRpixelSeed.rangeX.first = 0;  hGLdRpixelSeed.rangeX.second = 4;
-  hGLdRpixelSeed.axisTitles.first = "Delta R";  hGLdRpixelSeed.axisTitles.second = "Events / 0.02";
-  hGLdRpixelSeed.filler1D = &RA2bZinvAnalysis::fillGLdRpixelSeed;
-  hGLdRpixelSeed.omitCuts.push_back(&photonVeto_);  hGLdRpixelSeed.addCuts = photonCut_.Data();
-  histograms.push_back(&hGLdRpixelSeed);
+  // histConfig hGLdRpixelSeed;
+  // hGLdRpixelSeed.name = TString("hGLdRpixelSeed_") + sample;  hGLdRpixelSeed.title = "min DR(photon-lepton), pixelSeed";
+  // hGLdRpixelSeed.NbinsX = 200;  hGLdRpixelSeed.rangeX.first = 0;  hGLdRpixelSeed.rangeX.second = 4;
+  // hGLdRpixelSeed.axisTitles.first = "Delta R";  hGLdRpixelSeed.axisTitles.second = "Events / 0.02";
+  // hGLdRpixelSeed.filler1D = &RA2bZinvAnalysis::fillGLdRpixelSeed;
+  // hGLdRpixelSeed.omitCuts.push_back(&photonVeto_);  hGLdRpixelSeed.addCuts = photonCut_.Data();
+  // histograms.push_back(&hGLdRpixelSeed);
 
   // Z mass in Njet, Nb bins
   histConfig hZmass_2j0b(hZmass);
@@ -868,23 +889,17 @@ RA2bZinvAnalysis::fillCC(TH1F* h, double wt) {
   if (useTreeCCbin_) {
     binCC = RA2bin;
     if (binCC > 0) {
-      if (hName.Contains("jb")) {
-	// Calculate binCCjb
-	int binNjets = nJetThresholds_.size()-1;
-	while (NJets < nJetThresholds_[binNjets]) binNjets--;
-	int binNb = nbThresholds_.size()-1;
-	while (BTags < nbThresholds_[binNb]) binNb--;
-	std::vector<int> jb = {binNjets, binNb};
-	try {
-	  binCCjb = toCCbinjb_.at(jb);
-	}
-	catch (const std::out_of_range& oor) {
-	  if (verbosity_ >= 1) std::cerr << "jb out of range: " << oor.what() << ": j = " << binNjets
-					   << ", b = " << binNb << ", RA2bin = " << RA2bin << '\n';
-	  return;
-	}
-	h->Fill(Double_t(binCCjb), wt);
-      } else {
+      if (hName.Contains("jb") || hName.Contains("spl")) {
+      // 	// Calculate binCCjb
+      // 	int binNjets = nJetThresholds_.size()-1;
+      // 	while (NJets < nJetThresholds_[binNjets]) binNjets--;
+      // 	int binNb = nbThresholds_.size()-1;
+      // 	while (BTags < nbThresholds_[binNb]) binNb--;
+      // 	std::vector<int> jb = {binNjets, binNb};
+      // 	try {binCCjb = toCCbinjb_.at(jb);}
+      // 	catch (const std::out_of_range& oor) {return;}
+      // 	h->Fill(Double_t(binCCjb), wt);
+      // } else {
 	h->Fill(Double_t(binCC), wt);
       }
     }
@@ -892,26 +907,39 @@ RA2bZinvAnalysis::fillCC(TH1F* h, double wt) {
     // Calculate binCC
     int binKin = kinBin(HT, MHT);
     if (binKin < 0) return;
-    int binNjets = nJetThresholds_.size()-1;
-    while (NJets < nJetThresholds_[binNjets]) binNjets--;
+    int binNjets;
+    if (hName.Contains("spl")) {
+      binNjets = nJet1Thresholds_.size()-1;
+      while (NJets < nJet1Thresholds_[binNjets]) binNjets--;
+    } else {
+      binNjets = nJetThresholds_.size()-1;
+      while (NJets < nJetThresholds_[binNjets]) binNjets--;
+    }
     if (!applyBTagSF_) {
       int binNb = nbThresholds_.size()-1;
       while (BTags < nbThresholds_[binNb]) binNb--;
       std::vector<int> jbk = {binNjets, binNb, binKin};
-      try {
-	binCC = toCCbin_.at(jbk);
-      }
-      catch (const std::out_of_range& oor) {
-      // Omitted bins j = 3,4, k = 0,3
-	if (verbosity_ >= 4) std::cerr << "jbk out of range: " << oor.what() << ": j = " << binNjets
-				       << ", b = " << binNb << ", k = " << binKin << ", RA2bin = " << RA2bin << '\n';
-	return;
+      if (hName.Contains("spl")) {
+	try {binCC = toCCbinSpl_.at(jbk);}
+	catch (const std::out_of_range& oor) {return;}
+      } else {
+	try {
+	  binCC = toCCbin_.at(jbk);
+	}
+	catch (const std::out_of_range& oor) {
+	  // Omitted bins j = 3,4, k = 0,3
+	  if (verbosity_ >= 4) std::cerr << "jbk out of range: " << oor.what() << ": j = " << binNjets
+					 << ", b = " << binNb << ", k = " << binKin << ", RA2bin = " << RA2bin << '\n';
+	  return;
+	}
       }
       if (verbosity_ >= 4) cout << "j = " << binNjets << ", b = " << binNb << ", k = " << binKin << ", binCC = "
 				<< binCC << ", RA2bin = " << RA2bin << endl;
       if (hName.Contains("jb")) {
+	// Above test on jbk needed even here, to exclude j = 3,4, k = 0,3
 	std::vector<int> jb = {binNjets, binNb};
-	binCCjb = toCCbinjb_.at(jb);
+	try {binCCjb = toCCbinjb_.at(jb);}
+      	catch (const std::out_of_range& oor) {return;}
 	h->Fill(Double_t(binCCjb), wt);
       } else {
 	h->Fill(Double_t(binCC), wt);
@@ -924,13 +952,19 @@ RA2bZinvAnalysis::fillCC(TH1F* h, double wt) {
       vector<double> probNb = btagcorr_->GetCorrections(Jets, Jets_hadronFlavor, Jets_HTMask);
       for (int binNb = 0; binNb < (int) nbThresholds_.size(); ++binNb) {
 	std::vector<int> jbk = {binNjets, binNb, binKin};
-	try {binCC = toCCbin_.at(jbk);}
-	catch (const std::out_of_range& oor) {return;}
-	if (verbosity_ >= 3) cout << "j = " << binNjets << ", NbTags = " << BTags << ", b = " << binNb
+	if (hName.Contains("spl")) {
+	  try {binCC = toCCbinSpl_.at(jbk);}
+	  catch (const std::out_of_range& oor) {return;}
+	} else {
+	  try {binCC = toCCbin_.at(jbk);}
+	  catch (const std::out_of_range& oor) {return;}
+	}
+	if (verbosity_ >= 4) cout << "j = " << binNjets << ", NbTags = " << BTags << ", b = " << binNb
 				  << ", b wt = " << probNb[binNb] << ", k = " << binKin << ", binCC = " << binCC << endl;
 	if (hName.Contains("jb")) {
 	  std::vector<int> jb = {binNjets, binNb};
-	  binCCjb = toCCbinjb_.at(jb);
+	  try {binCCjb = toCCbinjb_.at(jb);}
+	  catch (const std::out_of_range& oor) {return;}
 	  h->Fill(Double_t(binCCjb), wt*probNb[binNb]);
 	} else {
 	  h->Fill(Double_t(binCC), wt*probNb[binNb]);

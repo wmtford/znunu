@@ -10,7 +10,7 @@ ROOT.gROOT.SetBatch(1)
 
 singleOutFile = True
 doMumu = True
-doEe = False
+doEe = True
 norm2016 = True
 iPeriod = 5
 fScaleM = 1
@@ -36,6 +36,8 @@ filehistsE = {}
 #   filehistsE['D'] = (Dfile, ["hHT_dyee", "hMHT_dyee", "hNJets_dyee", "hBTags_dyee", "hZmass_dyee", "hZpt_dyee", "hCutFlow_dyee", "hCuts_dyee", "hVertices_dyee"])
 #   hists.append(filehistsE)
 
+#  ========================================================================================
+
 # iPeriod = 5
 # legList = ['2016 DY MC, pileup wt','2016 DY MC']
 # Nfile = ROOT.TFile('../outputs/histsDYMC_2016v12_puWt.root')
@@ -53,9 +55,14 @@ filehistsE = {}
 #   filehistsE['D'] = (Dfile, fScaleE, histnames)
 #   hists.append(filehistsE)
 
+#  ========================================================================================
+
 iPeriod = 5
+# legList = ['2016 data V15 DeepCSV', '2016 data V15']
 legList = ['2016 data V15', '2016 data V12']
-Nfile = ROOT.TFile('../outputs/histsDYmm_2016v15.root')
+Nfile = ROOT.TFile('../outputs/histsDY_2016v15.root')
+# Nfile = ROOT.TFile('../outputs/histsDY_2016v15_DeepCSV.root')
+# Dfile = ROOT.TFile('../outputs/histsDY_2016v15.root')
 Dfile = ROOT.TFile('../outputs/histsDY_2016v12_skimCuts.root')
 if (doMumu):
   histnames = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm"]
@@ -71,32 +78,32 @@ if (doEe):
 #  ========================================================================================
 
 # iPeriod = 6
-# Nfile = ROOT.TFile('../outputs/histsDY_2017v15.root')
+# Nfile = ROOT.TFile('../outputs/histsDY_2017v15_DeepCSV.root')
 # if (norm2016):
-#   legList = ['2017 data','2016 data, scaled']
-#   Dfile = ROOT.TFile('../outputs/histsDYmm_2016v15.root')
+#   legList = ['2017 data DeepCSV','2016 data DeepCSV, scaled']
+#   Dfile = ROOT.TFile('../outputs/histsDY_2016v15_DeepCSV.root')
 #   fScaleM = 41.5/35.9
 #   fScaleE = fScaleM
 # else:
 #   legList = ['2017 data from skim','2017 data from ntuples']
 #   Dfile = ROOT.TFile('../outputs/histsDY_2017v15_skimCuts.root')
 # if (doMumu):
-#   # Nfile = ROOT.TFile('../outputs/histsDYmm_2017v15.root')
 #   histnames = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm"]
 #   filehistsM['N'] = (Nfile, histnames)
 #   filehistsM['D'] = (Dfile, fScaleM, histnames)
 #   hists.append(filehistsM)
 # if (doEe):
-#   # Nfile = ROOT.TFile('../outputs/histsDYee_2017v15.root')
 #   histnames = ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee"]
 #   filehistsE['N'] = (Nfile, histnames)
 #   filehistsE['D'] = (Dfile, fScaleE, histnames)
 #   hists.append(filehistsE)
 
+#  ========================================================================================
+
 # iPeriod = 8
-# legList = ['2018 data','2016 data, scaled']
-# Nfile = ROOT.TFile('../outputs/histsDY_2018_14ifb_v15.root')
-# Dfile = ROOT.TFile('../outputs/histsDYmm_2016v15.root')
+# legList = ['2018 data DeepCSV','2016 data DeepCSV, scaled']
+# Nfile = ROOT.TFile('../outputs/histsDY_2018_14ifb_v15_DeepCSV.root')
+# Dfile = ROOT.TFile('../outputs/histsDY_2016v15_DeepCSV.root')
 # fScaleM = 14.0/35.9
 # fScaleE = 13.5/35.9
 # if (doMumu):
@@ -146,7 +153,7 @@ for samples in hists:
         hNumer.SetMaximum(MZeeMax)
     else:
       doLogy = True
-    canvas = RA2b.getPlotAndRatio(
+    canvTuple = RA2b.getPlotAndRatio(
       numHists=hNumer, denomHists=hDen, doRatio=True,
       doLogy=doLogy, doCMSlumi=True, iPeriod=iPeriod, drawHorizontalLine=True,
       xTitle=hNumer.GetXaxis().GetTitle(), yTitle=hNumer.GetYaxis().GetTitle(),
@@ -177,9 +184,9 @@ for samples in hists:
     #   )
 
     if (singleOutFile):
-      canvas.Print("ratioPlots.pdf")
+      canvTuple[0].Print("ratioPlots.pdf")
     else:
-      canvas.SaveAs(str(nhName)+".pdf")
+      canvTuple[0].SaveAs(str(nhName)+".pdf")
 
 if (singleOutFile):
   canvas.Print("ratioPlots.pdf]")
