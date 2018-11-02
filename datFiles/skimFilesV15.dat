@@ -48,6 +48,31 @@ tree_DYe_CleanVars/tree_EGamma_2018A3.root
 tree_DYe_CleanVars/tree_EGamma_2018B1.root
 ##
 
+photon2016 10   # Photon data 2016
+tree_GJet_CleanVars/tree_SinglePhoton_2016B.root
+tree_GJet_CleanVars/tree_SinglePhoton_2016C.root
+tree_GJet_CleanVars/tree_SinglePhoton_2016D.root
+tree_GJet_CleanVars/tree_SinglePhoton_2016E.root
+tree_GJet_CleanVars/tree_SinglePhoton_2016F.root
+tree_GJet_CleanVars/tree_SinglePhoton_2016G.root
+tree_GJet_CleanVars/tree_SinglePhoton_2016H.root
+##
+
+photon2017 10   # Photon data 2017
+tree_GJet_CleanVars/tree_SinglePhoton_2017B.root
+tree_GJet_CleanVars/tree_SinglePhoton_2017C.root
+tree_GJet_CleanVars/tree_SinglePhoton_2017D.root
+tree_GJet_CleanVars/tree_SinglePhoton_2017E.root
+tree_GJet_CleanVars/tree_SinglePhoton_2017F.root
+##
+
+photon2018 10   # Photon data 2018
+tree_GJet_CleanVars/tree_EGamma_2018A1.root
+tree_GJet_CleanVars/tree_EGamma_2018A2.root
+tree_GJet_CleanVars/tree_EGamma_2018A3.root
+tree_GJet_CleanVars/tree_EGamma_2018B1.root
+##
+
 zmmldp2016 10   # DY->mumu data LDP 2016
 tree_DYmLDP_CleanVars/tree_SingleMuon_2016B.root
 tree_DYmLDP_CleanVars/tree_SingleMuon_2016C.root
@@ -96,5 +121,30 @@ tree_DYeLDP_CleanVars/tree_EGamma_2018A1.root
 tree_DYeLDP_CleanVars/tree_EGamma_2018A2.root
 tree_DYeLDP_CleanVars/tree_EGamma_2018A3.root
 tree_DYeLDP_CleanVars/tree_EGamma_2018B1.root
+##
+
+photonldp2016 10   # Photon data LDP 2016
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2016B.root
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2016C.root
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2016D.root
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2016E.root
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2016F.root
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2016G.root
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2016H.root
+##
+
+photonldp2017 10   # Photon data LDP 2017
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2017B.root
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2017C.root
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2017D.root
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2017E.root
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2017F.root
+##
+
+photonldp2018 10   # Photon data LDP 2018
+tree_GJetLDP_CleanVars/tree_EGamma_2018A1.root
+tree_GJetLDP_CleanVars/tree_EGamma_2018A2.root
+tree_GJetLDP_CleanVars/tree_EGamma_2018A3.root
+tree_GJetLDP_CleanVars/tree_EGamma_2018B1.root
 ##
 

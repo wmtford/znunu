@@ -1,9 +1,9 @@
-  /*
+/*
   Run from the command line with
   root -l -b RA2bZinvLoadClasses.C RA2bZinvDriver.C
   or
   root -l -b RA2bZinvLoadClasses.C RA2bZinvDriver.C\(\"2016B\"\)
-  */
+*/
 
 #include "TROOT.h"
 #include "TEnv.h"
@@ -17,6 +17,7 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
   bool doHttzvv = false;
   bool doHzmm = true;
   bool doHzee = true;
+  bool doHphoton = false;
   bool doHdymm = false;
   bool doHdyee = false;
   bool doHttzmm = false;
@@ -107,6 +108,16 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
 	}
       }
     }
+    histoOutFile->Write();
+  }
+
+  if (doHphoton) {
+    fnroot = "histsPhoton";
+    const char* outfn = (fnroot + runBlock + ".root").data();
+    TFile *histoOutFile = TFile::Open(outfn, "RECREATE");
+    std::vector<TH1*> h_photon = analyzer.makeHistograms("photon");
+    for (auto& theHist : h_photon)
+      theHist->Draw();
     histoOutFile->Write();
   }
 

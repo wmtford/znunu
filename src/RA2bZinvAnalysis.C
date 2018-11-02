@@ -193,56 +193,16 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
 
     if (isMC_) BTagSFfile_ = "../../Analysis/btag/CSVv2_Moriond17_B_H_mod.csv";
 
-    kinThresholds_.push_back({300, 300, 500, 1000});  // mht threshold, {ht thresholds}
-    kinThresholds_.push_back({350, 350, 500, 1000});
-    kinThresholds_.push_back({500, 500, 1000});
-    kinThresholds_.push_back({750, 750, 1500});
-    kinThresholds_.push_back({250, 300, 500, 1000}); // QCD control bins
-    nJet1Thresholds_ = {2, 3, 4, 5, 6, 7, 8, 9};  // for Nb/0b extrapolation
-    nJetThresholds_ = {2, 3, 5, 7, 9};
-    nbThresholds_ = {0, 1, 2, 3};
-
   } // era 2016
 
-  //  The following loop fills the binning maps
-  //  toCCbin_ for the main analysis NJet, Nb, (HT, MHT) histogram
-  //  toCCbinSpl_ with one NJet value per NJet bin, for Nb/0b extrapolation
-  //  toCCbinjb_ for kinematics-integrated NJet, Nb histogram
-  Int_t binJbk = 0, binjbk = 0, binjb = 0;
-  unsigned j = 0;
-  for (unsigned J = 0; J < nJet1Thresholds_.size(); ++J) {
-    for (unsigned b = 0; b < nbThresholds_.size(); ++b) {
-      if (nbThresholds_[b] > nJetThresholds_[j]) continue;  // Exclude Nb > NJets
-      std::vector<int> jb = {int(j), int(b)};
-      if (nJet1Thresholds_[J] == nJetThresholds_[j]) {
-	binjb++;
-	toCCbinjb_[jb] = binjb;
-      }
-      unsigned mmax = deltaPhi_ == TString("nominal") ? kinThresholds_.size()-1 : kinThresholds_.size();
-      int k = -1;
-      for (unsigned m = 0; m < mmax; ++m) {
-	for (unsigned h = 1; h < kinThresholds_[m].size(); ++h) {
-	  k++;
-	  if (j > 2 && (m < 2 || m == kinThresholds_.size()-1) && h == 1) continue;   // Exclude (Njets3,4; HT0,3,(6))
-	  std::vector<int> Jbk = {int(J), int(b), k};
-	  binJbk++;
-	  toCCbinSpl_[Jbk] = binJbk;
-	  if (nJet1Thresholds_[J] == nJetThresholds_[j]) {
-	    std::vector<int> jbk = {int(j), int(b), k};
-	    binjbk++;
-	    toCCbin_[jbk] = binjbk;
-	    // cout << "Filling toCCbin; j = " << j << ", b = "  << b << ", k = " << k << ", bin = " << toCCbin_[jbk] << endl;
-	  }
-	}
-      }
-    }
-    if (J+1 < nJet1Thresholds_.size() && j+1 < nJetThresholds_.size() && nJet1Thresholds_[J+1] == nJetThresholds_[j+1]) j++;
-  }
-
-  kinSize_ = 0;
-  int mmax = (deltaPhi_ == TString("nominal")) ? kinThresholds_.size() -1 : kinThresholds_.size();
-  for (int i = 0; i < mmax; ++i)
-    kinSize_ += kinThresholds_[i].size();
+  CCbinning CCmaps(era_, deltaPhi_);
+  kinThresholds_ = CCmaps.kinThresholds();
+  nJet1Thresholds_ = CCmaps.nJet1Thresholds();
+  nJetThresholds_ = CCmaps.nJetThresholds();
+  nbThresholds_ = CCmaps.nbThresholds();
+  toCCbin_ = CCmaps.toCCbin();
+  toCCbinSpl_ = CCmaps.toCCbinSpl();
+  toCCbinjb_ = CCmaps.toCCbinjb();
 
   fillCutMaps();
 
@@ -284,6 +244,7 @@ RA2bZinvAnalysis::getChain(const char* sample, Int_t* fCurrent, bool makeClass) 
   else if (theSample.Contains("ttee")) key = TString("ttee");
   else if (theSample.Contains("zmm")) key = TString("zmm");
   else if (theSample.Contains("zee")) key = TString("zee");
+  else if (theSample.Contains("photon")) key = TString("photon");
   if (deltaPhi_ == "ldp" && isSkim_) key += "ldp";
   if (!runBlock_.empty()) key += runBlock_;
 
@@ -401,7 +362,9 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
     if (Ntrig > 1) trigCuts_ = TString("(");
     for (auto theTrigger : trigger)
       trigCuts_ += TString("(TriggerPass[")+theTrigger+TString("]==1) + ");
-    if (Ntrig > 1) trigCuts_.Replace(trigCuts_.Length()-3, 3, ")");
+    trigCuts_.Replace(trigCuts_.Length()-3, 3, "");
+    if (Ntrig > 1) trigCuts_ += TString(")");
+    // if (Ntrig > 1) trigCuts_.Replace(trigCuts_.Length()-3, 3, ")");
   }
 
   // // commonCuts_ = "(JetID==1&& HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && BadChargedCandidateFilter && NVtx > 0 && BadPFMuonFilter && PFCaloMETRatio < 5)";  // Troy revision+
@@ -433,8 +396,8 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
 
   photonDeltaRcut_ = "1";
   if (sampleKey == "photon") {
-    if (applyPtCut_) ptCut_ = "@Photons.size()==1 && Photons->at(0).Pt()>=200.";
-    if (trigger.empty() && applyMinDeltaRCut_) photonDeltaRcut_ = "madMinPhotonDeltaR>=0.4";
+    if (applyPtCut_) ptCut_ = "@Photons.size()==1 && Photons.Pt()>=200.";
+    if (isMC_ && applyMinDeltaRCut_) photonDeltaRcut_ = "madMinPhotonDeltaR>=0.4";
   }
 				       
     // 	if(extraCuts!=None):
@@ -977,6 +940,7 @@ RA2bZinvAnalysis::fillCC(TH1F* h, double wt) {
 
 void
 RA2bZinvAnalysis::fillZmassjb(TH1F* h, double wt) {
+  if (ZCandidates->size() == 0) return;
   Int_t j, b;
   TString hName(h->GetName());
   j = hName(hName.First('j')-1) - '0';
@@ -1031,6 +995,7 @@ RA2bZinvAnalysis::fillGJdR(TH1F* h, double wt) {
 
 void
 RA2bZinvAnalysis::fillZGdRvsM(TH2F* h, double wt) {
+  if (ZCandidates->size() == 0) return;
   TLorentzVector theZ = ZCandidates->at(0);
   TLorentzVector thePhoton = Photons->at(0);
   TLorentzVector Zg(theZ);  Zg += thePhoton;

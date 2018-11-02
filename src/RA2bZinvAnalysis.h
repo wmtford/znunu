@@ -12,6 +12,7 @@
 #define ISSKIM
 /* #define ISMC */
 
+#include "CCbinning.h"
 #include <TString.h>
 #include <TChain.h>
 #include <TTreeReaderValue.h>
@@ -176,13 +177,12 @@ private:
 
   typedef std::map<TString, std::vector<TString> > vstring_map;
   typedef std::map<TString, TString> string_map;
-  typedef std::map<std::vector<int>, Int_t> ivector_map;
   vstring_map triggerMap_;
   string_map objCutMap_;
   string_map minDphiCutMap_;
   string_map MHTCutMap_;
   string_map sampleKeyMap_;
-  ivector_map toCCbin_, toCCbinSpl_, toCCbinjb_;
+  CCbinning::ivector_map toCCbin_, toCCbinSpl_, toCCbinjb_;
   std::vector<const char*> activeBranches_;
 
   void Init(const std::string& cfg_filename="");
