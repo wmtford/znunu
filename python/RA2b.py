@@ -4875,17 +4875,18 @@ def getZmassFitPlot(fitFunc=None, dataSet=None, mcSet=None, plotMC=None, doDiMu=
             nEvents.append(h_zllE)
             dataSet.append(d3)
     else:
-        nEvents=[]
+        # nEvents=[]
         for dataSetDict in dataSet:
             dataSetDict["sig"].SetMarkerStyle(20)
             dataSetDict["sig"].SetMarkerSize(1.1)
             hS = dataSetDict["sig"]
-            hE = hS.Clone()
-            for bin in range(9):  # underflow to 76.0
-                hE.SetBinContent(bin, 0)
-            for bin in range(24, hE.GetXaxis().GetNbins()+2):  # 106.0 to overflow
-                hE.SetBinContent(bin, 0)
-            nEvents.append(hE)
+            # Here we kluge the Z-mass-cut histogram; assumes current binning.
+            # hE = hS.Clone()
+            # for bin in range(9):  # underflow to 76.0
+            #     hE.SetBinContent(bin, 0)
+            # for bin in range(24, hE.GetXaxis().GetNbins()+2):  # 106.0 to overflow
+            #     hE.SetBinContent(bin, 0)
+            # nEvents.append(hE)
         if(mcSet==None):
             if(plotMC==None):
                 plotMC=False ## user gives dataSet, can't predict corresponding MC set
@@ -5112,7 +5113,7 @@ def getZmassFitPlot(fitFunc=None, dataSet=None, mcSet=None, plotMC=None, doDiMu=
             tot = ROOT.RooRealVar("tot","tot",10000,0,10000000)
 
             frac = ROOT.RooRealVar("frac","frac",0.9,0.0,1.0)
-            fsig = ROOT.RooRealVar("fsig","fsig",0.7,0.2,1.0)
+            # fsig = ROOT.RooRealVar("fsig","fsig",0.7,0.2,1.0)  # wtf
 
             model = ROOT.RooAddPdf("model","model",ROOT.RooArgList(fitFuncDict[fitFunc],bfit),ROOT.RooArgList(nsig,nbkg))
             model2 = ROOT.RooAddPdf("model2","model2",ROOT.RooArgList(fitFuncDict[fitFunc],bfit),ROOT.RooArgList(frac))
@@ -5120,7 +5121,7 @@ def getZmassFitPlot(fitFunc=None, dataSet=None, mcSet=None, plotMC=None, doDiMu=
             if(it==0):
                 model.fitTo(Data)
             else:
-                model.fitTo(Data)
+                # model.fitTo(Data)
                 model2.fitTo(Data)
                 
                 rooVarX.setRange("all",60,120)
@@ -5132,22 +5133,32 @@ def getZmassFitPlot(fitFunc=None, dataSet=None, mcSet=None, plotMC=None, doDiMu=
                 selectionSel = fitFuncDict[fitFunc].createIntegral(ROOT.RooArgSet(rooArgL),"selection").getVal()
                 allBGSel = bfit.createIntegral(ROOT.RooArgSet(rooArgL),"all").getVal()
                 selectionBGSel = bfit.createIntegral(ROOT.RooArgSet(rooArgL),"selection").getVal()
+                # print "PDF integral:  sig, bg = "+str(selectionSel/allSel)+", "+str(selectionBGSel/allBGSel)
 
-                nsigLVLB = nsig.getVal()
-                nbkgLVLB = nbkg.getVal()
+                # nsigLVLB = nsig.getVal()
+                # nbkgLVLB = nbkg.getVal()
 
-                integralSigSel = ((selectionSel/allSel)*nsigLVLB)
-                integralBgSel = ((selectionBGSel/allBGSel)*nbkgLVLB)
+                # integralSigSel = ((selectionSel/allSel)*nsigLVLB)
+                # integralBgSel = ((selectionBGSel/allBGSel)*nbkgLVLB)
 
-                selentries = data[key].GetEntries()
-                selSelentries = nEvents[j].GetEntries()
-                selFractionENaive = ROOT.TMath.Sqrt( (selFraction*(1-selFraction))/selentries )
-                selFractionSel = integralSigSel/(integralSigSel+integralBgSel)
-                selFractionESelNaive = ROOT.TMath.Sqrt( (selFractionSel*(1-selFractionSel))/(float(selSelentries) ))
-                selFractionESel = selFractionESelNaive*(selFractionE/selFractionENaive)
+                # # print "Nbins, (Entries, Sum) in sig, E = "+str(nEvents[j].GetXaxis().GetNbins())+", ("+str(data[key].GetEntries())+", "+str(data[key].GetSumOfWeights())+"), ("+str(nEvents[j].GetEntries())+", "+str(nEvents[j].GetSumOfWeights())+")"
+                # # selentries = data[key].GetEntries()
+                # # selSelentries = nEvents[j].GetEntries()
+                # selentries = data[key].GetSumOfWeights()  # wtf
+                # selSelentries = nEvents[j].GetSumOfWeights()  # wtf
+                # selFractionENaive = ROOT.TMath.Sqrt( (selFraction*(1-selFraction))/selentries )
+                # selFractionSel = integralSigSel/(integralSigSel+integralBgSel)
+                # selFractionESelNaive = ROOT.TMath.Sqrt( (selFractionSel*(1-selFractionSel))/(float(selSelentries) ))
+                # selFractionESel = selFractionESelNaive*(selFractionE/selFractionENaive)
 
-                purity = (1/correctionFactor[fitFunc])*integralSigSel/(integralSigSel+integralBgSel)
-                Epurity= (1/correctionFactor[fitFunc])*selFractionESel 
+                # purity_orig = (1/correctionFactor[fitFunc])*integralSigSel/(integralSigSel+integralBgSel)
+                # Epurity_orig = (1/correctionFactor[fitFunc])*selFractionESel
+
+                # Alternate purity calculation (wtf)
+                Rbs = (selectionBGSel/allBGSel) / (selectionSel/allSel)
+                purity = (1/correctionFactor[fitFunc]) * selFraction / (Rbs + (1-Rbs)*selFraction)
+                Epurity = (1/correctionFactor[fitFunc]) * Rbs*selFractionE / (Rbs + (1-Rbs)*selFraction)**2
+                # print "purity orig, new = "+str(purity_orig)+"+/-"+str(Epurity_orig)+", "+str(purity)+"+/-"+str(Epurity)
                 
                 purityList.append((purity,Epurity))
 
@@ -5205,20 +5216,21 @@ def getZmassFitPlot(fitFunc=None, dataSet=None, mcSet=None, plotMC=None, doDiMu=
                 model2.plotOn(frame[key],ROOT.RooFit.Name("fit"))
                 model2.plotOn(frame[key],ROOT.RooFit.Components("background"),ROOT.RooFit.LineColor(4),ROOT.RooFit.LineStyle(2))
 
-                leg1 = ROOT.TLegend(0.65,0.60,0.85,0.88, "","brNDC")
-                leg1.SetBorderSize(2)
-                leg1.SetFillStyle(1001)
-                # leg1.SetFillColor(ROOT.kWhite) 
-                leg1.SetFillColor(0) 
-                leg1.AddEntry(mcList[0],"Drell-Yan Sim","f")
-                leg1.AddEntry(mcList[1],"t#bar{t}Z Sim","f")
-                leg1.AddEntry(mcList[2],"VV Sim","f")
-                leg1.AddEntry(mcList[3],"t#bar{t} Sim","f")
-                leg1.AddEntry(data[key], dataStr, "p")
-                leg1.AddEntry(frame[key].findObject("fit"), "Fit to "+dataStr, "l")
+                if(plotMC):
+                    leg1 = ROOT.TLegend(0.65,0.60,0.85,0.88, "","brNDC")
+                    leg1.SetBorderSize(2)
+                    leg1.SetFillStyle(1001)
+                    # leg1.SetFillColor(ROOT.kWhite) 
+                    leg1.SetFillColor(0) 
+                    leg1.AddEntry(mcList[0],"Drell-Yan Sim","f")
+                    leg1.AddEntry(mcList[1],"t#bar{t}Z Sim","f")
+                    leg1.AddEntry(mcList[2],"VV Sim","f")
+                    leg1.AddEntry(mcList[3],"t#bar{t} Sim","f")
+                    leg1.AddEntry(data[key], dataStr, "p")
+                    leg1.AddEntry(frame[key].findObject("fit"), "Fit to "+dataStr, "l")
 
-                leg1.Draw("NB")
-                ROOT.SetOwnership(leg1,0)
+                    leg1.Draw("NB")
+                    ROOT.SetOwnership(leg1,0)
             frame[key].Draw("same")
 
             pt = ROOT.TPaveText(textCoords[0],textCoords[1],textCoords[2],textCoords[3],"brNDC")
