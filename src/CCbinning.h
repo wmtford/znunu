@@ -20,10 +20,12 @@ public:
   std::vector<int> nJet1Thresholds() {return nJet1Thresholds_;};
   std::vector<int> nbThresholds() {return nbThresholds_;};
   unsigned kinSize() {return kinSize_;};
+  std::vector< std::vector<int> > jetSubBins() {return jetSubBins_;};
   typedef std::map<std::vector<int>, Int_t> ivector_map;
   ivector_map toCCbin() {return toCCbin_;};
-  ivector_map toCCbinSpl() {return toCCbinSpl_;};
   ivector_map toCCbinjb() {return toCCbinjb_;};
+  ivector_map toCCbinSpl() {return toCCbinSpl_;};
+  ivector_map toCCbinJb() {return toCCbinJb_;};
 
 private:
   std::string era_;  // "2016", ...
@@ -33,7 +35,8 @@ private:
   std::vector<int> nJet1Thresholds_;
   std::vector<int> nbThresholds_;
   unsigned kinSize_;
-  ivector_map toCCbin_, toCCbinSpl_, toCCbinjb_;
+  std::vector< std::vector<int> > jetSubBins_;
+  ivector_map toCCbin_, toCCbinSpl_, toCCbinJb_, toCCbinjb_;
 
   ClassDef(CCbinning, 1) // 2nd arg is ClassVersionID
 };

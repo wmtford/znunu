@@ -182,7 +182,7 @@ private:
   string_map minDphiCutMap_;
   string_map MHTCutMap_;
   string_map sampleKeyMap_;
-  CCbinning::ivector_map toCCbin_, toCCbinSpl_, toCCbinjb_;
+  CCbinning::ivector_map toCCbin_, toCCbinjb_, toCCbinSpl_, toCCbinJb_;
   std::vector<const char*> activeBranches_;
 
   void Init(const std::string& cfg_filename="");

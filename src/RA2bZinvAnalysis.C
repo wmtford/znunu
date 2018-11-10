@@ -201,8 +201,9 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   nJetThresholds_ = CCmaps.nJetThresholds();
   nbThresholds_ = CCmaps.nbThresholds();
   toCCbin_ = CCmaps.toCCbin();
-  toCCbinSpl_ = CCmaps.toCCbinSpl();
   toCCbinjb_ = CCmaps.toCCbinjb();
+  toCCbinSpl_ = CCmaps.toCCbinSpl();
+  toCCbinJb_ = CCmaps.toCCbinJb();
 
   fillCutMaps();
 
@@ -644,6 +645,15 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hCCspl.filler1D = &RA2bZinvAnalysis::fillCC;
   histograms.push_back(&hCCspl);
 
+  histConfig hCCJb;
+  hCCJb.name = TString("hCCJb_") + sample;  hCCJb.title = "Cut & count, kinematics integrated, JNet split";
+  Int_t MaxBinsJb = toCCbinJb_.size();
+  cout << "MaxBinsJb = " << MaxBinsJb << endl;
+  hCCJb.NbinsX = MaxBinsJb;  hCCJb.rangeX.first = 0.5;  hCCJb.rangeX.second = MaxBinsJb+0.5;
+  hCCJb.axisTitles.first = "Njets, Nb";  hCCJb.axisTitles.second = "Events / bin";
+  hCCJb.filler1D = &RA2bZinvAnalysis::fillCC;
+  histograms.push_back(&hCCJb);
+
   histConfig hHT;
   hHT.name = TString("hHT_") + sample;  hHT.title = "HT";
   hHT.NbinsX = 60;  hHT.rangeX.first = 0;  hHT.rangeX.second = 3000;
@@ -852,7 +862,7 @@ RA2bZinvAnalysis::fillCC(TH1F* h, double wt) {
   if (useTreeCCbin_) {
     binCC = RA2bin;
     if (binCC > 0) {
-      if (hName.Contains("jb") || hName.Contains("spl")) {
+      if (hName.Contains("jb") || hName.Contains("Jb") || hName.Contains("spl")) {
       // 	// Calculate binCCjb
       // 	int binNjets = nJetThresholds_.size()-1;
       // 	while (NJets < nJetThresholds_[binNjets]) binNjets--;
@@ -871,7 +881,7 @@ RA2bZinvAnalysis::fillCC(TH1F* h, double wt) {
     int binKin = kinBin(HT, MHT);
     if (binKin < 0) return;
     int binNjets;
-    if (hName.Contains("spl")) {
+    if (hName.Contains("spl") || hName.Contains("Jb")) {
       binNjets = nJet1Thresholds_.size()-1;
       while (NJets < nJet1Thresholds_[binNjets]) binNjets--;
     } else {
@@ -882,26 +892,19 @@ RA2bZinvAnalysis::fillCC(TH1F* h, double wt) {
       int binNb = nbThresholds_.size()-1;
       while (BTags < nbThresholds_[binNb]) binNb--;
       std::vector<int> jbk = {binNjets, binNb, binKin};
-      if (hName.Contains("spl")) {
+      if (hName.Contains("spl") || hName.Contains("Jb")) {
 	try {binCC = toCCbinSpl_.at(jbk);}
 	catch (const std::out_of_range& oor) {return;}
       } else {
-	try {
-	  binCC = toCCbin_.at(jbk);
-	}
-	catch (const std::out_of_range& oor) {
-	  // Omitted bins j = 3,4, k = 0,3
-	  if (verbosity_ >= 4) std::cerr << "jbk out of range: " << oor.what() << ": j = " << binNjets
-					 << ", b = " << binNb << ", k = " << binKin << ", RA2bin = " << RA2bin << '\n';
-	  return;
-	}
+	try {binCC = toCCbin_.at(jbk);}
+	catch (const std::out_of_range& oor) {return;}  // Omitted bins j = 3,4, k = 0,3
       }
       if (verbosity_ >= 4) cout << "j = " << binNjets << ", b = " << binNb << ", k = " << binKin << ", binCC = "
 				<< binCC << ", RA2bin = " << RA2bin << endl;
-      if (hName.Contains("jb")) {
+      if (hName.Contains("jb") || hName.Contains("Jb")) {
 	// Above test on jbk needed even here, to exclude j = 3,4, k = 0,3
 	std::vector<int> jb = {binNjets, binNb};
-	try {binCCjb = toCCbinjb_.at(jb);}
+	try {binCCjb = hName.Contains("jb") ? toCCbinjb_.at(jb) : toCCbinJb_.at(jb);}
       	catch (const std::out_of_range& oor) {return;}
 	h->Fill(Double_t(binCCjb), wt);
       } else {

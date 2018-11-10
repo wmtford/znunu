@@ -26,12 +26,16 @@ era_(era), deltaPhi_(deltaPhi) {
   //  toCCbin_ for the main analysis NJet, Nb, (HT, MHT) histogram
   //  toCCbinSpl_ with one NJet value per NJet bin, for Nb/0b extrapolation
   //  toCCbinjb_ for kinematics-integrated NJet, Nb histogram
-  Int_t binJbk = 0, binjbk = 0, binjb = 0;
+  Int_t binJbk = 0, binjbk = 0, binJb = 0, binjb = 0;
+  jetSubBins_.resize(nJetThresholds_.size());
   unsigned j = 0;
   for (unsigned J = 0; J < nJet1Thresholds_.size(); ++J) {
+    jetSubBins_[j].push_back(J);
     for (unsigned b = 0; b < nbThresholds_.size(); ++b) {
       if (nbThresholds_[b] > nJetThresholds_[j]) continue;  // Exclude Nb > NJets
-      std::vector<int> jb = {int(j), int(b)};
+      std::vector<int> Jb = {int(J), int(b)}, jb = {int(j), int(b)};
+      binJb++;
+      toCCbinJb_[Jb] = binJb;
       if (nJet1Thresholds_[J] == nJetThresholds_[j]) {
 	binjb++;
 	toCCbinjb_[jb] = binjb;
