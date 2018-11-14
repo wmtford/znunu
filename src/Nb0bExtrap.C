@@ -25,11 +25,15 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
   CCbinning::ivector_map toCCbinjb = CCmaps.toCCbinjb();
   CCbinning::ivector_map toCCbinSpl = CCmaps.toCCbinSpl();
   CCbinning::ivector_map toCCbinJb = CCmaps.toCCbinJb();
-  int extrapByMCthreshold = 4;  // Use MC for the NJets 9+ bin
+
+  bool doJfromData = false;
+  int extrapByMCthreshold = nJetThresholds.size() - 1;  // Use MC for the NJets 9+ bin
   // std::vector<int> extrapFromRange = {5, 6};
+  float relErrXsec_ttz = 0.3;
 
   TFile ZllData("../outputs/histsDYspl_2016v15.root");
   TFile photonData("../outputs/histsPhoton_2016v15.root");
+  TFile ZllXMC("../outputs/histsDYMCspl_2016v12.root");
   
   // Get the Z->ll data histograms
   TH1F* hCC_zmm = (TH1F*) ZllData.Get("hCC_zmm");
@@ -38,8 +42,27 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
   TH1F* hCCjb_zee = (TH1F*) ZllData.Get("hCCjb_zee");
   TH1F* hCCjb_zll = (TH1F*) hCCjb_zmm->Clone();  hCCjb_zll->SetName("hCCjb_zll");
   hCCjb_zll->Add(hCCjb_zee);
+  TH1F* hCCspl_photon = (TH1F*) photonData.Get("hCCspl_photon");
   TH1F* hCCJb_zmm = (TH1F*) ZllData.Get("hCCJb_zmm");
   TH1F* hCCJb_zee = (TH1F*) ZllData.Get("hCCJb_zee");
+  TH1F* hCCJb_zll = (TH1F*) hCCJb_zmm->Clone();  hCCJb_zll->SetName("hCCJb_zll");
+  hCCJb_zll->Add(hCCJb_zee);
+  TH1F* hCCJb_dymm = (TH1F*) ZllXMC.Get("hCCJb_dymm");
+  TH1F* hCCJb_dyee = (TH1F*) ZllXMC.Get("hCCJb_dyee");
+  TH1F* hCCJb_ttzmm = (TH1F*) ZllXMC.Get("hCCJb_ttzmm");
+  TH1F* hCCJb_ttzee = (TH1F*) ZllXMC.Get("hCCJb_ttzee");
+  TH1F* hCCJb_VVmm = (TH1F*) ZllXMC.Get("hCCJb_VVmm");
+  TH1F* hCCJb_VVee = (TH1F*) ZllXMC.Get("hCCJb_VVee");
+  TH1F* hCCJb_ttmm = (TH1F*) ZllXMC.Get("hCCJb_ttmm");
+  TH1F* hCCJb_ttee = (TH1F*) ZllXMC.Get("hCCJb_ttee");
+  TH1F* hCCJb_MCall = (TH1F*) hCCJb_dymm->Clone();  hCCJb_MCall->SetName("hCCJb_MCall");
+  hCCJb_MCall->Add(hCCJb_dyee);
+  hCCJb_MCall->Add(hCCJb_ttzmm);
+  hCCJb_MCall->Add(hCCJb_ttzee);
+  hCCJb_MCall->Add(hCCJb_VVmm);
+  hCCJb_MCall->Add(hCCJb_VVee);
+  // hCCJb_MCall->Add(hCCJb_ttmm);  // Omit non-peaking, since data are purity corrected.
+  // hCCJb_MCall->Add(hCCJb_ttee);
 
   // Calculate Z->ll data stat errors
   std::vector<float> DYstat;
@@ -101,29 +124,113 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
       int bin = pbins[i][j];
       y += hCCjb_zmm->GetBinContent(bin) + hCCjb_zee->GetBinContent(bin);
       ype += hCCjb_zmm->GetBinContent(bin)*h_pur_m->GetBinError(bin)/h_pur_m->GetBinContent(bin)
-	+ hCCjb_zee->GetBinContent(bin)*h_pur_e->GetBinError(bin)/h_pur_e->GetBinContent(bin);
+       	   + hCCjb_zee->GetBinContent(bin)*h_pur_e->GetBinError(bin)/h_pur_e->GetBinContent(bin);
     }
     DYpurSys.push_back(ype/y);
   }
 
-  // Calculate Nb/0b F factors
+  // Calculate the MC J factors from MC to extend the Nb/0b F factors
   // Take the Nphoton average of F over NJet sub-bins at each kin bin.
-  TH1F* hCCspl_photon = (TH1F*) photonData.Get("hCCspl_photon");
-  std::vector<float> Fextrap, fb0;
-  for (int j = 0; j < nJetThresholds.size(); ++j) {
-    float fbb = 0;
+  std::vector<std::pair<float, float>> Jextrap, jb0;
+  for (int j = 0; j <= extrapByMCthreshold; ++j) {
     for (int b = 0; b < nbThresholds.size(); ++b) {
       for (int k = 0; k < kinSize; ++k) {
-	try {int binCCjbk = toCCbin.at((std::vector<int>) {j, b, k});}  catch (const std::out_of_range& oor) {continue;}
+	int binCC;
+	try {binCC = toCCbin.at((std::vector<int>) {j, b, k});}  catch (const std::out_of_range& oor) {continue;}
+	float Npho = 0;
+	std::pair<float, float> jbb, NphoF;
+	for (auto J : jetSubBins[j]) {
+	  int binCCJb, binCCjb;
+	  try {binCCJb = toCCbinJb.at((std::vector<int>) {J, b});}  catch (const std::out_of_range& oor) {continue;}
+	  try {binCCjb = toCCbinjb.at((std::vector<int>) {j, b});}  catch (const std::out_of_range& oor) {continue;}
+	  std::pair<float, float> nMC;
+	  if (doJfromData) {
+	    nMC.first = hCCJb_zll->GetBinContent(binCCJb);  // for Jextrap systematic
+	    nMC.second = hCCJb_zll->GetBinError(binCCJb);  //  "
+	  } else {
+	    nMC.first = hCCJb_MCall->GetBinContent(binCCJb);
+	    nMC.second = hCCJb_MCall->GetBinError(binCCJb);
+	  }
+	  if (J >= jb0.size()) {
+	    jb0.push_back(nMC);
+	    // cout << "j, J, b, k, jb0Size = " << j << ", " << J << ", " << b << ", " << k << ", " << jb0.size() << endl;
+	  } else {
+	    jbb.first = nMC.first / jb0.at(J).first;
+	    jbb.second = nMC.first > 0 ? Sqrt(Power(nMC.second/nMC.first, 2) + Power(jb0.at(J).second/jb0.at(J).first, 2)) : 0;
+	    int binCCJ0k;
+	    try {binCCJ0k = toCCbinSpl.at((std::vector<int>) {J, 0, k});}  catch (const std::out_of_range& oor) {continue;}
+	    float NphoJ = hCCspl_photon->GetBinContent(binCCJ0k);
+	    Npho += NphoJ;
+	    NphoF.first += NphoJ*jbb.first;
+	    NphoF.second += NphoJ*jbb.second;
+	    // cout << "j, J, b, k, jbb, NphoJ, Npho = " << j << ", " << J << ", " << b << ", " << k << ", "
+	    // 	 << jbb.first << ", relErr = " << jbb.second << ", " << NphoJ << ", " << Npho << endl;
+	  }
+	}
+	if (b == 0) {
+	  Jextrap.push_back(std::pair<float, float>(1, 0));
+	} else {
+	  if (Npho > 0)
+	    Jextrap.push_back(std::pair<float, float>(NphoF.first/Npho, NphoF.second/Npho));
+	  else
+	    Jextrap.push_back(std::pair<float, float>(jbb.first, jbb.second));
+	}
+	if (j >= extrapByMCthreshold) {
+	  // Compute ratio of NJets = 9+ to NJets = 7-8
+	  float relErrjbk = Jextrap[binCC - 1].second;
+	  float relErrjm1bk = Jextrap[toCCbin.at((std::vector<int>) {j-1, b, k}) - 1].second;
+	  Jextrap[binCC - 1].first /= Jextrap[toCCbin.at((std::vector<int>) {j-1, b, k}) - 1].first;
+	  Jextrap[binCC - 1].second = Sqrt(Power(relErrjbk, 2) + Power(relErrjm1bk, 2));
+	  if (k == k) cout << "j, b, k, Jextrap = " << j << ", " << b << ", " << k << ", " <<
+			Jextrap[binCC - 1].first << ", rel err = " << Jextrap[binCC - 1].second << endl;
+	}
+      }
+    }
+  }
+
+  // Jextrap systematics derived from analysis of the above for data, MC
+  std::vector<float> systJ = {0, 0.10, 0.10, 0.20};
+
+  if (extrapByMCthreshold != nJetThresholds.size() - 1) return;
+
+  // Calculate the ttz cross section uncertainty from the ttz fraction.
+  TH1F* hCCjb_dymm = (TH1F*) ZllXMC.Get("hCCjb_dymm");
+  TH1F* hCCjb_dyee = (TH1F*) ZllXMC.Get("hCCjb_dyee");
+  TH1F* hCCjb_ttzmm = (TH1F*) ZllXMC.Get("hCCjb_ttzmm");
+  TH1F* hCCjb_ttzee = (TH1F*) ZllXMC.Get("hCCjb_ttzee");
+  TH1F* hCCjb_VVmm = (TH1F*) ZllXMC.Get("hCCjb_VVmm");
+  TH1F* hCCjb_VVee = (TH1F*) ZllXMC.Get("hCCjb_VVee");
+  TH1F* hCCjb_ttmm = (TH1F*) ZllXMC.Get("hCCjb_ttmm");
+  TH1F* hCCjb_ttee = (TH1F*) ZllXMC.Get("hCCjb_ttee");
+  TH1F* hCCjb_MCall = (TH1F*) hCCjb_dymm->Clone();  hCCjb_MCall->SetName("hCCjb_MCall");
+  hCCjb_MCall->Add(hCCjb_dyee);
+  hCCjb_MCall->Add(hCCjb_ttzmm);
+  hCCjb_MCall->Add(hCCjb_ttzee);
+  hCCjb_MCall->Add(hCCjb_VVmm);
+  hCCjb_MCall->Add(hCCjb_VVee);
+  hCCjb_MCall->Add(hCCjb_ttmm);
+  hCCjb_MCall->Add(hCCjb_ttee);
+  TH1F* hCCjb_MCttzFrac = (TH1F*) hCCjb_ttzmm->Clone();  hCCjb_MCall->SetName("hCCjb_MCttzFrac");
+  hCCjb_MCttzFrac->Add(hCCjb_ttzee);
+  hCCjb_MCttzFrac->Divide(hCCjb_MCall);
+  hCCjb_MCttzFrac->Print("all");
+
+  // Calculate Nb/0b F factors
+  // Take the Nphoton average of F over NJet sub-bins at each kin bin.
+  std::vector<float> Fextrap, fb0;
+  for (int j = 0; j < nJetThresholds.size(); ++j) {
+    for (int b = 0; b < nbThresholds.size(); ++b) {
+      for (int k = 0; k < kinSize; ++k) {
+	int binCC = 0;
+	try {binCC = toCCbin.at((std::vector<int>) {j, b, k});}  catch (const std::out_of_range& oor) {continue;}
 	if (j < extrapByMCthreshold) {
-	  float Npho = 0, NphoF = 0;
+	  float Npho = 0, NphoF = 0, fbb = 0;
 	  for (auto J : jetSubBins[j]) {
 	    int binCCJb, binCCjb;
 	    try {binCCJb = toCCbinJb.at((std::vector<int>) {J, b});}  catch (const std::out_of_range& oor) {continue;}
 	    try {binCCjb = toCCbinjb.at((std::vector<int>) {j, b});}  catch (const std::out_of_range& oor) {continue;}
 	    float Nemuxp = hCCJb_zmm->GetBinContent(binCCJb) * h_pur_m->GetBinContent(binCCjb)
 	                 + hCCJb_zee->GetBinContent(binCCJb) * h_pur_e->GetBinContent(binCCjb);
-	    // if (b == 0 && k == 0) {
 	    if (J >= fb0.size()) {
 	      fb0.push_back(Nemuxp);
 	      // cout << "j, J, b, k, fb0Size = " << j << ", " << J << ", " << b << ", " << k << ", " << fb0.size() << endl;
@@ -143,15 +250,18 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
 	    Fextrap.push_back(NphoF/Npho);
 	  }
 	} else {
-	  // Copy NJets 7-8 to 9+
-	  Fextrap.push_back(Fextrap[toCCbin.at((std::vector<int>) {j-1, b, k}) - 1]);
+	  // Set F(9+) = F(7,8) * J(7,8;9+)
+	  // cout << "j, b, k, Jextrap (rel. err) = " << j << ", " << b << ", " << k << ", " <<
+	  //   Jextrap[toCCbin.at((std::vector<int>) {j, b, k}) - 1].first << " (" <<
+	  //   Jextrap[toCCbin.at((std::vector<int>) {j, b, k}) - 1].second << ")" << endl;
+	  Fextrap.push_back(Fextrap[toCCbin.at((std::vector<int>) {j-1, b, k}) - 1] *
+			    Jextrap[binCC - 1].first);
 	}
       }
     }
   }
 
-    
-  // kin systematics derived using analysis of the closure plot
+  // kin systematics derived from analysis of the closure plot
   std::vector<float> systKin = {0, 0.07, 0.10, 0.20};
 
 
@@ -174,15 +284,28 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
 	int binCC = 0, binCCjb = 0;
 	try {binCC = toCCbin.at(jbk);}	catch (const std::out_of_range& oor) {continue;}
 	try {binCCjb = toCCbinjb.at(jb);}  catch (const std::out_of_range& oor) {continue;}
-	fprintf(outFile, " %1d %1d %1d||%7d|%7d|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f\n", j, b, k,
+	float JextrapErr, ttzErr;
+	if (j < extrapByMCthreshold || b == 0) {
+	  JextrapErr = 0;
+	  ttzErr = 0;
+	} else {
+	  JextrapErr = Jextrap[binCC - 1].second;
+	  // Factors in the Jextrap double ratio are fully correlated
+	  ttzErr = relErrXsec_ttz * (hCCjb_MCttzFrac->GetBinContent(binCCjb) -
+				     hCCjb_MCttzFrac->GetBinContent(toCCbinjb.at((std::vector<int>) {j-1, b})) -
+				     hCCjb_MCttzFrac->GetBinContent(toCCbinjb.at((std::vector<int>) {j, 0})) +
+				     hCCjb_MCttzFrac->GetBinContent(toCCbinjb.at((std::vector<int>) {j-1, 0}))
+				     );
+	}
+  	fprintf(outFile, " %1d %1d %1d||%7d|%7d|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f\n", j, b, k,
 		(int) hCC_zmm->GetBinContent(binCC),
 		(int) hCC_zee->GetBinContent(binCC),
 		Fextrap[binCC - 1],
 		DYstat[binCCjb - 1],
-		0.999,
-		0.999,
-		0.999,
-		0.999,
+		JextrapErr,
+		ttzErr,
+		systJ[b],
+		systJ[b],
 		systKin[b],
 		DYpurSys[binCCjb - 1]
 		);
