@@ -173,6 +173,8 @@ private:
 #if VERSION == 12
   Int_t           NElectrons;
   Int_t           NMuons;
+  Int_t           BTagsDeepCSV;
+  Int_t           ecalBadCalibFilter;
 #endif
 
   typedef std::map<TString, std::vector<TString> > vstring_map;

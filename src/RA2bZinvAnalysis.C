@@ -90,6 +90,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   RA2bin = 0;  // overridden from tree if isSkim_
   NElectrons = 0;  // overridden from tree if >=V15
   NMuons = 0;  // overridden from tree if >=V15
+  ecalBadCalibFilter = 0;  // overridden from tree if >=V15
 
   if (!isMC_) {
     applyBTagSF_ = false;
@@ -105,12 +106,12 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
       || (ntupleVersion_ == "V15" && runBlock_.find("2016")==std::string::npos)
       || useDeepCSV_)
     useTreeCCbin_ = false;
+  if (ntupleVersion_ == "V12") useDeepCSV_ = false;
   if (ntupleVersion_ == "V15" && runBlock_.find("2016")==std::string::npos) csvMthreshold_ = 0.8838;
 
   // Needed branches
   activeBranches_.push_back("NJets");
   activeBranches_.push_back("BTags");
-  activeBranches_.push_back("BTagsDeepCSV");
   activeBranches_.push_back("HT");
   activeBranches_.push_back("HT5");
   activeBranches_.push_back("MHT");
@@ -149,6 +150,8 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   if (ntupleVersion_ != "V12") {
     activeBranches_.push_back("NMuons");
     activeBranches_.push_back("NElectrons");
+    activeBranches_.push_back("BTagsDeepCSV");
+    activeBranches_.push_back("ecalBadCalibFilter");
   }
   activeBranches_.push_back("RunNum");
   activeBranches_.push_back("LumiBlockNum");
@@ -167,7 +170,6 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   activeBranches_.push_back("HBHENoiseFilter");
   activeBranches_.push_back("HBHEIsoNoiseFilter");
   activeBranches_.push_back("eeBadScFilter");
-  activeBranches_.push_back("ecalBadCalibFilter");
   activeBranches_.push_back("EcalDeadCellTriggerPrimitiveFilter");
   activeBranches_.push_back("globalTightHalo2016Filter");
   activeBranches_.push_back("BadChargedCandidateFilter");
@@ -365,7 +367,6 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
       trigCuts_ += TString("(TriggerPass[")+theTrigger+TString("]==1) + ");
     trigCuts_.Replace(trigCuts_.Length()-3, 3, "");
     if (Ntrig > 1) trigCuts_ += TString(")");
-    // if (Ntrig > 1) trigCuts_.Replace(trigCuts_.Length()-3, 3, ")");
   }
 
   // // commonCuts_ = "(JetID==1&& HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && BadChargedCandidateFilter && NVtx > 0 && BadPFMuonFilter && PFCaloMETRatio < 5)";  // Troy revision+
@@ -377,7 +378,7 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
 
   // When it's available, replace globalTightHalo2016Filter with globalSuperTightHalo2016Filter
   commonCuts_ = "globalTightHalo2016Filter==1 && HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && BadChargedCandidateFilter && BadPFMuonFilter && NVtx > 0";
-  commonCuts_ += " && ecalBadCalibFilter==1";  // Added for 94X
+  if (ntupleVersion_ != "V12") commonCuts_ += " && ecalBadCalibFilter==1";  // Added for 94X
   if (!isMC_) commonCuts_ += " &&  eeBadScFilter==1";
   if (!isSkim_) {
     commonCuts_ += " && JetIDclean";
