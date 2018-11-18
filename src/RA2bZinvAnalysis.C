@@ -1,5 +1,5 @@
 //
-//  Zinv background prediction for RA2b analysis
+//  Make histograms for Zinv background prediction in the RA2b analysis
 //  Loosely based on Troy Mulholland's python code
 //
 
@@ -165,6 +165,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   activeBranches_.push_back("Photons_fullID");
   activeBranches_.push_back("Photons_hasPixelSeed");
   activeBranches_.push_back("NVtx");
+  activeBranches_.push_back("TriggerNames");
   activeBranches_.push_back("TriggerPass");
   activeBranches_.push_back("TriggerPrescales");
   activeBranches_.push_back("HBHENoiseFilter");
@@ -248,6 +249,7 @@ RA2bZinvAnalysis::getChain(const char* sample, Int_t* fCurrent, bool makeClass) 
   else if (theSample.Contains("zmm")) key = TString("zmm");
   else if (theSample.Contains("zee")) key = TString("zee");
   else if (theSample.Contains("photon")) key = TString("photon");
+  else if (theSample.Contains("gjets")) key = TString("gJets");
   if (deltaPhi_ == "ldp" && isSkim_) key += "ldp";
   if (!runBlock_.empty()) key += runBlock_;
 
@@ -481,43 +483,18 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 			  hg->NbinsY, hg->rangeY.first, hg->rangeY.second);
       hg->hist->SetOption("colz");
     } else {
-      hg->hist = new TH1F(hg->name, hg->title, hg->NbinsX, hg->rangeX.first, hg->rangeX.second);
+      if (hg->binsX == nullptr)
+	hg->hist = new TH1F(hg->name, hg->title, hg->NbinsX, hg->rangeX.first, hg->rangeX.second);
+      else
+	hg->hist = new TH1F(hg->name, hg->title, hg->NbinsX, hg->binsX);
       hg->hist->SetOption("hist");
       hg->hist->SetMarkerSize(0);
     }
     hg->hist->GetXaxis()->SetTitle(hg->axisTitles.first);
     hg->hist->GetYaxis()->SetTitle(hg->axisTitles.second);
-    if (hg->name.Contains(TString("hFilterCuts"))) {
-      hg->hist->GetXaxis()->SetBinLabel(1, "None");
-      hg->hist->GetXaxis()->SetBinLabel(2, "TightHalo");
-      hg->hist->GetXaxis()->SetBinLabel(3, "SupTgtHalo");
-      hg->hist->GetXaxis()->SetBinLabel(4, "HBENoise");
-      hg->hist->GetXaxis()->SetBinLabel(5, "HBEIsoNoise");
-      hg->hist->GetXaxis()->SetBinLabel(6, "EcalDeadCell");
-      hg->hist->GetXaxis()->SetBinLabel(7, "BadChCand");
-      hg->hist->GetXaxis()->SetBinLabel(8, "BadPFMu");
-      hg->hist->GetXaxis()->SetBinLabel(9, "NVtx");
-      hg->hist->GetXaxis()->SetBinLabel(10, "eeBadSc");
-      hg->hist->GetXaxis()->SetBinLabel(11, "ecalBadCal");
-      hg->hist->GetXaxis()->SetBinLabel(12, "");
-      hg->hist->GetXaxis()->SetBinLabel(13, "JetID");
-      hg->hist->GetXaxis()->SetBinLabel(14, "PFCaloMETR");
-      hg->hist->GetXaxis()->SetBinLabel(15, "HT5/HT");
-      hg->hist->GetXaxis()->LabelsOption("vu");
-    }
+    if (hg->name.Contains(TString("Cut"))) cutHistFiller.setAxisLabels((TH1F*) hg->hist);
     if (hg->name.Contains(TString("hCut"))) {
       hg->NminusOneCuts = "1";
-      hg->hist->GetXaxis()->SetBinLabel(1, "None");
-      hg->hist->GetXaxis()->SetBinLabel(2, "HT");
-      hg->hist->GetXaxis()->SetBinLabel(3, "MHT");
-      hg->hist->GetXaxis()->SetBinLabel(4, "NJets");
-      hg->hist->GetXaxis()->SetBinLabel(5, "mnDphi");
-      hg->hist->GetXaxis()->SetBinLabel(6, "objects");
-      hg->hist->GetXaxis()->SetBinLabel(7, "Zpt");
-      hg->hist->GetXaxis()->SetBinLabel(8, "Zmass");
-      hg->hist->GetXaxis()->SetBinLabel(9, "Trigger");
-      hg->hist->GetXaxis()->SetBinLabel(10, "Filters");
-      hg->hist->GetXaxis()->LabelsOption("vu");
     } else {
       hg->NminusOneCuts = baselineCuts;
       for (auto cutToOmit : hg->omitCuts) hg->NminusOneCuts(*cutToOmit) = "1";
@@ -618,6 +595,9 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 
   std::vector<histConfig*> histograms;
   TCut baselineCuts = getCuts(sample);
+  bool isPhoton = !strcmp(sample, "photon");
+  TString sampleKey = sampleKeyMap_.count(sample) > 0 ? sampleKeyMap_.at(sample) : TString("none");
+  bool isZll = (sampleKey == "zmm" || sampleKey == "zee" || sampleKey == "zll");
 
   histConfig hCC;
   hCC.name = TString("hCC_") + sample;  hCC.title = "Cut & count analysis";
@@ -683,27 +663,6 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hBTags.ivalue = &BTags;
   histograms.push_back(&hBTags);
 
-  histConfig hnZcand;
-  hnZcand.name = TString("hnZcand_") + sample;  hnZcand.title = "Number of Z candidates";
-  hnZcand.NbinsX = 10;  hnZcand.rangeX.first = 0;  hnZcand.rangeX.second = 10;
-  hnZcand.axisTitles.first = "N(Z candidates)";  hnZcand.axisTitles.second = "Events / bin";
-  hnZcand.filler1D = &RA2bZinvAnalysis::fillnZcand;  hnZcand.omitCuts.push_back(&massCut_);
-  histograms.push_back(&hnZcand);
-
-  histConfig hZmass;
-  hZmass.name = TString("hZmass_") + sample;  hZmass.title = "Z mass";
-  hZmass.NbinsX = 30;  hZmass.rangeX.first = 60;  hZmass.rangeX.second = 120;
-  hZmass.axisTitles.first = "M(Z) [GeV]";  hZmass.axisTitles.second = "Events / 2 GeV";
-  hZmass.filler1D = &RA2bZinvAnalysis::fillZmass;  hZmass.omitCuts.push_back(&massCut_);
-  histograms.push_back(&hZmass);
-
-  histConfig hZpt;
-  hZpt.name = TString("hZpt_") + sample;  hZpt.title = "Z Pt";
-  hZpt.NbinsX = 60;  hZpt.rangeX.first = 0;  hZpt.rangeX.second = 3000;
-  hZpt.axisTitles.first = "Pt(Z) [GeV]";  hZpt.axisTitles.second = "Events / 50 GeV";
-  hZpt.filler1D = &RA2bZinvAnalysis::fillZpt;  hZpt.omitCuts.push_back(&ptCut_);  hZpt.omitCuts.push_back(&MHTcut_);
-  histograms.push_back(&hZpt);
-
   histConfig hCutFlow;
   hCutFlow.name = TString("hCutFlow_") + sample;  hCutFlow.title = "Cut flow";
   hCutFlow.NbinsX = 10;  hCutFlow.rangeX.first = 0;  hCutFlow.rangeX.second = 10;
@@ -736,7 +695,209 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hTrueNumInt.NbinsX = 100;  hTrueNumInt.rangeX.first = 0;  hTrueNumInt.rangeX.second = 100;
   hTrueNumInt.axisTitles.first = "No. of interactions";  hTrueNumInt.axisTitles.second = "Events / bin";
   hTrueNumInt.dvalue = &TrueNumInteractions;
-  histograms.push_back(&hTrueNumInt);
+  if (isMC_) histograms.push_back(&hTrueNumInt);
+
+  // For double ratio
+
+  Double_t hHT_DR_bins[9] = {300, 400, 450, 550, 650, 750, 1000, 1200, 1600};  // Check if CCbinning changes
+  histConfig hHT_DR;
+  hHT_DR.name = TString("hHT_DR_") + sample;  hHT_DR.title = "HT";
+  hHT_DR.NbinsX = 8;
+  hHT_DR.binsX = hHT_DR_bins;
+  hHT_DR.axisTitles.first = "HT [GeV]";  hHT_DR.axisTitles.second = "Events / bin";
+  hHT_DR.dvalue = &HT;
+  histograms.push_back(&hHT_DR);
+
+  histConfig hHT_DR_xWt;  // for weighted centers of bins
+  hHT_DR_xWt.name = TString("hHT_DR_xWt_") + sample;  hHT_DR_xWt.title = "HT bin values";
+  hHT_DR_xWt.NbinsX = hHT_DR.NbinsX;
+  hHT_DR_xWt.binsX = hHT_DR.binsX;
+  hHT_DR_xWt.axisTitles.first = "HT [GeV]";  hHT_DR_xWt.axisTitles.second = "Bin value / bin";
+  hHT_DR_xWt.filler1D = &RA2bZinvAnalysis::fillHT_DR_xWt;
+  if (isPhoton) histograms.push_back(&hHT_DR_xWt);
+
+  std::vector<double> HTthresh1;
+  // Check if CCbinning changes [
+  for (Size_t i = 1; i < kinThresholds_[0].size(); ++i) HTthresh1.push_back(kinThresholds_[0][i]);
+  HTthresh1.push_back(2500);
+  // cout << "HTthresh1 = " ; for (Size_t i = 0; i < HTthresh1.size(); ++i) cout << HTthresh1[i] << ", "; cout << endl;
+  //  ]
+  Double_t* hHT1_DRCC_bins = &HTthresh1[0];
+  histConfig hHT1_DRCC;
+  hHT1_DRCC.name = TString("hHT1_DRCC_") + sample;  hHT1_DRCC.title = "HT for DR fit 1";
+  hHT1_DRCC.NbinsX = HTthresh1.size() - 1;
+  hHT1_DRCC.binsX = hHT1_DRCC_bins;
+  hHT1_DRCC.axisTitles.first = "HT [GeV]";  hHT1_DRCC.axisTitles.second = "Events / bin";
+  hHT1_DRCC.dvalue = &HT;  hHT1_DRCC.omitCuts.push_back(&HTcut_);
+  if (isPhoton) histograms.push_back(&hHT1_DRCC);
+  histConfig hHT1_DRCC_xWt;  // for weighted centers of bins
+  hHT1_DRCC_xWt.name = TString("hHT1_DRCC_xWt_") + sample;  hHT1_DRCC_xWt.title = "HT CC bin values";
+  hHT1_DRCC_xWt.NbinsX = hHT1_DRCC.NbinsX;
+  hHT1_DRCC_xWt.binsX = hHT1_DRCC.binsX;
+  hHT1_DRCC_xWt.axisTitles.first = "HT [GeV]";  hHT1_DRCC_xWt.axisTitles.second = "Bin value / bin";
+  hHT1_DRCC_xWt.filler1D = &RA2bZinvAnalysis::fillHT_DR_xWt;
+  hHT1_DRCC_xWt.omitCuts.push_back(&HTcut_);
+  if (isPhoton) histograms.push_back(&hHT1_DRCC_xWt);
+
+  std::vector<double> HTthresh2;
+  // Check if CCbinning changes [
+  HTthresh2.push_back(kinThresholds_[0][1]);
+  HTthresh2.push_back(kinThresholds_[1][1]);
+  HTthresh2.push_back(kinThresholds_[2][1]);
+  HTthresh2.push_back(kinThresholds_[3][1]);
+  HTthresh2.push_back(kinThresholds_[3][2]);
+  HTthresh2.push_back(2500);
+  // cout << "HTthresh2 = " ; for (Size_t i = 0; i < HTthresh2.size(); ++i) cout << HTthresh2[i] << ", "; cout << endl;
+  //  ]
+  Double_t* hHT2_DRCC_bins = &HTthresh2[0];
+  histConfig hHT2_DRCC;
+  hHT2_DRCC.name = TString("hHT2_DRCC_") + sample;  hHT2_DRCC.title = "HT for DR fit 2";
+  hHT2_DRCC.NbinsX = HTthresh2.size() - 1;
+  hHT2_DRCC.binsX = hHT2_DRCC_bins;
+  hHT2_DRCC.axisTitles.first = "HT [GeV]";  hHT2_DRCC.axisTitles.second = "Events / bin";
+  hHT2_DRCC.dvalue = &HT;  hHT2_DRCC.omitCuts.push_back(&HTcut_);
+  if (isPhoton) histograms.push_back(&hHT2_DRCC);
+  histConfig hHT2_DRCC_xWt;  // for weighted centers of bins
+  hHT2_DRCC_xWt.name = TString("hHT2_DRCC_xWt_") + sample;  hHT2_DRCC_xWt.title = "HT CC bin values";
+  hHT2_DRCC_xWt.NbinsX = hHT2_DRCC.NbinsX;
+  hHT2_DRCC_xWt.binsX = hHT2_DRCC.binsX;
+  hHT2_DRCC_xWt.axisTitles.first = "HT [GeV]";  hHT2_DRCC_xWt.axisTitles.second = "Bin value / bin";
+  hHT2_DRCC_xWt.filler1D = &RA2bZinvAnalysis::fillHT_DR_xWt;
+  hHT2_DRCC_xWt.omitCuts.push_back(&HTcut_);
+  if (isPhoton) histograms.push_back(&hHT2_DRCC_xWt);
+
+  Double_t hMHT_DR_bins[7] = {300., 350., 400., 450., 600., 750, 900.};  // Check if CCbinning changes
+  histConfig hMHT_DR;
+  hMHT_DR.name = TString("hMHT_DR_") + sample;  hMHT_DR.title = "MHT for DR fit";
+  hMHT_DR.NbinsX = 6;
+  hMHT_DR.binsX = hMHT_DR_bins;
+  hMHT_DR.axisTitles.first = "MHT [GeV]";  hMHT_DR.axisTitles.second = "Events / bin";
+  hMHT_DR.dvalue = &MHT;
+  histograms.push_back(&hMHT_DR);
+
+  histConfig hMHT_DR_xWt;  // for weighted centers of bins
+  hMHT_DR_xWt.name = TString("hMHT_DR_xWt_") + sample;  hMHT_DR_xWt.title = "MHT bin values";
+  hMHT_DR_xWt.NbinsX = hMHT_DR.NbinsX;
+  hMHT_DR_xWt.binsX = hMHT_DR.binsX;
+  hMHT_DR_xWt.axisTitles.first = "MHT [GeV]";  hMHT_DR_xWt.axisTitles.second = "Bin value / bin";
+  hMHT_DR_xWt.filler1D = &RA2bZinvAnalysis::fillMHT_DR_xWt;
+  if (isPhoton) histograms.push_back(&hMHT_DR_xWt);
+
+  std::vector<double> MHTthresh;
+  for (auto thresh : kinThresholds_) MHTthresh.push_back(thresh[0]);
+  MHTthresh.insert(MHTthresh.begin(), MHTthresh.back());
+  MHTthresh.pop_back();  MHTthresh.push_back(900);  // Check if CCbinning changes
+  Double_t* hMHT_DRCC_bins = &MHTthresh[0];
+  histConfig hMHT_DRCC;
+  hMHT_DRCC.name = TString("hMHT_DRCC_") + sample;  hMHT_DRCC.title = "MHT for DR";
+  hMHT_DRCC.NbinsX = MHTthresh.size() - 1;
+  hMHT_DRCC.binsX = hMHT_DRCC_bins;
+  hMHT_DRCC.axisTitles.first = "MHT [GeV]";  hMHT_DRCC.axisTitles.second = "Events / bin";
+  hMHT_DRCC.dvalue = &MHT;  hMHT_DRCC.omitCuts.push_back(&MHTcut_);  hMHT_DRCC.omitCuts.push_back(&ptCut_);
+  if (isPhoton) histograms.push_back(&hMHT_DRCC);
+  histConfig hMHT_DRCC_xWt;  // for weighted centers of bins
+  hMHT_DRCC_xWt.name = TString("hMHT_DRCC_xWt_") + sample;  hMHT_DRCC_xWt.title = "MHT CC bin values";
+  hMHT_DRCC_xWt.NbinsX = hMHT_DRCC.NbinsX;
+  hMHT_DRCC_xWt.binsX = hMHT_DRCC.binsX;
+  hMHT_DRCC_xWt.axisTitles.first = "MHT [GeV]";  hMHT_DRCC_xWt.axisTitles.second = "Bin value / bin";
+  hMHT_DRCC_xWt.filler1D = &RA2bZinvAnalysis::fillMHT_DR_xWt;
+  hMHT_DRCC_xWt.omitCuts.push_back(&MHTcut_);  hMHT_DRCC_xWt.omitCuts.push_back(&ptCut_);
+  if (isPhoton) histograms.push_back(&hMHT_DRCC_xWt);
+
+  histConfig hNJets_DR;
+  hNJets_DR.name = TString("hNJets_DR_") + sample;  hNJets_DR.title = "NJets";
+  hNJets_DR.NbinsX = 8;  hNJets_DR.rangeX.first = 1.5;  hNJets_DR.rangeX.second = 9.5;
+  hNJets_DR.axisTitles.first = "N (jets)";  hNJets_DR.axisTitles.second = "Events / bin";
+  hNJets_DR.ivalue = &NJets;
+  histograms.push_back(&hNJets_DR);
+
+  std::vector<double> NJetsthresh;
+  for (auto thresh : nJetThresholds_) NJetsthresh.push_back(thresh);
+  NJetsthresh.push_back(12);  // Check if CCbinning changes
+  Double_t* hNJets_DRCC_bins = &NJetsthresh[0];
+  histConfig hNJets_DRCC;
+  hNJets_DRCC.name = TString("hNJets_DRCC_") + sample;  hNJets_DRCC.title = "NJets for DR";
+  hNJets_DRCC.NbinsX = NJetsthresh.size() - 1;
+  hNJets_DRCC.binsX = hNJets_DRCC_bins;
+  hNJets_DRCC.axisTitles.first = "N (jets)";  hNJets_DRCC.axisTitles.second = "Events / bin";
+  hNJets_DRCC.ivalue = &NJets;
+  if (isPhoton) histograms.push_back(&hNJets_DRCC);
+  histConfig hNJets_DRCC_xWt;  // for weighted centers of bins
+  hNJets_DRCC_xWt.name = TString("hNJets_DRCC_xWt_") + sample;  hNJets_DRCC_xWt.title = "NJets CC bin values";
+  hNJets_DRCC_xWt.NbinsX = hNJets_DRCC.NbinsX;
+  hNJets_DRCC_xWt.binsX = hNJets_DRCC.binsX;
+  hNJets_DRCC_xWt.axisTitles.first = "N (jets)";  hNJets_DRCC_xWt.axisTitles.second = "Bin value / bin";
+  hNJets_DRCC_xWt.filler1D = &RA2bZinvAnalysis::fillNJets_DR_xWt;
+  if (isPhoton) histograms.push_back(&hNJets_DRCC_xWt);
+
+  histConfig hnZcand;
+  hnZcand.name = TString("hnZcand_") + sample;  hnZcand.title = "Number of Z candidates";
+  hnZcand.NbinsX = 10;  hnZcand.rangeX.first = 0;  hnZcand.rangeX.second = 10;
+  hnZcand.axisTitles.first = "N(Z candidates)";  hnZcand.axisTitles.second = "Events / bin";
+  hnZcand.filler1D = &RA2bZinvAnalysis::fillnZcand;  hnZcand.omitCuts.push_back(&massCut_);
+  histograms.push_back(&hnZcand);
+
+  histConfig hZpt;
+  hZpt.name = TString("hZpt_") + sample;  hZpt.title = "Z Pt";
+  hZpt.NbinsX = 60;  hZpt.rangeX.first = 0;  hZpt.rangeX.second = 3000;
+  hZpt.axisTitles.first = "Pt(Z) [GeV]";  hZpt.axisTitles.second = "Events / 50 GeV";
+  hZpt.filler1D = &RA2bZinvAnalysis::fillZpt;  hZpt.omitCuts.push_back(&ptCut_);  hZpt.omitCuts.push_back(&MHTcut_);
+  if (isZll) histograms.push_back(&hZpt);
+
+  histConfig hZmass;
+  hZmass.name = TString("hZmass_") + sample;  hZmass.title = "Z mass";
+  hZmass.NbinsX = 30;  hZmass.rangeX.first = 60;  hZmass.rangeX.second = 120;
+  hZmass.axisTitles.first = "M(Z) [GeV]";  hZmass.axisTitles.second = "Events / 2 GeV";
+  hZmass.filler1D = &RA2bZinvAnalysis::fillZmass;  hZmass.omitCuts.push_back(&massCut_);
+  if (isZll) histograms.push_back(&hZmass);
+
+  // Z mass in Njet, Nb bins
+  histConfig hZmass_2j0b(hZmass);
+  hZmass_2j0b.name = TString("hZmass_2j0b_") + sample;  hZmass_2j0b.title = "Z mass, 2 jets & 0 b jets";
+  hZmass_2j0b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
+  if (isZll) histograms.push_back(&hZmass_2j0b);
+
+  histConfig hZmass_2j1b(hZmass);
+  hZmass_2j1b.name = TString("hZmass_2j1b_") + sample;  hZmass_2j1b.title = "Z mass, 2 jets & 1 b jet";
+  hZmass_2j1b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
+  if (isZll) histograms.push_back(&hZmass_2j1b);
+
+  histConfig hZmass_2j2b(hZmass);
+  hZmass_2j2b.name = TString("hZmass_2j2b_") + sample;  hZmass_2j2b.title = "Z mass, 2 jets & >=2 b jets";
+  hZmass_2j2b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
+  if (isZll) histograms.push_back(&hZmass_2j2b);
+  //
+  histConfig hZmass_3j0b(hZmass);
+  hZmass_3j0b.name = TString("hZmass_3j0b_") + sample;  hZmass_3j0b.title = "Z mass, 3-4 jets & 0 b jets";
+  hZmass_3j0b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
+  if (isZll) histograms.push_back(&hZmass_3j0b);
+
+  histConfig hZmass_3j1b(hZmass);
+  hZmass_3j1b.name = TString("hZmass_3j1b_") + sample;  hZmass_3j1b.title = "Z mass, 3-4 jets & 1 b jet";
+  hZmass_3j1b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
+  if (isZll) histograms.push_back(&hZmass_3j1b);
+
+  histConfig hZmass_3j2b(hZmass);
+  hZmass_3j2b.name = TString("hZmass_3j2b_") + sample;  hZmass_3j2b.title = "Z mass, 3-4 jets & >=2 b jets";
+  hZmass_3j2b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
+  if (isZll) histograms.push_back(&hZmass_3j2b);
+  //
+  histConfig hZmass_5j0b(hZmass);
+  hZmass_5j0b.name = TString("hZmass_5j0b_") + sample;  hZmass_5j0b.title = "Z mass, >=5 jets & 0 B jets";
+  hZmass_5j0b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
+  if (isZll) histograms.push_back(&hZmass_5j0b);
+
+  histConfig hZmass_5j1b(hZmass);
+  hZmass_5j1b.name = TString("hZmass_5j1b_") + sample;  hZmass_5j1b.title = "Z mass, >=5 jets & 1 B jet";
+  hZmass_5j1b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
+  if (isZll) histograms.push_back(&hZmass_5j1b);
+
+  histConfig hZmass_5j2b(hZmass);
+  hZmass_5j2b.name = TString("hZmass_5j2b_") + sample;  hZmass_5j2b.title = "Z mass, >=5 jets & >=2 B jets";
+  hZmass_5j2b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
+  if (isZll) histograms.push_back(&hZmass_5j2b);
+
+  // Special studies
 
   // histConfig hZmass_sfLepTksVeto(hZmass);
   // hZmass_sfLepTksVeto.name = TString("hZmass_sfLepTksVeto_") + sample;  hZmass_sfLepTksVeto.title = "Z mass, SF lepton vetoed";
@@ -797,52 +958,6 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   // hGLdRpixelSeed.filler1D = &RA2bZinvAnalysis::fillGLdRpixelSeed;
   // hGLdRpixelSeed.omitCuts.push_back(&photonVeto_);  hGLdRpixelSeed.addCuts = photonCut_.Data();
   // histograms.push_back(&hGLdRpixelSeed);
-
-  // Z mass in Njet, Nb bins
-  histConfig hZmass_2j0b(hZmass);
-  hZmass_2j0b.name = TString("hZmass_2j0b_") + sample;  hZmass_2j0b.title = "Z mass, 2 jets & 0 b jets";
-  hZmass_2j0b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
-  histograms.push_back(&hZmass_2j0b);
-
-  histConfig hZmass_2j1b(hZmass);
-  hZmass_2j1b.name = TString("hZmass_2j1b_") + sample;  hZmass_2j1b.title = "Z mass, 2 jets & 1 b jet";
-  hZmass_2j1b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
-  histograms.push_back(&hZmass_2j1b);
-
-  histConfig hZmass_2j2b(hZmass);
-  hZmass_2j2b.name = TString("hZmass_2j2b_") + sample;  hZmass_2j2b.title = "Z mass, 2 jets & >=2 b jets";
-  hZmass_2j2b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
-  histograms.push_back(&hZmass_2j2b);
-  //
-  histConfig hZmass_3j0b(hZmass);
-  hZmass_3j0b.name = TString("hZmass_3j0b_") + sample;  hZmass_3j0b.title = "Z mass, 3-4 jets & 0 b jets";
-  hZmass_3j0b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
-  histograms.push_back(&hZmass_3j0b);
-
-  histConfig hZmass_3j1b(hZmass);
-  hZmass_3j1b.name = TString("hZmass_3j1b_") + sample;  hZmass_3j1b.title = "Z mass, 3-4 jets & 1 b jet";
-  hZmass_3j1b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
-  histograms.push_back(&hZmass_3j1b);
-
-  histConfig hZmass_3j2b(hZmass);
-  hZmass_3j2b.name = TString("hZmass_3j2b_") + sample;  hZmass_3j2b.title = "Z mass, 3-4 jets & >=2 b jets";
-  hZmass_3j2b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
-  histograms.push_back(&hZmass_3j2b);
-  //
-  histConfig hZmass_5j0b(hZmass);
-  hZmass_5j0b.name = TString("hZmass_5j0b_") + sample;  hZmass_5j0b.title = "Z mass, >=5 jets & 0 B jets";
-  hZmass_5j0b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
-  histograms.push_back(&hZmass_5j0b);
-
-  histConfig hZmass_5j1b(hZmass);
-  hZmass_5j1b.name = TString("hZmass_5j1b_") + sample;  hZmass_5j1b.title = "Z mass, >=5 jets & 1 B jet";
-  hZmass_5j1b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
-  histograms.push_back(&hZmass_5j1b);
-
-  histConfig hZmass_5j2b(hZmass);
-  hZmass_5j2b.name = TString("hZmass_5j2b_") + sample;  hZmass_5j2b.title = "Z mass, >=5 jets & >=2 B jets";
-  hZmass_5j2b.filler1D = &RA2bZinvAnalysis::fillZmassjb;
-  histograms.push_back(&hZmass_5j2b);
 
   bookAndFillHistograms(sample, histograms, baselineCuts);
 
@@ -969,7 +1084,7 @@ RA2bZinvAnalysis::fillFilterCuts(TH1F* h, double wt) {
   if (!BadPFMuonFilter) h->Fill(7.5, wt);
   if (!(NVtx > 0)) h->Fill(8.5, wt);
   if (!(eeBadScFilter==1)) h->Fill(9.5, wt);
-  if (!(ecalBadCalibFilter==1)) h->Fill(10.5, wt);
+  if (!isMC_ && !(ecalBadCalibFilter==1)) h->Fill(10.5, wt);
   if (!(JetID)) h->Fill(12.5, wt);
   if (!(PFCaloMETRatio < 5)) h->Fill(13.5, wt);
   if (!(HT5/HT <= 2)) h->Fill(14.5, wt);
@@ -1217,7 +1332,7 @@ RA2bZinvAnalysis::fillCutMaps() {
   } else if (ntupleVersion_ == "V15") {
     triggerMap_["zmm"] = {"48", "50", "52", "53", "55", "63"};  // 48 prescaled in late 2017 --Owen; add 50
     triggerMap_["zee"] = {"21", "23", "28", "35", "40", "41"};
-    triggerMap_["photon"] = {"141"};
+    triggerMap_["photon"] = {"138"};
     triggerMap_["sig"] = {"108", "112", "124", "128"};
   }
   triggerMap_["zll"].reserve(triggerMap_["zmm"].size() + triggerMap_["zee"].size());
@@ -1254,6 +1369,41 @@ RA2bZinvAnalysis::cutHistos::cutHistos(TChain* chain, TObjArray* forNotify) : fo
   masscutf_ = new TTreeFormula("masscut", massCut_, chain);  forNotify->Add(masscutf_);
   trigcutf_ = new TTreeFormula("trigcut", trigCuts_, chain);  forNotify->Add(trigcutf_);
   commoncutf_ = new TTreeFormula("commoncut", commonCuts_, chain);  forNotify->Add(commoncutf_);
+}  // ======================================================================================
+
+void
+RA2bZinvAnalysis::cutHistos::setAxisLabels(TH1F* hcf) {
+  if (TString(hcf->GetName()).Contains(TString("hFilterCuts"))) {
+    hcf->GetXaxis()->SetBinLabel(1, "1 None");
+    hcf->GetXaxis()->SetBinLabel(2, "2 TightHalo");
+    hcf->GetXaxis()->SetBinLabel(3, "3 SupTgtHalo");
+    hcf->GetXaxis()->SetBinLabel(4, "4 HBENoise");
+    hcf->GetXaxis()->SetBinLabel(5, "5 HBEIsoNoise");
+    hcf->GetXaxis()->SetBinLabel(6, "6 EcalDeadCell");
+    hcf->GetXaxis()->SetBinLabel(7, "7 BadChCand");
+    hcf->GetXaxis()->SetBinLabel(8, "8 BadPFMu");
+    hcf->GetXaxis()->SetBinLabel(9, "9 NVtx");
+    hcf->GetXaxis()->SetBinLabel(10, "10 eeBadSc");
+    hcf->GetXaxis()->SetBinLabel(11, "11 ecalBadCal");
+    hcf->GetXaxis()->SetBinLabel(12, "12");
+    hcf->GetXaxis()->SetBinLabel(13, "13 JetID");
+    hcf->GetXaxis()->SetBinLabel(14, "14 PFCaloMETR");
+    hcf->GetXaxis()->SetBinLabel(15, "15 HT5/HT");
+    hcf->GetXaxis()->LabelsOption("vu");
+  }
+  if (TString(hcf->GetName()).Contains(TString("hCut"))) {
+    hcf->GetXaxis()->SetBinLabel(1, "1 None");
+    hcf->GetXaxis()->SetBinLabel(2, "2 HT");
+    hcf->GetXaxis()->SetBinLabel(3, "3 MHT");
+    hcf->GetXaxis()->SetBinLabel(4, "4 NJets");
+    hcf->GetXaxis()->SetBinLabel(5, "5 mnDphi");
+    hcf->GetXaxis()->SetBinLabel(6, "6 objects");
+    hcf->GetXaxis()->SetBinLabel(7, "7 Zpt");
+    hcf->GetXaxis()->SetBinLabel(8, "8 Zmass");
+    hcf->GetXaxis()->SetBinLabel(9, "9 Trigger");
+    hcf->GetXaxis()->SetBinLabel(10, "10 Filters");
+    hcf->GetXaxis()->LabelsOption("vu");
+  }
 }  // ======================================================================================
 
 void
@@ -1350,17 +1500,27 @@ RA2bZinvAnalysis::checkTrigPrescales(const char* sample) {
 
 void
 RA2bZinvAnalysis::checkActiveTrigPrescales(const char* sample) {
+
+  // for ( unsigned long ti=0; ti<TriggerPass->size(); ti++ ) {
+  //   TString tname( TriggerNames->at(ti).c_str() ) ;
+  //   cout << "Trigger " << ti << " is " << tname << endl;  // temp
+  //   // int tstatus = TriggerPass->at(ti) ;
+  //   // if ( tname.Contains( "HLT_PFMET120_PFMHT120_IDTight_v" ) && tstatus > 0 ) pass_pfmet120_trig = true ;
+  // } 
+
+
   std::vector<TString> trigger;
   try {trigger = triggerMap_.at(sample);}
   catch (const std::out_of_range& oor) {trigger.clear();}
   for (auto theTrigger : trigger) {
-  stringstream ss;
-  ss << theTrigger;
+    stringstream ss;
+    ss << theTrigger;
     string temp;
     int trgIndex;
     while (!ss.eof()) {
       ss >> temp;
       if (stringstream(temp) >> trgIndex) {
+	// cout << "Trigger " << trgIndex << " is " << TriggerNames->at(trgIndex) << endl;  // temp
 	Int_t prescale = TriggerPrescales->at(trgIndex);
 	if (verbosity_ >= 1 && prescale != 1) cout << "Trigger " << trgIndex << " prescaled to " << prescale << endl;
       }

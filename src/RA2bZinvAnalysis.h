@@ -1,5 +1,5 @@
 //
-//  Zinv background prediction for RA2b analysis
+//  Make histograms for Zinv background prediction in the RA2b analysis
 //  Loosely based on Troy Mulholland's python code
 //
 
@@ -60,8 +60,10 @@ public:
     std::pair<const char*, const char*> axisTitles;
     Int_t NbinsX;
     std::pair<Double_t, Double_t> rangeX;
+    Double_t* binsX;
     Int_t NbinsY;
     std::pair<Double_t, Double_t> rangeY;
+    Double_t* binsY;
     Double_t* dvalue;
     Int_t* ivalue;
     void (RA2bZinvAnalysis::*filler1D)(TH1F* h, double wt);
@@ -70,13 +72,15 @@ public:
     const char* addCuts;
     TString NminusOneCuts;
     TTreeFormula* NminusOneFormula;
-  histConfig() : dvalue(nullptr), ivalue(nullptr), filler1D(nullptr), filler2D(nullptr), addCuts(""), NbinsY(0) {}
+  histConfig() : binsX(nullptr), binsY(nullptr), dvalue(nullptr), ivalue(nullptr),
+      filler1D(nullptr), filler2D(nullptr), addCuts(""), NbinsY(0) {}
   };
 
   class cutHistos {
   public:
     cutHistos(TChain* chain, TObjArray* forNotify);
     ~cutHistos() {};
+    void setAxisLabels(TH1F* hcf);
     void fill(TH1F* hcf, Double_t wt);
   private:
     TObjArray* forNotify_;
@@ -220,6 +224,9 @@ private:
   void fillnZcand(TH1F* h, double wt) {h->Fill(ZCandidates->size(), wt);}
   void fillZmass(TH1F* h, double wt) {for (auto & theZ : *ZCandidates) h->Fill(theZ.M(), wt);}
   void fillZmassjb(TH1F* h, double wt);
+  void fillHT_DR_xWt(TH1F* h, double wt) {h->Fill(HT, wt*HT);}
+  void fillMHT_DR_xWt(TH1F* h, double wt) {h->Fill(MHT, wt*MHT);}
+  void fillNJets_DR_xWt(TH1F* h, double wt) {h->Fill(Double_t(NJets), wt*NJets);}
   void fillZpt(TH1F* h, double wt) {for (auto & theZ : *ZCandidates) h->Fill(theZ.Pt(), wt);}
   void fillGpt(TH1F* h, double wt) {for (auto & theG : *Photons) h->Fill(theG.Pt(), wt);}
   void fillFilterCuts(TH1F* h, double wt);

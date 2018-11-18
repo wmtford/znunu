@@ -15,9 +15,9 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
 
   bool doHzvv = false;
   bool doHttzvv = false;
-  bool doHzmm = true;
-  bool doHzee = true;
-  bool doHphoton = false;
+  bool doHzmm = false;
+  bool doHzee = false;
+  bool doHphoton = true;
   bool doHdymm = false;
   bool doHdyee = false;
   bool doHttzmm = false;
@@ -26,6 +26,7 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
   bool doHVVee = false;
   bool doHttmm = false;
   bool doHttee = false;
+  bool doHgJets = false;
   const std::string makeClassSample = "";  // Must be compatible with compiler directives
   bool doListTrigPrescales = false;
   const std::string dumpSelEvIDsample("");
@@ -111,16 +112,6 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
     histoOutFile->Write();
   }
 
-  if (doHphoton) {
-    fnroot = "histsPhoton";
-    const char* outfn = (fnroot + runBlock + ".root").data();
-    TFile *histoOutFile = TFile::Open(outfn, "RECREATE");
-    std::vector<TH1*> h_photon = analyzer.makeHistograms("photon");
-    for (auto& theHist : h_photon)
-      theHist->Draw();
-    histoOutFile->Write();
-  }
-
   if (doHdymm || doHdyee || doHttzmm || doHttzee || doHVVmm || doHVVee || doHttmm || doHttee) {
     fnroot = "histsDYMC";
     const char* outfn = (fnroot + runBlock + ".root").data();
@@ -162,6 +153,26 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
       for (auto& theHist : h_ttee) theHist->Draw();
     }
 
+    histoOutFile->Write();
+  }
+
+  if (doHphoton) {
+    fnroot = "histsPhoton";
+    const char* outfn = (fnroot + runBlock + ".root").data();
+    TFile *histoOutFile = TFile::Open(outfn, "RECREATE");
+    std::vector<TH1*> h_photon = analyzer.makeHistograms("photon");
+    for (auto& theHist : h_photon)
+      theHist->Draw();
+    histoOutFile->Write();
+  }
+
+  if (doHgJets) {
+    fnroot = "histsGjets";
+    const char* outfn = (fnroot + runBlock + ".root").data();
+    TFile *histoOutFile = TFile::Open(outfn, "RECREATE");
+    std::vector<TH1*> h_gJets = analyzer.makeHistograms("gjets");
+    for (auto& theHist : h_gJets)
+      theHist->Draw();
     histoOutFile->Write();
   }
 

@@ -76,6 +76,17 @@ tree_DYe_CleanVars/tree_TTJets_SingleLeptFromTbar.root
 tree_DYe_CleanVars/tree_TTJets_SingleLeptFromT.root
 ##
 
+gJets 10   # gJets MC
+# tree_GJet_CleanVars/tree_GJets_DR-0p4_HT-100to200.root
+# tree_GJet_CleanVars/tree_GJets_DR-0p4_HT-200to400.root
+# tree_GJet_CleanVars/tree_GJets_DR-0p4_HT-400to600.root
+# tree_GJet_CleanVars/tree_GJets_DR-0p4_HT-600toInf.root
+tree_GJet_CleanVars/tree_GJets_HT-100to200.root
+tree_GJet_CleanVars/tree_GJets_HT-200to400.root
+tree_GJet_CleanVars/tree_GJets_HT-400to600.root
+tree_GJet_CleanVars/tree_GJets_HT-600toInf.root
+##
+
 zmm 10   # DY->mumu data
 tree_DYm_CleanVars/tree_SingleMuon_re2016B.root
 tree_DYm_CleanVars/tree_SingleMuon_re2016C.root
@@ -96,6 +107,17 @@ tree_DYe_CleanVars/tree_SingleElectron_re2016F.root
 tree_DYe_CleanVars/tree_SingleElectron_re2016G.root
 tree_DYe_CleanVars/tree_SingleElectron_re2016H2.root
 tree_DYe_CleanVars/tree_SingleElectron_re2016H3.root
+##
+
+photon 10   # gJets data
+tree_GJet_CleanVars/tree_SinglePhoton_re2016B.root
+tree_GJet_CleanVars/tree_SinglePhoton_re2016C.root
+tree_GJet_CleanVars/tree_SinglePhoton_re2016D.root
+tree_GJet_CleanVars/tree_SinglePhoton_re2016E.root
+tree_GJet_CleanVars/tree_SinglePhoton_re2016F.root
+tree_GJet_CleanVars/tree_SinglePhoton_re2016G.root
+tree_GJet_CleanVars/tree_SinglePhoton_re2016H2.root
+tree_GJet_CleanVars/tree_SinglePhoton_re2016H3.root
 ##
 
 zmmldp 10   # DY->mumu data LDP
