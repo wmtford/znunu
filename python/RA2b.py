@@ -1868,10 +1868,11 @@ def getEffWeights(sample, doEffError=None):
         ROOT.v5.TFormula.SetMaxima(10000,1000,1000)
         h_pur_eb = effFile.Get("h_pur_eb")
         h_pur_ec = effFile.Get("h_pur_ec")
-        g_frag = effFileFrag.Get("bin46_NJets789")
+        # g_frag = effFileFrag.Get("bin46_NJets789")  # not in fragmentation.root  wtf
+        g_frag = effFileFrag.Get("bin46_intHT_f")  # this one is  wtf
         fragVector = g_frag.GetY()
-        g_fragLDP = effFileFrag.Get("bin59_NJets789")
-        fragVectorLDP = g_fragLDP.GetY()
+        # g_fragLDP = effFileFrag.Get("bin59_NJets789")
+        # fragVectorLDP = g_fragLDP.GetY()  # Not used? wtf
         nomBin = 0
         if("LDP" in sample):
             for i in range(3,13)+range(16,26)+range(29,39)+range(41,49)+range(51,59):
@@ -4103,7 +4104,7 @@ def getDevSyst(hists, binSplit=None, doFlip=None):
         
 
 
-def getDoubleRatioGraph(dist, binning=None, extraCuts=None, nJetBin=None, bJetBin=None, kinBin=None, dphiCut=None, applyMassCut=None, applyPtCut=None, applyHTCut=None, applyMHTCut=None, applyNJetsCut=None, doLumi=None, removeZkfactor=None, doNoisy=None, doProof=None, treeLoc=None, applyEffs=None, treeName=None, applySF=None, doCG=None, do20=None, doClopperPearsonError=None, applyPuWeight=None, doDiMu=None, doDiEl=None):
+def getDoubleRatioGraph(dist, histos=None, binning=None, extraCuts=None, nJetBin=None, bJetBin=None, kinBin=None, dphiCut=None, applyMassCut=None, applyPtCut=None, applyHTCut=None, applyMHTCut=None, applyNJetsCut=None, doLumi=None, removeZkfactor=None, doNoisy=None, doProof=None, treeLoc=None, applyEffs=None, treeName=None, applySF=None, doCG=None, do20=None, doClopperPearsonError=None, applyPuWeight=None, doDiMu=None, doDiEl=None):
 
     #####################################################################
     # set defaults and initialize 
@@ -4115,28 +4116,31 @@ def getDoubleRatioGraph(dist, binning=None, extraCuts=None, nJetBin=None, bJetBi
     if(do20):
         if(doLumi==None):
             doLumi=35.9
-    if(dist=='HT'):
-        if(binning==None):
-            #binning=[300,400,500.,650.,800.,1000.,1200.,1600.]
-            #binning=[300,350,425,550,800.,1600.]
+    if (histos is None):
+        if(dist=='HT'):
+            if(binning==None):
+                #binning=[300,400,500.,650.,800.,1000.,1200.,1600.]
+                #binning=[300,350,425,550,800.,1600.]
 
-            #binning=[300.,400.,500,750.,1000.,1600.]
-            binning=[300,400,450,550,650,750,1000,1200,1600]
-    if(dist=='MHT'):
-        if(binning==None):
-            #binning=[300.,400.,500.,600.,750.,900.]
-            binning=[300.,350.,400.,450.,600.,750,900.]
-    if(dist=='NJets'):
-        if(applyNJetsCut==None):
-            applyNJetsCut=False
-        if(binning==None):
-            binning=[1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5]
-            #binning=[1.5,2.5,4.5,6.5,9.5]
-            #binning=[2.5,3.5,4.5,5.5,6.5,7.5]
-    if(dist=='BTags'):
-        bJetBin=-1
-        if(binning==None):
-            binning=[-0.5,0.5,1.5,2.5,3.5]
+                #binning=[300.,400.,500,750.,1000.,1600.]
+                binning=[300,400,450,550,650,750,1000,1200,1600]
+        if(dist=='MHT'):
+            if(binning==None):
+                #binning=[300.,400.,500.,600.,750.,900.]
+                binning=[300.,350.,400.,450.,600.,750,900.]
+        if(dist=='NJets'):
+            if(applyNJetsCut==None):
+                applyNJetsCut=False
+            if(binning==None):
+                binning=[1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5]
+                #binning=[1.5,2.5,4.5,6.5,9.5]
+                #binning=[2.5,3.5,4.5,5.5,6.5,7.5]
+        if(dist=='BTags'):
+            bJetBin=-1
+            if(binning==None):
+                binning=[-0.5,0.5,1.5,2.5,3.5]
+    else:
+        binning = []
     if(doLumi==None):
         doLumi = 35.9
     if(removeZkfactor==None):
@@ -4192,12 +4196,20 @@ def getDoubleRatioGraph(dist, binning=None, extraCuts=None, nJetBin=None, bJetBi
     ########################################################
     cg = []
     if(doCG==True):
-        for i in range(len(binning)-1):
-            h_cg = getDist('photon'+sampleSuffix, dist, distRange=[binning[i],binning[i+1]], nBins=100, doVarBinning=False,
-                           extraCuts=extraCuts, nJetBin=nJetBin, bJetBin=bJetBin, dphiCut=dphiCut, applyMassCut=applyMassCut,
-                           applyPtCut=applyPtCut, applyHTCut=applyHTCut, applyMHTCut=applyMHTCut, applyNJetsCut=applyNJetsCut, 
-                           doLumi=doLumi, applyEffs=applyEffs, treeLoc=treeLoc, treeName=treeName)
-            cg.append(h_cg.GetMean())
+        if (histos is None):
+            for i in range(len(binning)-1):
+                h_cg = getDist('photon'+sampleSuffix, dist, distRange=[binning[i],binning[i+1]], nBins=100, doVarBinning=False,
+                               extraCuts=extraCuts, nJetBin=nJetBin, bJetBin=bJetBin, dphiCut=dphiCut, applyMassCut=applyMassCut,
+                               applyPtCut=applyPtCut, applyHTCut=applyHTCut, applyMHTCut=applyMHTCut, applyNJetsCut=applyNJetsCut, 
+                               doLumi=doLumi, applyEffs=applyEffs, treeLoc=treeLoc, treeName=treeName)
+                cg.append(h_cg.GetMean())
+        else:
+            for i in range(1, histos['pho_cg'].GetNbinsX()+1):
+                cg.append(histos['pho_cg'].GetBinContent(i))
+                binning.append(histos['pho_cg'].GetBinLowEdge(i))
+            cgAxis = histos['pho_cg'].GetXaxis()
+            binning.append(cgAxis.GetBinUpEdge(cgAxis.GetNbins()))
+            
 
     ########################################################
     # end get bin center of gravity from photon distribution
@@ -4208,59 +4220,68 @@ def getDoubleRatioGraph(dist, binning=None, extraCuts=None, nJetBin=None, bJetBi
     # get zll,dyll,photon, and gjets histograms
     ########################################################
     
-    overflowmax = (binning[len(binning)-1]+binning[len(binning)-2])/2.
-    dist = "min("+dist+","+str(overflowmax)+")"
+    if (histos is None):
+        overflowmax = (binning[len(binning)-1]+binning[len(binning)-2])/2.
+        dist = "min("+dist+","+str(overflowmax)+")"
 
-    pho_da = getDist('photon'+sampleSuffix, dist, doVarBinning=True, binning=binning, extraCuts=extraCuts, 
-                     nJetBin=nJetBin, bJetBin=bJetBin, dphiCut=dphiCut, applyMassCut=applyMassCut,
-                     applyPtCut=applyPtCut, applyHTCut=applyHTCut, applyMHTCut=applyMHTCut, applyNJetsCut=applyNJetsCut, 
-                     doLumi=doLumi, applyEffs=applyEffs, treeLoc=treeLoc, treeName=treeName)
+        pho_da = getDist('photon'+sampleSuffix, dist, doVarBinning=True, binning=binning, extraCuts=extraCuts, 
+                         nJetBin=nJetBin, bJetBin=bJetBin, dphiCut=dphiCut, applyMassCut=applyMassCut,
+                         applyPtCut=applyPtCut, applyHTCut=applyHTCut, applyMHTCut=applyMHTCut, applyNJetsCut=applyNJetsCut, 
+                         doLumi=doLumi, applyEffs=applyEffs, treeLoc=treeLoc, treeName=treeName)
 
-    doCombo=False
-    if(doCombo==True):
-        extraCuts = '@GenJets.size()>=5'
-    pho_mc = getDist('gjets'+sampleSuffix, dist, doVarBinning=True, binning=binning, extraCuts=extraCuts, 
-                     nJetBin=nJetBin, bJetBin=bJetBin, dphiCut=dphiCut, applyMassCut=applyMassCut,
-                     applyPtCut=applyPtCut, applyHTCut=applyHTCut, applyMHTCut=applyMHTCut, applyNJetsCut=applyNJetsCut, 
-                     doLumi=doLumi, applyEffs=applyEffs, treeLoc=treeLoc, treeName=treeName, applySF=applySF,
-                     applyPuWeight=applyPuWeight)
-    
-    if(doCombo==True):
-        extraCuts = '@GenJets.size()<5'
-        pho_mc_old = getDist('gjetsold'+sampleSuffix, dist, doVarBinning=True, binning=binning, extraCuts=extraCuts, 
+        doCombo=False
+        if(doCombo==True):
+            extraCuts = '@GenJets.size()>=5'
+        pho_mc = getDist('gjets'+sampleSuffix, dist, doVarBinning=True, binning=binning, extraCuts=extraCuts, 
                          nJetBin=nJetBin, bJetBin=bJetBin, dphiCut=dphiCut, applyMassCut=applyMassCut,
                          applyPtCut=applyPtCut, applyHTCut=applyHTCut, applyMHTCut=applyMHTCut, applyNJetsCut=applyNJetsCut, 
                          doLumi=doLumi, applyEffs=applyEffs, treeLoc=treeLoc, treeName=treeName, applySF=applySF,
                          applyPuWeight=applyPuWeight)
-        pho_mc.Add(pho_mc_old)
-        extraCuts = None
+    
+        if(doCombo==True):
+            extraCuts = '@GenJets.size()<5'
+            pho_mc_old = getDist('gjetsold'+sampleSuffix, dist, doVarBinning=True, binning=binning, extraCuts=extraCuts, 
+                                 nJetBin=nJetBin, bJetBin=bJetBin, dphiCut=dphiCut, applyMassCut=applyMassCut,
+                                 applyPtCut=applyPtCut, applyHTCut=applyHTCut, applyMHTCut=applyMHTCut, applyNJetsCut=applyNJetsCut, 
+                                 doLumi=doLumi, applyEffs=applyEffs, treeLoc=treeLoc, treeName=treeName, applySF=applySF,
+                                 applyPuWeight=applyPuWeight)
+            pho_mc.Add(pho_mc_old)
+            extraCuts = None
 
-    zmm_da = getDist('zmm'+sampleSuffix, dist, doVarBinning=True, binning=binning, extraCuts=extraCuts, 
-                     nJetBin=nJetBin, bJetBin=bJetBin, dphiCut=dphiCut, applyMassCut=applyMassCut,
-                     applyPtCut=applyPtCut, applyHTCut=applyHTCut, applyMHTCut=applyMHTCut, applyNJetsCut=applyNJetsCut, 
-                     doLumi=doLumi, applyEffs=applyEffs, treeLoc=treeLoc, treeName=treeName)
+        zmm_da = getDist('zmm'+sampleSuffix, dist, doVarBinning=True, binning=binning, extraCuts=extraCuts, 
+                         nJetBin=nJetBin, bJetBin=bJetBin, dphiCut=dphiCut, applyMassCut=applyMassCut,
+                         applyPtCut=applyPtCut, applyHTCut=applyHTCut, applyMHTCut=applyMHTCut, applyNJetsCut=applyNJetsCut, 
+                         doLumi=doLumi, applyEffs=applyEffs, treeLoc=treeLoc, treeName=treeName)
 
-    zmm_mc = getDist('dymm'+sampleSuffix, dist, doVarBinning=True, binning=binning, extraCuts=extraCuts, 
-                     nJetBin=nJetBin, bJetBin=bJetBin, dphiCut=dphiCut, applyMassCut=applyMassCut,
-                     applyPtCut=applyPtCut, applyHTCut=applyHTCut, applyMHTCut=applyMHTCut, applyNJetsCut=applyNJetsCut, 
-                     doLumi=doLumi, applyEffs=applyEffs, treeLoc=treeLoc, treeName=treeName, applySF=applySF,
-                     applyPuWeight=applyPuWeight)
+        zmm_mc = getDist('dymm'+sampleSuffix, dist, doVarBinning=True, binning=binning, extraCuts=extraCuts, 
+                         nJetBin=nJetBin, bJetBin=bJetBin, dphiCut=dphiCut, applyMassCut=applyMassCut,
+                         applyPtCut=applyPtCut, applyHTCut=applyHTCut, applyMHTCut=applyMHTCut, applyNJetsCut=applyNJetsCut, 
+                         doLumi=doLumi, applyEffs=applyEffs, treeLoc=treeLoc, treeName=treeName, applySF=applySF,
+                         applyPuWeight=applyPuWeight)
 
-    zee_da = getDist('zee'+sampleSuffix, dist, doVarBinning=True, binning=binning, extraCuts=extraCuts, 
-                     nJetBin=nJetBin, bJetBin=bJetBin, dphiCut=dphiCut, applyMassCut=applyMassCut,
-                     applyPtCut=applyPtCut, applyHTCut=applyHTCut, applyMHTCut=applyMHTCut, applyNJetsCut=applyNJetsCut, 
-                     doLumi=doLumi, applyEffs=applyEffs, treeLoc=treeLoc, treeName=treeName)
+        zee_da = getDist('zee'+sampleSuffix, dist, doVarBinning=True, binning=binning, extraCuts=extraCuts, 
+                         nJetBin=nJetBin, bJetBin=bJetBin, dphiCut=dphiCut, applyMassCut=applyMassCut,
+                         applyPtCut=applyPtCut, applyHTCut=applyHTCut, applyMHTCut=applyMHTCut, applyNJetsCut=applyNJetsCut, 
+                         doLumi=doLumi, applyEffs=applyEffs, treeLoc=treeLoc, treeName=treeName)
 
-    zee_mc = getDist('dyee'+sampleSuffix, dist, doVarBinning=True, binning=binning, extraCuts=extraCuts, 
-                     nJetBin=nJetBin, bJetBin=bJetBin, dphiCut=dphiCut, applyMassCut=applyMassCut,
-                     applyPtCut=applyPtCut, applyHTCut=applyHTCut, applyMHTCut=applyMHTCut, applyNJetsCut=applyNJetsCut, 
-                     doLumi=doLumi, applyEffs=applyEffs, treeLoc=treeLoc, treeName=treeName, applySF=applySF,
-                     applyPuWeight=applyPuWeight)
+        zee_mc = getDist('dyee'+sampleSuffix, dist, doVarBinning=True, binning=binning, extraCuts=extraCuts, 
+                         nJetBin=nJetBin, bJetBin=bJetBin, dphiCut=dphiCut, applyMassCut=applyMassCut,
+                         applyPtCut=applyPtCut, applyHTCut=applyHTCut, applyMHTCut=applyMHTCut, applyNJetsCut=applyNJetsCut, 
+                         doLumi=doLumi, applyEffs=applyEffs, treeLoc=treeLoc, treeName=treeName, applySF=applySF,
+                         applyPuWeight=applyPuWeight)
 
-    # if(do20):
-    #     pho_da.Sumw2(False)
-    #     zmm_da.Sumw2(False)
-    #     zee_da.Sumw2(False)
+        # if(do20):
+        #     pho_da.Sumw2(False)
+        #     zmm_da.Sumw2(False)
+        #     zee_da.Sumw2(False)
+
+    else:
+        pho_da = histos['pho_da']
+        pho_mc = histos['pho_mc']
+        zmm_da = histos['zmm_da']
+        zmm_mc = histos['zmm_mc']
+        zee_da = histos['zee_da']
+        zee_mc = histos['zee_mc']
 
     if(doDiMu==True):
         zll_da = zmm_da.Clone()
@@ -4370,7 +4391,8 @@ def getDoubleRatioFit(hist, func, returnDiff=False):
     loEnd = -0.5
     # hiEnd = hist.GetBinLowEdge(nbins)+hist.GetBinWidth(nbins)
     hiEnd = hist.GetX().__getitem__(nbins-1)*2
-    mbins = 100
+    # mbins = 100
+    mbins = nbins -1  # wtf
     bwidth = (hiEnd-loEnd)/float(mbins)
     for ibin in range(mbins+1):
         ptsForGrph.append(loEnd + ibin*bwidth)
@@ -4499,7 +4521,7 @@ def getDoubleRatioFit(hist, func, returnDiff=False):
     else:
         return (graph_mid, graph_lo, graph_hi)
 
-def getDoubleRatioPlot(dr_graphs, Title=None, xTitle=None, yTitle=None, doCMSlumi=None, iPos=None, iPeriod=None, extraText=None, fitFunc=None, returnDiff=None, drawText=None, text=None, textCoords=None, addDeviationInQuad=None):
+def getDoubleRatioPlot(dr_graphs, binMeans=None, Title=None, xTitle=None, yTitle=None, doCMSlumi=None, iPos=None, iPeriod=None, extraText=None, fitFunc=None, returnDiff=None, drawText=None, text=None, textCoords=None, addDeviationInQuad=None):
     """takes as input a TGraph (or list of TGraphs) returns canvas with fit and error
     default is linear fit"""
     
@@ -4601,15 +4623,23 @@ def getDoubleRatioPlot(dr_graphs, Title=None, xTitle=None, yTitle=None, doCMSlum
         if(xTitle==None and 'NJets' in graph.GetTitle()):
             xTitle = "N_{jet}"
 
-            bin1 = 2.            
-            h_bin2 = getDist("photon","NJets",distRange=[2.5,4.5],doVarBinning=False)
-            bin2 = h_bin2.GetMean()
-            h_bin3 = getDist("photon","NJets",distRange=[4.5,6.5],doVarBinning=False)
-            bin3 = h_bin3.GetMean()
-            h_bin4 = getDist("photon","NJets",distRange=[6.5,8.5],doVarBinning=False)
-            bin4 = h_bin4.GetMean()
-            h_bin5 = getDist("photon","NJets",distRange=[8.5,12.5],doVarBinning=False)
-            bin5 = h_bin5.GetMean()
+            if (binMeans is None):
+                bin1 = 2.
+                h_bin2 = getDist("photon","NJets",distRange=[2.5,4.5],doVarBinning=False)
+                bin2 = h_bin2.GetMean()
+                h_bin3 = getDist("photon","NJets",distRange=[4.5,6.5],doVarBinning=False)
+                bin3 = h_bin3.GetMean()
+                h_bin4 = getDist("photon","NJets",distRange=[6.5,8.5],doVarBinning=False)
+                bin4 = h_bin4.GetMean()
+                h_bin5 = getDist("photon","NJets",distRange=[8.5,12.5],doVarBinning=False)
+                bin5 = h_bin5.GetMean()
+            else:
+                bin1 = binMeans['NJets'][0]
+                bin2 = binMeans['NJets'][1]
+                bin3 = binMeans['NJets'][2]
+                bin4 = binMeans['NJets'][3]
+                bin5 = binMeans['NJets'][4]
+
             error1D.append(((fitGraph[2].Eval(bin1)-fitGraph[0].Eval(bin1))/line[it].Eval(bin1),(fitGraph[0].Eval(bin1)-fitGraph[1].Eval(bin1))/line[it].Eval(bin1)))
             error1D.append(((fitGraph[2].Eval(bin2)-fitGraph[0].Eval(bin2))/line[it].Eval(bin2),(fitGraph[0].Eval(bin2)-fitGraph[1].Eval(bin2))/line[it].Eval(bin2)))
             error1D.append(((fitGraph[2].Eval(bin3)-fitGraph[0].Eval(bin3))/line[it].Eval(bin3),(fitGraph[0].Eval(bin3)-fitGraph[1].Eval(bin3))/line[it].Eval(bin3)))
@@ -4658,16 +4688,23 @@ def getDoubleRatioPlot(dr_graphs, Title=None, xTitle=None, yTitle=None, doCMSlum
         if(xTitle==None and 'MHT' in graph.GetTitle()):
             xTitle = "H_{T}^{miss} [GeV]"
             
-            h_bin1 = getDist("photon","MHT",distRange=[300,350],doVarBinning=False)
-            bin1 = h_bin1.GetMean()
-            h_bin2 = getDist("photon","MHT",distRange=[350,500],doVarBinning=False)
-            bin2 = h_bin2.GetMean()
-            h_bin3 = getDist("photon","MHT",distRange=[500,750],doVarBinning=False)
-            bin3 = h_bin3.GetMean()
-            h_bin4 = getDist("photon","MHT",distRange=[750,1500],doVarBinning=False)
-            bin4 = h_bin4.GetMean()
-            h_bin5 = getDist("photon","MHT",distRange=[250,300],doVarBinning=False,applyMHTCut=False)
-            bin5 = h_bin5.GetMean()
+            if (binMeans is None):
+                h_bin1 = getDist("photon","MHT",distRange=[300,350],doVarBinning=False)
+                bin1 = h_bin1.GetMean()
+                h_bin2 = getDist("photon","MHT",distRange=[350,500],doVarBinning=False)
+                bin2 = h_bin2.GetMean()
+                h_bin3 = getDist("photon","MHT",distRange=[500,750],doVarBinning=False)
+                bin3 = h_bin3.GetMean()
+                h_bin4 = getDist("photon","MHT",distRange=[750,1500],doVarBinning=False)
+                bin4 = h_bin4.GetMean()
+                h_bin5 = getDist("photon","MHT",distRange=[250,300],doVarBinning=False,applyMHTCut=False)
+                bin5 = h_bin5.GetMean()
+            else:
+                bin1 = binMeans['MHT'][1]
+                bin2 = binMeans['MHT'][2]
+                bin3 = binMeans['MHT'][3]
+                bin4 = binMeans['MHT'][4]
+                bin5 = binMeans['MHT'][0]
 
             error1D.append(((fitGraph[2].Eval(bin1)-fitGraph[0].Eval(bin1))/line[it].Eval(bin1),(fitGraph[0].Eval(bin1)-fitGraph[1].Eval(bin1))/line[it].Eval(bin1)))
             error1D.append(((fitGraph[2].Eval(bin2)-fitGraph[0].Eval(bin2))/line[it].Eval(bin2),(fitGraph[0].Eval(bin2)-fitGraph[1].Eval(bin2))/line[it].Eval(bin2)))
@@ -4691,19 +4728,27 @@ def getDoubleRatioPlot(dr_graphs, Title=None, xTitle=None, yTitle=None, doCMSlum
 
         if(xTitle==None and 'HT' in graph.GetTitle()):
             xTitle = "H_{T} [GeV]"
-            
-            h_bin1 = getDist("photon","HT",distRange=[300,500],doVarBinning=False)
-            bin1 = h_bin1.GetMean()
-            h_bin2 = getDist("photon","HT",distRange=[500,1000],doVarBinning=False)
-            bin2 = h_bin2.GetMean()
-            h_bin3 = getDist("photon","HT",distRange=[1000,2500],doVarBinning=False)
-            bin3 = h_bin3.GetMean()
-            h_bin4 = getDist("photon","HT",distRange=[350,500],doVarBinning=False)
-            bin4 = h_bin4.GetMean()
-            h_bin5 = getDist("photon","HT",distRange=[750,1500],doVarBinning=False)
-            bin5 = h_bin5.GetMean()
-            h_bin6 = getDist("photon","HT",distRange=[1500,2500],doVarBinning=False)
-            bin6 = h_bin6.GetMean()
+
+            if (binMeans is None):
+                h_bin1 = getDist("photon","HT",distRange=[300,500],doVarBinning=False)
+                bin1 = h_bin1.GetMean()
+                h_bin2 = getDist("photon","HT",distRange=[500,1000],doVarBinning=False)
+                bin2 = h_bin2.GetMean()
+                h_bin3 = getDist("photon","HT",distRange=[1000,2500],doVarBinning=False)
+                bin3 = h_bin3.GetMean()
+                h_bin4 = getDist("photon","HT",distRange=[350,500],doVarBinning=False)
+                bin4 = h_bin4.GetMean()
+                h_bin5 = getDist("photon","HT",distRange=[750,1500],doVarBinning=False)
+                bin5 = h_bin5.GetMean()
+                h_bin6 = getDist("photon","HT",distRange=[1500,2500],doVarBinning=False)
+                bin6 = h_bin6.GetMean()
+            else:
+                bin1 = binMeans['HT'][0]
+                bin2 = binMeans['HT'][1]
+                bin3 = binMeans['HT'][2]
+                bin4 = binMeans['HT'][3+1]
+                bin5 = binMeans['HT'][3+3]
+                bin6 = binMeans['HT'][3+4]
             
             error1D.append(((fitGraph[2].Eval(bin1)-fitGraph[0].Eval(bin1))/line[it].Eval(bin1),(fitGraph[0].Eval(bin1)-fitGraph[1].Eval(bin1))/line[it].Eval(bin1)))
             error1D.append(((fitGraph[2].Eval(bin2)-fitGraph[0].Eval(bin2))/line[it].Eval(bin2),(fitGraph[0].Eval(bin2)-fitGraph[1].Eval(bin2))/line[it].Eval(bin2)))
