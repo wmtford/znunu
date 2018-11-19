@@ -1362,7 +1362,7 @@ RA2bZinvAnalysis::setTriggerIndexList(const char* sample) {
   }
   for (auto myTrigName : triggers) {
     for (unsigned int ti=0; ti<TriggerNames->size(); ++ti) {
-      if (!strcmp(TriggerNames->at(ti).c_str(), myTrigName.Data())) {
+      if (TString(TriggerNames->at(ti)).Contains(myTrigName)) {
 	triggerIndexList_.push_back(ti);
 	Int_t prescale = TriggerPrescales->at(ti);
 	if (verbosity_ >= 2 || (verbosity_ >= 1 && prescale != 1))
