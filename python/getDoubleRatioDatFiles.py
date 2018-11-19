@@ -26,6 +26,8 @@ else:
 haveHistograms = True
 runBlock = "2016"
 
+DYkfactor = 1.23
+
 for sample in doSample:
 
     histoNJets = {}
@@ -63,9 +65,9 @@ for sample in doSample:
     else:
         # Histograms from RA2bZinvAnalysis
         if (runBlock is "2016"):
-            dataZllFile = ROOT.TFile('../outputs/histsDYspl_2016v15.root')
+            dataZllFile = ROOT.TFile('../outputs/histsDY_2016v15.root')
             dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_2016v15.root')
-            mcZllFile = ROOT.TFile('../outputs/histsDYMCspl_2016v12.root')
+            mcZllFile = ROOT.TFile('../outputs/histsDYMC_2016v12.root')
             mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2016v12.root')
         histoNJets['pho_da'] = dataPhotonFile.Get("hNJets_DR_photon")
         histoNJets['pho_cg'] = histoNJets['pho_da'].Clone()
@@ -74,24 +76,30 @@ for sample in doSample:
         histoNJets['pho_mc'] = mcPhotonFile.Get("hNJets_DR_gjets")
         histoNJets['zmm_da'] = dataZllFile.Get("hNJets_DR_zmm")
         histoNJets['zmm_mc'] = mcZllFile.Get("hNJets_DR_dymm")
+        histoNJets['zmm_mc'].Scale(1/DYkfactor)
         histoNJets['zee_da'] = dataZllFile.Get("hNJets_DR_zee")
         histoNJets['zee_mc'] = mcZllFile.Get("hNJets_DR_dyee")
+        histoNJets['zee_mc'].Scale(1/DYkfactor)
         histoMHT['pho_da'] = dataPhotonFile.Get("hMHT_DR_photon")
         histoMHT['pho_cg'] = dataPhotonFile.Get("hMHT_DR_xWt_photon")
         histoMHT['pho_cg'].Divide(histoMHT['pho_da'])
         histoMHT['pho_mc'] = mcPhotonFile.Get("hMHT_DR_gjets")
         histoMHT['zmm_da'] = dataZllFile.Get("hMHT_DR_zmm")
         histoMHT['zmm_mc'] = mcZllFile.Get("hMHT_DR_dymm")
+        histoMHT['zmm_mc'].Scale(1/DYkfactor)
         histoMHT['zee_da'] = dataZllFile.Get("hMHT_DR_zee")
         histoMHT['zee_mc'] = mcZllFile.Get("hMHT_DR_dyee")
+        histoMHT['zee_mc'].Scale(1/DYkfactor)
         histoHT['pho_da'] = dataPhotonFile.Get("hHT_DR_photon")
         histoHT['pho_cg'] = dataPhotonFile.Get("hHT_DR_xWt_photon")
         histoHT['pho_cg'].Divide(histoHT['pho_da'])
         histoHT['pho_mc'] = mcPhotonFile.Get("hHT_DR_gjets")
         histoHT['zmm_da'] = dataZllFile.Get("hHT_DR_zmm")
         histoHT['zmm_mc'] = mcZllFile.Get("hHT_DR_dymm")
+        histoHT['zmm_mc'].Scale(1/DYkfactor)
         histoHT['zee_da'] = dataZllFile.Get("hHT_DR_zee")
         histoHT['zee_mc'] = mcZllFile.Get("hHT_DR_dyee")
+        histoHT['zee_mc'].Scale(1/DYkfactor)
 
         ## get the double ratio graphs
         nj_dr = RA2b.getDoubleRatioGraph('NJets', histos=histoNJets)

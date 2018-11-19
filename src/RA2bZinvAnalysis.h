@@ -30,7 +30,6 @@ static TString NJetscut_;
 static TString objcut_;
 static TString minDphicut_;
 static TString commonCuts_;
-static TString trigCuts_;
 static TString ptCut_;
 static TString massCut_;
 static TString photonDeltaRcut_;
@@ -48,8 +47,8 @@ public:
   void dumpSelEvIDs(const char* sample, const char* idFileName);
   TCut getCuts(const TString sampleKey);
   int kinBin(double& ht, double& mht);
+  void setTriggerIndexList(const char* sample);
   void checkTrigPrescales(const char* sample);
-  void checkActiveTrigPrescales(const char* sample);
   void runMakeClass(const std::string& sample);
 
   struct histConfig {
@@ -81,7 +80,7 @@ public:
     cutHistos(TChain* chain, TObjArray* forNotify);
     ~cutHistos() {};
     void setAxisLabels(TH1F* hcf);
-    void fill(TH1F* hcf, Double_t wt);
+    void fill(TH1F* hcf, Double_t wt, bool passTrg);
   private:
     TObjArray* forNotify_;
     TTreeFormula* HTcutf_;
@@ -91,7 +90,6 @@ public:
     TTreeFormula* objcutf_;
     TTreeFormula* ptcutf_;
     TTreeFormula* masscutf_;
-    TTreeFormula* trigcutf_;
     TTreeFormula* commoncutf_;
   };
 
@@ -183,7 +181,8 @@ private:
 
   typedef std::map<TString, std::vector<TString> > vstring_map;
   typedef std::map<TString, TString> string_map;
-  vstring_map triggerMap_;
+  std::vector<unsigned> triggerIndexList_;
+  vstring_map triggerMapByName_;
   string_map objCutMap_;
   string_map minDphiCutMap_;
   string_map MHTCutMap_;

@@ -35,7 +35,7 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
   TFile photonData("../outputs/histsPhoton_2016v15.root");
   TFile ZllXMC("../outputs/histsDYMCspl_2016v12.root");
   
-  // Get the Z->ll data histograms
+  // Get the Z->ll and photon data and MC histograms
   TH1F* hCC_zmm = (TH1F*) ZllData.Get("hCC_zmm");
   TH1F* hCC_zee = (TH1F*) ZllData.Get("hCC_zee");
   TH1F* hCCjb_zmm = (TH1F*) ZllData.Get("hCCjb_zmm");

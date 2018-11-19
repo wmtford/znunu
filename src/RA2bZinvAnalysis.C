@@ -357,20 +357,6 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
     return cuts;
   }
 
-  std::vector<TString> trigger;
-  try {trigger = triggerMap_.at(sample);}
-  catch (const std::out_of_range& oor) {trigger.clear();}
-  if (trigger.empty()) {
-    trigCuts_ = "1";
-  } else {
-    int Ntrig = trigger.size();
-    if (Ntrig > 1) trigCuts_ = TString("(");
-    for (auto theTrigger : trigger)
-      trigCuts_ += TString("(TriggerPass[")+theTrigger+TString("]==1) + ");
-    trigCuts_.Replace(trigCuts_.Length()-3, 3, "");
-    if (Ntrig > 1) trigCuts_ += TString(")");
-  }
-
   // // commonCuts_ = "(JetID==1&& HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && BadChargedCandidateFilter && NVtx > 0 && BadPFMuonFilter && PFCaloMETRatio < 5)";  // Troy revision+
   // if (trigger.empty()) {
   //   commonCuts_ = "JetID==1&& HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && eeBadScFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && NVtx > 0";  // Troy revision-;  moved JetID to !isSkim_
@@ -439,7 +425,6 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
   cuts += ptCut_;
   cuts += photonDeltaRcut_;
   cuts += commonCuts_;
-  cuts += trigCuts_;
 
     // 	  if(applySF):
     //     cuts*=bJetCutsSF[bJetBin]
@@ -528,7 +513,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 	if (verbosity_ >= 1) cout << "Current file in chain: " << thisFile->GetName() << endl;
       }
       chain->GetEntry(entry);  // Pull in tree variables for reinitialization
-      checkActiveTrigPrescales(sample);
+      setTriggerIndexList(sample);
       if (isMC_ && verbosity_ >= 1) cout << "MC weight for this file is " << Weight << endl;
     }
     chain->GetEntry(entry);
@@ -551,12 +536,17 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       eventWt = 1000*intLumi_*Weight*PUweight;
       if (eventWt < 0) eventWt *= -1;
     }
+    // Trigger requirements
+    bool passTrg = false;
+    for (auto trgIndex : triggerIndexList_)
+      if (TriggerPass->at(trgIndex)) passTrg = true;
 
     for (auto & hg : histograms) {
       if (hg->name.Contains(TString("hCut"))) {
-	cutHistFiller.fill((TH1F*) hg->hist, eventWt);
+	cutHistFiller.fill((TH1F*) hg->hist, eventWt, passTrg);
 	continue;
       }
+      if (!passTrg) break;
       hg->NminusOneFormula->GetNdata();
       double selWt = hg->NminusOneFormula->EvalInstance(0);
       if (selWt != 0) {
@@ -598,6 +588,18 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   bool isPhoton = !strcmp(sample, "photon");
   TString sampleKey = sampleKeyMap_.count(sample) > 0 ? sampleKeyMap_.at(sample) : TString("none");
   bool isZll = (sampleKey == "zmm" || sampleKey == "zee" || sampleKey == "zll");
+
+  histConfig hCutFlow;
+  hCutFlow.name = TString("hCutFlow_") + sample;  hCutFlow.title = "Cut flow";
+  hCutFlow.NbinsX = 10;  hCutFlow.rangeX.first = 0;  hCutFlow.rangeX.second = 10;
+  hCutFlow.axisTitles.first = "";  hCutFlow.axisTitles.second = "Events surviving";
+  histograms.push_back(&hCutFlow);
+
+  histConfig hCuts;
+  hCuts.name = TString("hCuts_") + sample;  hCuts.title = "Cuts passed";
+  hCuts.NbinsX = 10;  hCuts.rangeX.first = 0;  hCuts.rangeX.second = 10;
+  hCuts.axisTitles.first = "";  hCuts.axisTitles.second = "Events passing";
+  histograms.push_back(&hCuts);
 
   histConfig hCC;
   hCC.name = TString("hCC_") + sample;  hCC.title = "Cut & count analysis";
@@ -662,18 +664,6 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hBTags.axisTitles.first = "N (b jets)";  hBTags.axisTitles.second = "Events / bin";
   hBTags.ivalue = &BTags;
   histograms.push_back(&hBTags);
-
-  histConfig hCutFlow;
-  hCutFlow.name = TString("hCutFlow_") + sample;  hCutFlow.title = "Cut flow";
-  hCutFlow.NbinsX = 10;  hCutFlow.rangeX.first = 0;  hCutFlow.rangeX.second = 10;
-  hCutFlow.axisTitles.first = "";  hCutFlow.axisTitles.second = "Events surviving";
-  histograms.push_back(&hCutFlow);
-
-  histConfig hCuts;
-  hCuts.name = TString("hCuts_") + sample;  hCuts.title = "Cuts passed";
-  hCuts.NbinsX = 10;  hCuts.rangeX.first = 0;  hCuts.rangeX.second = 10;
-  hCuts.axisTitles.first = "";  hCuts.axisTitles.second = "Events passing";
-  histograms.push_back(&hCuts);
 
   histConfig hFilterCuts;
   hFilterCuts.name = TString("hFilterCuts_") + sample;  hFilterCuts.title = "Filter cuts";
@@ -1324,22 +1314,63 @@ RA2bZinvAnalysis::fillCutMaps() {
     MHTCutMap_["ldp"] = "MHTclean>=250";
   }
 
-  if (ntupleVersion_ == "V12") {
-    triggerMap_["zmm"] = {"18", "20", "22", "23", "29"};
-    triggerMap_["zee"] = {"3", "4", "6", "7", "11", "12"};
-    triggerMap_["photon"] = {"52"};  // re-miniAOD; 51 for ReReco/PromptReco
-    triggerMap_["sig"] = {"42", "43", "44", "46", "47", "48"};
-  } else if (ntupleVersion_ == "V15") {
-    triggerMap_["zmm"] = {"48", "50", "52", "53", "55", "63"};  // 48 prescaled in late 2017 --Owen; add 50
-    triggerMap_["zee"] = {"21", "23", "28", "35", "40", "41"};
-    triggerMap_["photon"] = {"138"};
-    triggerMap_["sig"] = {"108", "112", "124", "128"};
+  triggerMapByName_["zmm"] = {
+    "HLT_IsoMu24_v",  // prescaled in late 2017 --Owen
+    "HLT_IsoMu27_v",
+    "HLT_IsoTkMu24_v",
+    "HLT_Mu15_IsoVVVL_PFHT350_v",
+    "HLT_Mu15_IsoVVVL_PFHT400_v",
+    "HLT_Mu50_v"
+  };
+  triggerMapByName_["zee"] = {
+    "HLT_Ele105_CaloIdVT_GsfTrkIdT_v",
+    "HLT_Ele115_CaloIdVT_GsfTrkIdT_v",
+    "HLT_Ele15_IsoVVVL_PFHT350_v",
+    "HLT_Ele15_IsoVVVL_PFHT400_v",
+    "HLT_Ele27_WPTight_Gsf_v",
+    "HLT_Ele27_eta2p1_WPLoose_Gsf_v"
+  };
+  triggerMapByName_["photon"] = {
+    "HLT_Photon175_v"
+  };
+  triggerMapByName_["sig"] = {
+    "HLT_PFMET100_PFMHT100_IDTight_v",
+    "HLT_PFMET110_PFMHT110_IDTight_v",
+    "HLT_PFMET120_PFMHT120_IDTight_v",
+    "HLT_PFMETNoMu100_PFMHTNoMu100_IDTight_v",
+    "HLT_PFMETNoMu110_PFMHTNoMu110_IDTight_v",
+    "HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_v"
+  };
+  triggerMapByName_["zll"].reserve(triggerMapByName_["zmm"].size() + triggerMapByName_["zee"].size());
+  triggerMapByName_["zll"] = triggerMapByName_["zmm"];
+  triggerMapByName_["zll"].insert(triggerMapByName_["zll"].end(), triggerMapByName_["zee"].begin(), triggerMapByName_["zee"].end());
+  triggerMapByName_["sle"] = triggerMapByName_["sig"];
+  triggerMapByName_["slm"] = triggerMapByName_["sig"];
+
+}  // ======================================================================================
+
+void
+RA2bZinvAnalysis::setTriggerIndexList(const char* sample) {
+
+  triggerIndexList_.clear();
+  std::vector<TString> triggers;
+  if (triggerMapByName_.count(sample) > 0) {
+    triggers = triggerMapByName_.at(sample);
+  } else {
+    cout << "No matches in triggerMapByName for sample " << sample << endl;
+    return;
   }
-  triggerMap_["zll"].reserve(triggerMap_["zmm"].size() + triggerMap_["zee"].size());
-  triggerMap_["zll"] = triggerMap_["zmm"];
-  triggerMap_["zll"].insert(triggerMap_["zll"].end(), triggerMap_["zee"].begin(), triggerMap_["zee"].end());
-  triggerMap_["sle"] = triggerMap_["sig"];
-  triggerMap_["slm"] = triggerMap_["sig"];
+  for (auto myTrigName : triggers) {
+    for (unsigned int ti=0; ti<TriggerNames->size(); ++ti) {
+      if (!strcmp(TriggerNames->at(ti).c_str(), myTrigName.Data())) {
+	triggerIndexList_.push_back(ti);
+	Int_t prescale = TriggerPrescales->at(ti);
+	if (verbosity_ >= 2 || (verbosity_ >= 1 && prescale != 1))
+	  cout << "Trigger " << TriggerNames->at(ti) << " (" << ti << ") prescaled by " << prescale << endl;
+	continue;
+      }
+    }
+  }
 
 }  // ======================================================================================
 
@@ -1367,7 +1398,6 @@ RA2bZinvAnalysis::cutHistos::cutHistos(TChain* chain, TObjArray* forNotify) : fo
   objcutf_ = new TTreeFormula("objcut", objcut_, chain);  forNotify->Add(objcutf_);
   ptcutf_ = new TTreeFormula("ptcut", ptCut_, chain);  forNotify->Add(ptcutf_);
   masscutf_ = new TTreeFormula("masscut", massCut_, chain);  forNotify->Add(masscutf_);
-  trigcutf_ = new TTreeFormula("trigcut", trigCuts_, chain);  forNotify->Add(trigcutf_);
   commoncutf_ = new TTreeFormula("commoncut", commonCuts_, chain);  forNotify->Add(commoncutf_);
 }  // ======================================================================================
 
@@ -1407,7 +1437,7 @@ RA2bZinvAnalysis::cutHistos::setAxisLabels(TH1F* hcf) {
 }  // ======================================================================================
 
 void
-RA2bZinvAnalysis::cutHistos::fill(TH1F* hcf, Double_t wt) {
+RA2bZinvAnalysis::cutHistos::fill(TH1F* hcf, Double_t wt, bool passTrg) {
   HTcutf_->GetNdata();
   MHTcutf_->GetNdata();
   NJetscutf_->GetNdata();
@@ -1415,7 +1445,6 @@ RA2bZinvAnalysis::cutHistos::fill(TH1F* hcf, Double_t wt) {
   objcutf_->GetNdata();
   ptcutf_->GetNdata();
   masscutf_->GetNdata();
-  trigcutf_->GetNdata();
   commoncutf_->GetNdata();
 
   hcf->Fill(0.5, wt);
@@ -1434,7 +1463,7 @@ RA2bZinvAnalysis::cutHistos::fill(TH1F* hcf, Double_t wt) {
 		hcf->Fill(6.5, wt);
 		if (masscutf_->EvalInstance(0)) {
 		  hcf->Fill(7.5, wt);
-		  if (trigcutf_->EvalInstance(0)) {
+		  if (passTrg) {
 		    hcf->Fill(8.5, wt);
 		    if (commoncutf_->EvalInstance(0)) {
 		      hcf->Fill(9.5, wt);
@@ -1455,7 +1484,6 @@ RA2bZinvAnalysis::cutHistos::fill(TH1F* hcf, Double_t wt) {
     if (objcutf_->EvalInstance(0)) hcf->Fill(5.5, wt);
     if (ptcutf_->EvalInstance(0)) hcf->Fill(6.5, wt);
     if (masscutf_->EvalInstance(0)) hcf->Fill(7.5, wt);
-    if (trigcutf_->EvalInstance(0)) hcf->Fill(8.5, wt);
     if (commoncutf_->EvalInstance(0)) hcf->Fill(9.5, wt);
   }
 }  // ======================================================================================
@@ -1499,38 +1527,6 @@ RA2bZinvAnalysis::checkTrigPrescales(const char* sample) {
 }  // ======================================================================================
 
 void
-RA2bZinvAnalysis::checkActiveTrigPrescales(const char* sample) {
-
-  // for ( unsigned long ti=0; ti<TriggerPass->size(); ti++ ) {
-  //   TString tname( TriggerNames->at(ti).c_str() ) ;
-  //   cout << "Trigger " << ti << " is " << tname << endl;  // temp
-  //   // int tstatus = TriggerPass->at(ti) ;
-  //   // if ( tname.Contains( "HLT_PFMET120_PFMHT120_IDTight_v" ) && tstatus > 0 ) pass_pfmet120_trig = true ;
-  // } 
-
-
-  std::vector<TString> trigger;
-  try {trigger = triggerMap_.at(sample);}
-  catch (const std::out_of_range& oor) {trigger.clear();}
-  for (auto theTrigger : trigger) {
-    stringstream ss;
-    ss << theTrigger;
-    string temp;
-    int trgIndex;
-    while (!ss.eof()) {
-      ss >> temp;
-      if (stringstream(temp) >> trgIndex) {
-	// cout << "Trigger " << trgIndex << " is " << TriggerNames->at(trgIndex) << endl;  // temp
-	Int_t prescale = TriggerPrescales->at(trgIndex);
-	if (verbosity_ >= 1 && prescale != 1) cout << "Trigger " << trgIndex << " prescaled to " << prescale << endl;
-      }
-      temp = "";
-    }
-  }
-
-}  // ======================================================================================
-
-void
 RA2bZinvAnalysis::dumpSelEvIDs(const char* sample, const char* idFileName) {
   //
   // For debugging, where individual events need to be selected
@@ -1555,7 +1551,6 @@ RA2bZinvAnalysis::dumpSelEvIDs(const char* sample, const char* idFileName) {
   TTreeFormula* objcutf_ = new TTreeFormula("objcut", objcut_, chain);  forNotify->Add(objcutf_);
   TTreeFormula* ptcutf_ = new TTreeFormula("ptcut", ptCut_, chain);  forNotify->Add(ptcutf_);
   TTreeFormula* masscutf_ = new TTreeFormula("masscut", massCut_, chain);  forNotify->Add(masscutf_);
-  TTreeFormula* trigcutf_ = new TTreeFormula("trigcut", trigCuts_, chain);  forNotify->Add(trigcutf_);
   TTreeFormula* commoncutf_ = new TTreeFormula("commoncut", commonCuts_, chain);  forNotify->Add(commoncutf_);
 
   chain->SetNotify(forNotify);
@@ -1616,7 +1611,6 @@ RA2bZinvAnalysis::dumpSelEvIDs(const char* sample, const char* idFileName) {
     objcutf_->GetNdata();  cout << "objcut = " << objcutf_->EvalInstance(0) << endl;
     ptcutf_->GetNdata();  cout << "ptcut = " << ptcutf_->EvalInstance(0) << endl;
     masscutf_->GetNdata();  cout << "masscut = " << masscutf_->EvalInstance(0) << endl;
-    trigcutf_->GetNdata();  cout << "trigcut = " << trigcutf_->EvalInstance(0) << endl;
     commoncutf_->GetNdata();  cout << "commoncut = " << commoncutf_->EvalInstance(0) << endl;
     cout << "globalTightHalo2016Filter = " << globalTightHalo2016Filter << endl;
     cout << "HBHENoiseFilter = " << HBHENoiseFilter << endl;
