@@ -12,7 +12,6 @@ singleOutFile = True
 doMumu = True
 doEe = True
 norm2016 = True
-iPeriod = 5
 fScaleM = 1
 fScaleE = 1
 MZmmMax = 0
@@ -24,6 +23,7 @@ hists = []
 filehistsM = {}
 filehistsE = {}
 
+# iPeriod = 5
 # legList = ['2016 DY data', '2016 DY MC']
 # Nfile = ROOT.TFile('../outputs/histsDY_2016v12.root')
 # Dfile = ROOT.TFile('../outputs/histsDYMC_2016v12_puWt.root')
@@ -63,7 +63,7 @@ legList = ['2016 data V15', '2016 data V12']
 Nfile = ROOT.TFile('../outputs/histsDY_2016v15.root')
 # Nfile = ROOT.TFile('../outputs/histsDY_2016v15_DeepCSV.root')
 # Dfile = ROOT.TFile('../outputs/histsDY_2016v15.root')
-Dfile = ROOT.TFile('../outputs/histsDY_2016v12_skimCuts.root')
+Dfile = ROOT.TFile('../outputs/histsDY_2016v12.root')
 if (doMumu):
   histnames = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm"]
   filehistsM['N'] = (Nfile, histnames)

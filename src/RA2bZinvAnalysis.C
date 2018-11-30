@@ -629,7 +629,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   histograms.push_back(&hCCspl);
 
   histConfig hCCJb;
-  hCCJb.name = TString("hCCJb_") + sample;  hCCJb.title = "Cut & count, kinematics integrated, JNet split";
+  hCCJb.name = TString("hCCJb_") + sample;  hCCJb.title = "Cut & count, kinematics integrated, NJet split";
   Int_t MaxBinsJb = toCCbinJb_.size();
   cout << "MaxBinsJb = " << MaxBinsJb << endl;
   hCCJb.NbinsX = MaxBinsJb;  hCCJb.rangeX.first = 0.5;  hCCJb.rangeX.second = MaxBinsJb+0.5;
@@ -1511,15 +1511,11 @@ RA2bZinvAnalysis::checkTrigPrescales(const char* sample) {
       fCurrent = chain->GetTreeNumber();
       TFile* thisFile = chain->GetCurrentFile();
       if (thisFile) cout << "Current file in chain: " << thisFile->GetName() << endl;
-      countInFile = 0;
-    }
-    chain->GetEntry(entry);
-    countInFile++;
-    if (countInFile == 1) {
-      int trigNo = 0;
-      for (auto & theTrigPrescale : *TriggerPrescales) {
-	if (theTrigPrescale != 1) cout << trigNo << ":  " << theTrigPrescale << endl;
-    	++trigNo;
+      chain->GetEntry(entry);
+      for (unsigned int ti=0; ti<TriggerNames->size(); ++ti) {
+	Int_t prescale = TriggerPrescales->at(ti);
+	// if (prescale != 1)
+	  cout << "Trigger " << TriggerNames->at(ti) << " (" << ti << ") prescaled by " << prescale << endl;
       }
     }
   }

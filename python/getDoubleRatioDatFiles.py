@@ -67,6 +67,8 @@ for sample in doSample:
         if (runBlock is "2016"):
             dataZllFile = ROOT.TFile('../outputs/histsDY_2016v15.root')
             dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_2016v15.root')
+            # dataZllFile = ROOT.TFile('../outputs/histsDY_2016v12.root')
+            # dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_2016v12.root')
             mcZllFile = ROOT.TFile('../outputs/histsDYMC_2016v12.root')
             mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2016v12.root')
         histoNJets['pho_da'] = dataPhotonFile.Get("hNJets_DR_photon")

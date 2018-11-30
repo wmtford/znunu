@@ -40,12 +40,12 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
   TH1F* hCC_zee = (TH1F*) ZllData.Get("hCC_zee");
   TH1F* hCCjb_zmm = (TH1F*) ZllData.Get("hCCjb_zmm");
   TH1F* hCCjb_zee = (TH1F*) ZllData.Get("hCCjb_zee");
-  TH1F* hCCjb_zll = (TH1F*) hCCjb_zmm->Clone();  hCCjb_zll->SetName("hCCjb_zll");
+  TH1F* hCCjb_zll = (TH1F*) hCCjb_zmm->Clone();  hCCjb_zll->SetName("hCCjb_zll");  hCCjb_zll->Sumw2();
   hCCjb_zll->Add(hCCjb_zee);
   TH1F* hCCspl_photon = (TH1F*) photonData.Get("hCCspl_photon");
   TH1F* hCCJb_zmm = (TH1F*) ZllData.Get("hCCJb_zmm");
   TH1F* hCCJb_zee = (TH1F*) ZllData.Get("hCCJb_zee");
-  TH1F* hCCJb_zll = (TH1F*) hCCJb_zmm->Clone();  hCCJb_zll->SetName("hCCJb_zll");
+  TH1F* hCCJb_zll = (TH1F*) hCCJb_zmm->Clone();  hCCJb_zll->SetName("hCCJb_zll");  hCCJb_zll->Sumw2();
   hCCJb_zll->Add(hCCJb_zee);
   TH1F* hCCJb_dymm = (TH1F*) ZllXMC.Get("hCCJb_dymm");
   TH1F* hCCJb_dyee = (TH1F*) ZllXMC.Get("hCCJb_dyee");
@@ -55,7 +55,7 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
   TH1F* hCCJb_VVee = (TH1F*) ZllXMC.Get("hCCJb_VVee");
   TH1F* hCCJb_ttmm = (TH1F*) ZllXMC.Get("hCCJb_ttmm");
   TH1F* hCCJb_ttee = (TH1F*) ZllXMC.Get("hCCJb_ttee");
-  TH1F* hCCJb_MCall = (TH1F*) hCCJb_dymm->Clone();  hCCJb_MCall->SetName("hCCJb_MCall");
+  TH1F* hCCJb_MCall = (TH1F*) hCCJb_dymm->Clone();  hCCJb_MCall->SetName("hCCJb_MCall");hCCJb_MCall->Sumw2();
   hCCJb_MCall->Add(hCCJb_dyee);
   hCCJb_MCall->Add(hCCJb_ttzmm);
   hCCJb_MCall->Add(hCCJb_ttzee);
@@ -202,7 +202,7 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
   TH1F* hCCjb_VVee = (TH1F*) ZllXMC.Get("hCCjb_VVee");
   TH1F* hCCjb_ttmm = (TH1F*) ZllXMC.Get("hCCjb_ttmm");
   TH1F* hCCjb_ttee = (TH1F*) ZllXMC.Get("hCCjb_ttee");
-  TH1F* hCCjb_MCall = (TH1F*) hCCjb_dymm->Clone();  hCCjb_MCall->SetName("hCCjb_MCall");
+  TH1F* hCCjb_MCall = (TH1F*) hCCjb_dymm->Clone();  hCCjb_MCall->SetName("hCCjb_MCall");  hCCjb_MCall->Sumw2();
   hCCjb_MCall->Add(hCCjb_dyee);
   hCCjb_MCall->Add(hCCjb_ttzmm);
   hCCjb_MCall->Add(hCCjb_ttzee);
@@ -210,7 +210,7 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
   hCCjb_MCall->Add(hCCjb_VVee);
   hCCjb_MCall->Add(hCCjb_ttmm);
   hCCjb_MCall->Add(hCCjb_ttee);
-  TH1F* hCCjb_MCttzFrac = (TH1F*) hCCjb_ttzmm->Clone();  hCCjb_MCall->SetName("hCCjb_MCttzFrac");
+  TH1F* hCCjb_MCttzFrac = (TH1F*) hCCjb_ttzmm->Clone();  hCCjb_MCall->SetName("hCCjb_MCttzFrac");  hCCjb_MCall->Sumw2();
   hCCjb_MCttzFrac->Add(hCCjb_ttzee);
   hCCjb_MCttzFrac->Divide(hCCjb_MCall);
   hCCjb_MCttzFrac->Print("all");
