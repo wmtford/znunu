@@ -26,7 +26,7 @@ era_(era), deltaPhi_(deltaPhi) {
   //  toCCbin_ for the main analysis NJet, Nb, (HT, MHT) histogram
   //  toCCbinSpl_ with one NJet value per NJet bin, for Nb/0b extrapolation
   //  toCCbinjb_ for kinematics-integrated NJet, Nb histogram
-  Int_t binJbk = 0, binjbk = 0, binJb = 0, binjb = 0;
+  Int_t binJbk = 0, binjbk = 0, binJb = 0, binjb = 0, binjk = 0;
   jetSubBins_.resize(nJetThresholds_.size());
   unsigned j = 0;
   for (unsigned J = 0; J < nJet1Thresholds_.size(); ++J) {
@@ -54,6 +54,11 @@ era_(era), deltaPhi_(deltaPhi) {
 	    binjbk++;
 	    toCCbin_[jbk] = binjbk;
 	    // cout << "Filling toCCbin; j = " << j << ", b = "  << b << ", k = " << k << ", bin = " << toCCbin_[jbk] << endl;
+	    if (b == 0) {
+	      std::vector<int> jk = {int(j), k};
+	      binjk++;
+	      toCCbinjk_[jk] = binjk;
+	    }
 	  }
 	}
       }

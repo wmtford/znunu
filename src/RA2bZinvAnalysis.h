@@ -9,8 +9,8 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #define VERSION 15
-#define ISSKIM
 /* #define ISMC */
+#define ISSKIM
 
 #include "CCbinning.h"
 #include <TString.h>
@@ -121,15 +121,19 @@ private:
   bool applyPtCut_;
   bool applyMinDeltaRCut_;
   // bool applySF_;
-  // bool njSplit_;
   bool useTreeCCbin_;
   bool useDeepCSV_;
   bool applyBTagSF_;
   bool applyPuWeight_;
   bool customPuWeight_;
   TH1* puHist_;
-  const char* BTagSFfile_;
   BTagCorrector* btagcorr_;
+  const char* BTagSFfile_;
+  TFile* purityTrigEffFile_;
+  TFile* muonSFfile_;
+  TFile* electronSFfile_;
+  TFile* photonSFfile_;
+  TFile* fragCorrFile_;
   std::vector< std::vector<double> > kinThresholds_;
   std::vector<int> nJetThresholds_;
   std::vector<int> nJet1Thresholds_;
@@ -140,6 +144,7 @@ private:
   TString photonVeto_;
   TString photonCut_;
   double csvMthreshold_;
+  double effWt_;
 
 #ifdef ISMC
 
@@ -188,6 +193,7 @@ private:
   string_map MHTCutMap_;
   string_map sampleKeyMap_;
   CCbinning::ivector_map toCCbin_, toCCbinjb_, toCCbinSpl_, toCCbinJb_;
+  CCbinning* CCbins_;
   std::vector<const char*> activeBranches_;
 
   void Init(const std::string& cfg_filename="");
@@ -219,6 +225,7 @@ private:
   };
 
   // Functions to fill histograms with non-double, non-int types
+  void fillFilterCuts(TH1F* h, double wt);
   void fillCC(TH1F* h, double wt);
   void fillnZcand(TH1F* h, double wt) {h->Fill(ZCandidates->size(), wt);}
   void fillZmass(TH1F* h, double wt) {for (auto & theZ : *ZCandidates) h->Fill(theZ.M(), wt);}
@@ -226,9 +233,9 @@ private:
   void fillHT_DR_xWt(TH1F* h, double wt) {h->Fill(HT, wt*HT);}
   void fillMHT_DR_xWt(TH1F* h, double wt) {h->Fill(MHT, wt*MHT);}
   void fillNJets_DR_xWt(TH1F* h, double wt) {h->Fill(Double_t(NJets), wt*NJets);}
+  void fillSFwt_DR(TH1F* h, double wt) {double wtt = effWt_ > 0 ? wt/effWt_ : wt;  h->Fill(effWt_, wtt);}
   void fillZpt(TH1F* h, double wt) {for (auto & theZ : *ZCandidates) h->Fill(theZ.Pt(), wt);}
   void fillGpt(TH1F* h, double wt) {for (auto & theG : *Photons) h->Fill(theG.Pt(), wt);}
-  void fillFilterCuts(TH1F* h, double wt);
   void fillZGmass(TH1F* h, double wt);
   void fillGJdR(TH1F* h, double wt);
   void fillZGdRvsM(TH2F* h, double wt);

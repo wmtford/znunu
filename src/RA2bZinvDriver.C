@@ -15,9 +15,9 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
 
   bool doHzvv = false;
   bool doHttzvv = false;
-  bool doHzmm = true;
-  bool doHzee = true;
-  bool doHphoton = false;
+  bool doHzmm = false;
+  bool doHzee = false;
+  bool doHphoton = true;
   bool doHdymm = false;
   bool doHdyee = false;
   bool doHttzmm = false;
@@ -32,8 +32,8 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
   const std::string dumpSelEvIDsample("");
 
   // RA2bZinvAnalysis analyzer("", runBlock);  // Default configuration, V12
-  RA2bZinvAnalysis analyzer("data2016.cfg", runBlock);
-  // RA2bZinvAnalysis analyzer("data2017.cfg", runBlock);
+  // RA2bZinvAnalysis analyzer("data2016.cfg", runBlock);
+  RA2bZinvAnalysis analyzer("data2017.cfg", runBlock);
   // RA2bZinvAnalysis analyzer("data2018.cfg", runBlock);
   // RA2bZinvAnalysis analyzer("lowDphi.cfg", runBlock);
 
@@ -47,6 +47,7 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
     if (doHzvv) {
       std::vector<TH1*> h_zinv = analyzer.makeHistograms("zinv");
       for (auto& theHist : h_zinv) {
+	theHist->Print();
 	theHist->Draw();
 	TString hName(theHist->GetName());
 	if (hName.Contains("hCC")) {
@@ -57,12 +58,14 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
     if (doHttzvv) {
       std::vector<TH1*> h_ttzvv = analyzer.makeHistograms("ttzvv");
       for (auto& theHist : h_ttzvv) {
+	theHist->Print();
 	theHist->Draw();
 	TString hName(theHist->GetName());
 	if (hName.Contains("hCC") && hCCzvv) {
 	  TH1F* hCCzinvAll = (TH1F*) hCCzvv->Clone();  hCCzinvAll->SetName("hCCzinvAll");  hCCzinvAll->Sumw2();
 	  hCCzinvAll->Add(theHist);
 	  hCCzinvAll->SetName("hCCzinvAll");
+	  hCCzinvAll->Print();
 	  hCCzinvAll->Draw();
 	}
       }
@@ -85,6 +88,7 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
       }
       std::vector<TH1*> h_zmm = analyzer.makeHistograms("zmm");
       for (auto& theHist : h_zmm) {
+	theHist->Print();
 	theHist->Draw();
 	TString hName(theHist->GetName());
 	if (hName.Contains("hCC") && !hName.Contains("jb") && !hName.Contains("Jb") && !hName.Contains("spl"))
@@ -102,21 +106,25 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
       }
       std::vector<TH1*> h_zee = analyzer.makeHistograms("zee");
       for (auto& theHist : h_zee) {
+	theHist->Print();
 	theHist->Draw();
 	TString hName(theHist->GetName());
 	if (hName.Contains("hCC") && !hName.Contains("jb") && !hName.Contains("Jb") && !hName.Contains("spl") && hCCzmm != nullptr) {
 	  TH1F* hCC_zll = (TH1F*) hCCzmm->Clone();  hCC_zll->SetName("hCC_zll");  hCC_zll->Sumw2();
 	  hCC_zll->Add(theHist);
+	  hCC_zll->Print();
 	  hCC_zll->Draw();
 	}
 	if (hName.Contains("hCC") && hName.Contains("jb") && !hName.Contains("Jb") && !hName.Contains("spl") && hCCjbzmm != nullptr) {
 	  TH1F* hCCjb_zll = (TH1F*) hCCjbzmm->Clone();  hCCjb_zll->SetName("hCCjb_zll");  hCCjb_zll->Sumw2();
 	  hCCjb_zll->Add(theHist);
+	  hCCjb_zll->Print();
 	  hCCjb_zll->Draw();
 	}
 	if (hName.Contains("hCC") && !hName.Contains("jb") && hName.Contains("Jb") && !hName.Contains("spl") && hCCJbzmm != nullptr) {
 	  TH1F* hCCJb_zll = (TH1F*) hCCJbzmm->Clone();  hCCJb_zll->SetName("hCCJb_zll");  hCCJb_zll->Sumw2();
 	  hCCJb_zll->Add(theHist);
+	  hCCJb_zll->Print();
 	  hCCJb_zll->Draw();
 	}
       }
@@ -131,38 +139,38 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
 
     if (doHdymm) {
       std::vector<TH1*> h_dymm = analyzer.makeHistograms("dymm");
-      for (auto& theHist : h_dymm) theHist->Draw();
+      for (auto& theHist : h_dymm) {theHist->Print();  theHist->Draw();}
     }
     if (doHdyee) {
       std::vector<TH1*> h_dyee = analyzer.makeHistograms("dyee");
-      for (auto& theHist : h_dyee) theHist->Draw();
+      for (auto& theHist : h_dyee) {theHist->Print();  theHist->Draw();}
     }
 
     if (doHttzmm) {
       std::vector<TH1*> h_ttzmm = analyzer.makeHistograms("ttzmm");
-      for (auto& theHist : h_ttzmm) theHist->Draw();
+      for (auto& theHist : h_ttzmm) {theHist->Print();  theHist->Draw();}
     }
     if (doHttzee) {
       std::vector<TH1*> h_ttzee = analyzer.makeHistograms("ttzee");
-      for (auto& theHist : h_ttzee) theHist->Draw();
+      for (auto& theHist : h_ttzee) {theHist->Print();  theHist->Draw();}
     }
 
     if (doHVVmm) {
       std::vector<TH1*> h_VVmm = analyzer.makeHistograms("VVmm");
-      for (auto& theHist : h_VVmm) theHist->Draw();
+      for (auto& theHist : h_VVmm) {theHist->Print();  theHist->Draw();}
     }
     if (doHVVee) {
       std::vector<TH1*> h_VVee = analyzer.makeHistograms("VVee");
-      for (auto& theHist : h_VVee) theHist->Draw();
+      for (auto& theHist : h_VVee) {theHist->Print();  theHist->Draw();}
     }
 
     if (doHttmm) {
       std::vector<TH1*> h_ttmm = analyzer.makeHistograms("ttmm");
-      for (auto& theHist : h_ttmm) theHist->Draw();
+      for (auto& theHist : h_ttmm) {theHist->Print();  theHist->Draw();}
     }
     if (doHttee) {
       std::vector<TH1*> h_ttee = analyzer.makeHistograms("ttee");
-      for (auto& theHist : h_ttee) theHist->Draw();
+      for (auto& theHist : h_ttee) {theHist->Print();  theHist->Draw();}
     }
 
     histoOutFile->Write();
@@ -173,8 +181,10 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
     const char* outfn = (fnroot + runBlock + ".root").data();
     TFile *histoOutFile = TFile::Open(outfn, "RECREATE");
     std::vector<TH1*> h_photon = analyzer.makeHistograms("photon");
-    for (auto& theHist : h_photon)
+    for (auto& theHist : h_photon) {
+      theHist->Print();
       theHist->Draw();
+    }
     histoOutFile->Write();
   }
 
@@ -183,8 +193,10 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
     const char* outfn = (fnroot + runBlock + ".root").data();
     TFile *histoOutFile = TFile::Open(outfn, "RECREATE");
     std::vector<TH1*> h_gJets = analyzer.makeHistograms("gjets");
-    for (auto& theHist : h_gJets)
+    for (auto& theHist : h_gJets) {
+      theHist->Print();
       theHist->Draw();
+    }
     histoOutFile->Write();
   }
 
