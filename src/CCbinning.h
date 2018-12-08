@@ -15,6 +15,7 @@ class CCbinning {
 public:
   CCbinning(const std::string& era = "2016", const std::string& deltaPhi = "nominal");
   virtual ~CCbinning() {};
+  int kinBin(double& ht, double& mht);
   std::vector< std::vector<double> > kinThresholds() {return kinThresholds_;};
   std::vector<int> nJetThresholds() {return nJetThresholds_;};
   std::vector<int> nJet1Thresholds() {return nJet1Thresholds_;};
@@ -27,6 +28,14 @@ public:
   ivector_map toCCbinjk() {return toCCbinjk_;};
   ivector_map toCCbinSpl() {return toCCbinSpl_;};
   ivector_map toCCbinJb() {return toCCbinJb_;};
+  Int_t bins() {return toCCbin_.size();};
+  Int_t binsjb() {return toCCbinjb_.size();};
+  Int_t binsjk() {return toCCbinjk_.size();};
+  Int_t binsSpl() {return toCCbinSpl_.size();};
+  Int_t binsJb() {return toCCbinJb_.size();};
+  int jbin(int nJets) {int bin = nJetThresholds_.size()-1;  while (nJets < nJetThresholds_[bin]) bin--;  return bin;};
+  int Jbin(int nJets) {int bin = nJet1Thresholds_.size()-1;  while (nJets < nJetThresholds_[bin]) bin--;  return bin;};
+  int bbin(int Nb) {int bin = nbThresholds_.size()-1;  while (Nb < nbThresholds_[bin]) bin--;  return bin;};
   int jbk(int j, int b, int k) {
     std::vector<int> jbk = {j, b, k};
     try {toCCbin_.at(jbk);}  catch (const std::out_of_range& oor) {return -1;}
@@ -61,6 +70,7 @@ private:
   std::vector<int> nJet1Thresholds_;
   std::vector<int> nbThresholds_;
   unsigned kinSize_;
+  unsigned kinSizeNominal_;
   std::vector< std::vector<int> > jetSubBins_;
   ivector_map toCCbin_, toCCbinSpl_, toCCbinJb_, toCCbinjb_, toCCbinjk_;
 

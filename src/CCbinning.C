@@ -66,8 +66,42 @@ era_(era), deltaPhi_(deltaPhi) {
     if (J+1 < nJet1Thresholds_.size() && j+1 < nJetThresholds_.size() && nJet1Thresholds_[J+1] == nJetThresholds_[j+1]) j++;
   }
 
-  kinSize_ = 0;
-  int mmax = (deltaPhi_ == TString("nominal")) ? kinThresholds_.size() -1 : kinThresholds_.size(); // No. of MHT bands
-  for (int i = 0; i < mmax; ++i)
+  kinSize_ = 0;  kinSizeNominal_ = 0;
+  int mmaxNominal = kinThresholds_.size() - 1;
+  int mmax = (deltaPhi_ == TString("nominal")) ? kinThresholds_.size() - 1 : kinThresholds_.size(); // No. of MHT bands
+  for (int i = 0; i < mmax; ++i) {
     kinSize_ += kinThresholds_[i].size() - 1;  // First component is MHT value
-}
+    if (i < mmaxNominal) kinSizeNominal_ += kinThresholds_[i].size() - 1;
+  }
+
+}  // ======================================================================================
+
+int
+CCbinning::kinBin(double& ht, double& mht) {
+  int theBin = -1;
+  int NmhtBins = kinThresholds_.size() - 1;
+  if (deltaPhi_ != TString("nominal")) {
+    // ldp or hdp
+    if (mht < kinThresholds_[NmhtBins][0] || ht < kinThresholds_[NmhtBins][1]) return theBin;
+    if (mht < kinThresholds_[0][0]) {
+      theBin += kinSizeNominal_;
+      for (unsigned j = 1; j < kinThresholds_[NmhtBins].size(); ++j) {
+	theBin++;
+	if (ht >= kinThresholds_[NmhtBins][j] &&
+	    (j == kinThresholds_[NmhtBins].size()-1 || ht < kinThresholds_[NmhtBins][j+1])) return theBin;
+      }
+    }
+  }
+  if (mht < kinThresholds_[0][0] || ht < kinThresholds_[0][1]) return theBin;
+  for (int i = 0; i < NmhtBins; ++i) {
+    if (mht >= kinThresholds_[i][0] && (i == NmhtBins-1 || mht < kinThresholds_[i+1][0])) {
+      for (unsigned j = 1; j < kinThresholds_[i].size(); ++j) {
+	theBin++;
+	if (ht >= kinThresholds_[i][j] && (j == kinThresholds_[i].size()-1 || ht < kinThresholds_[i][j+1])) return theBin;
+      }
+    } else {
+      theBin += kinThresholds_[i].size() - 1;
+    }
+  }
+  return -2;  // Outside binned area (e.g., MHT > HT), though within preselection
+}  // ======================================================================================

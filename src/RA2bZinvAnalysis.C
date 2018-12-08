@@ -209,10 +209,6 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   nJet1Thresholds_ = CCbins_->nJet1Thresholds();
   nJetThresholds_ = CCbins_->nJetThresholds();
   nbThresholds_ = CCbins_->nbThresholds();
-  toCCbin_ = CCbins_->toCCbin();
-  toCCbinjb_ = CCbins_->toCCbinjb();
-  toCCbinSpl_ = CCbins_->toCCbinSpl();
-  toCCbinJb_ = CCbins_->toCCbinJb();
 
   fillCutMaps();
 
@@ -580,7 +576,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 
       int binNJets = nJetThresholds_.size()-1;  while (NJets < nJetThresholds_[binNJets]) binNJets--;
       int binNb = nbThresholds_.size()-1;  while (BTags < nbThresholds_[binNb]) binNb--;
-      int binKin = kinBin(HT, MHT);
+      int binKin = CCbins_->kinBin(HT, MHT);
       int CCbin = CCbins_->jbk(binNJets, binNb, binKin);
 
       double eventWt0 = eventWt;
@@ -673,7 +669,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 
   histConfig hCC;
   hCC.name = TString("hCC_") + sample;  hCC.title = "Cut & count analysis";
-  Int_t MaxBins = toCCbin_.size();
+  Int_t MaxBins = CCbins_->bins();
   cout << "MaxBins = " << MaxBins << endl;
   hCC.NbinsX = MaxBins;  hCC.rangeX.first = 0.5;  hCC.rangeX.second = MaxBins+0.5;
   hCC.axisTitles.first = "Njets, Nb, (HT, MHT)";  hCC.axisTitles.second = "Events / bin";
@@ -682,7 +678,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 
   histConfig hCCjb;
   hCCjb.name = TString("hCCjb_") + sample;  hCCjb.title = "Cut & count, kinematics integrated";
-  Int_t MaxBinsjb = toCCbinjb_.size();
+  Int_t MaxBinsjb = CCbins_->binsjb();
   cout << "MaxBinsjb = " << MaxBinsjb << endl;
   hCCjb.NbinsX = MaxBinsjb;  hCCjb.rangeX.first = 0.5;  hCCjb.rangeX.second = MaxBinsjb+0.5;
   hCCjb.axisTitles.first = "Njets, Nb";  hCCjb.axisTitles.second = "Events / bin";
@@ -691,7 +687,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 
   histConfig hCCspl;
   hCCspl.name = TString("hCCspl_") + sample;  hCCspl.title = "Cut & count, NJet split";
-  Int_t MaxBinsSpl = toCCbinSpl_.size();
+  Int_t MaxBinsSpl = CCbins_->binsSpl();
   cout << "MaxBinsSpl = " << MaxBinsSpl << endl;
   hCCspl.NbinsX = MaxBinsSpl;  hCCspl.rangeX.first = 0.5;  hCCspl.rangeX.second = MaxBinsSpl+0.5;
   hCCspl.axisTitles.first = "Njets, Nb, (HT, MHT)";  hCCspl.axisTitles.second = "Events / bin";
@@ -700,7 +696,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 
   histConfig hCCJb;
   hCCJb.name = TString("hCCJb_") + sample;  hCCJb.title = "Cut & count, kinematics integrated, NJet split";
-  Int_t MaxBinsJb = toCCbinJb_.size();
+  Int_t MaxBinsJb = CCbins_->binsJb();
   cout << "MaxBinsJb = " << MaxBinsJb << endl;
   hCCJb.NbinsX = MaxBinsJb;  hCCJb.rangeX.first = 0.5;  hCCJb.rangeX.second = MaxBinsJb+0.5;
   hCCJb.axisTitles.first = "Njets, Nb";  hCCJb.axisTitles.second = "Events / bin";
@@ -1061,35 +1057,21 @@ RA2bZinvAnalysis::fillCC(TH1F* h, double wt) {
     }
   } else {
     // Calculate binCC
-    int binKin = kinBin(HT, MHT);
+    int binKin = CCbins_->kinBin(HT, MHT);
     if (binKin < 0) return;
-    int binNjets;
-    if (hName.Contains("spl") || hName.Contains("Jb")) {
-      binNjets = nJet1Thresholds_.size()-1;
-      while (NJets < nJet1Thresholds_[binNjets]) binNjets--;
-    } else {
-      binNjets = nJetThresholds_.size()-1;
-      while (NJets < nJetThresholds_[binNjets]) binNjets--;
-    }
+    int binNjets = (hName.Contains("spl") || hName.Contains("Jb")) ? CCbins_->Jbin(NJets) : CCbins_->jbin(NJets);
+    if (binNjets < 0) return;
     if (!applyBTagSF_) {
-      int binNb = nbThresholds_.size()-1;
-      while (BTags < nbThresholds_[binNb]) binNb--;
-      std::vector<int> jbk = {binNjets, binNb, binKin};
-      if (hName.Contains("spl") || hName.Contains("Jb")) {
-	try {binCC = toCCbinSpl_.at(jbk);}
-	catch (const std::out_of_range& oor) {return;}
-      } else {
-	try {binCC = toCCbin_.at(jbk);}
-	catch (const std::out_of_range& oor) {return;}  // Omitted bins j = 3,4, k = 0,3
-      }
+      int binNb = CCbins_->bbin(BTags);
+      binCC = (hName.Contains("spl") || hName.Contains("Jb")) ?
+	CCbins_->Jbk(binNjets, binNb, binKin) : CCbins_->jbk(binNjets, binNb, binKin);
+      if (binCC <= 0) return;
       if (verbosity_ >= 4) cout << "j = " << binNjets << ", b = " << binNb << ", k = " << binKin << ", binCC = "
 				<< binCC << ", RA2bin = " << RA2bin << endl;
       if (hName.Contains("jb") || hName.Contains("Jb")) {
-	// Above test on jbk needed even here, to exclude j = 3,4, k = 0,3
-	std::vector<int> jb = {binNjets, binNb};
-	try {binCCjb = hName.Contains("jb") ? toCCbinjb_.at(jb) : toCCbinJb_.at(jb);}
-      	catch (const std::out_of_range& oor) {return;}
-	h->Fill(Double_t(binCCjb), wt);
+	// Above test on j, b, k needed even here, to exclude j = 3,4, k = 0,3
+	binCCjb = hName.Contains("jb") ? CCbins_->jb(binNjets, binNb) : CCbins_->Jb(binNjets, binNb);
+	if (binCCjb > 0) h->Fill(Double_t(binCCjb), wt);
       } else {
 	h->Fill(Double_t(binCC), wt);
       }
@@ -1100,20 +1082,13 @@ RA2bZinvAnalysis::fillCC(TH1F* h, double wt) {
 				<< " Jets_HTMask = " << Jets_HTMask->size() << endl;
       vector<double> probNb = btagcorr_->GetCorrections(Jets, Jets_hadronFlavor, Jets_HTMask);
       for (int binNb = 0; binNb < (int) nbThresholds_.size(); ++binNb) {
-	std::vector<int> jbk = {binNjets, binNb, binKin};
-	if (hName.Contains("spl")) {
-	  try {binCC = toCCbinSpl_.at(jbk);}
-	  catch (const std::out_of_range& oor) {return;}
-	} else {
-	  try {binCC = toCCbin_.at(jbk);}
-	  catch (const std::out_of_range& oor) {return;}
-	}
+	binCC = hName.Contains("spl") ? CCbins_->Jbk(binNjets, binNb, binKin) : CCbins_->jbk(binNjets, binNb, binKin);
+	if (binCC <= 0) return;
 	if (verbosity_ >= 4) cout << "j = " << binNjets << ", NbTags = " << BTags << ", b = " << binNb
 				  << ", b wt = " << probNb[binNb] << ", k = " << binKin << ", binCC = " << binCC << endl;
 	if (hName.Contains("jb")) {
-	  std::vector<int> jb = {binNjets, binNb};
-	  try {binCCjb = toCCbinjb_.at(jb);}
-	  catch (const std::out_of_range& oor) {return;}
+	  binCCjb = CCbins_->jb(binNjets, binNb);
+	  if (binCCjb <= 0) return;
 	  h->Fill(Double_t(binCCjb), wt*probNb[binNb]);
 	} else {
 	  h->Fill(Double_t(binCC), wt*probNb[binNb]);
@@ -1245,35 +1220,6 @@ RA2bZinvAnalysis::fillGLdRpixelSeed(TH1F* h, double wt) {
       h->Fill(dR, wt);
     }
   }
-}  // ======================================================================================
-
-int
-RA2bZinvAnalysis::kinBin(double& ht, double& mht) {
-  int theBin = -1;
-  int NmhtBins = kinThresholds_.size() - 1;
-  if (deltaPhi_ != TString("nominal")) {
-    // ldp or hdp
-    if (mht < kinThresholds_[NmhtBins][0] || ht < kinThresholds_[NmhtBins][1]) return theBin;
-    if (mht < kinThresholds_[0][0]) {
-      theBin += 10;
-      for (unsigned j = 1; j < kinThresholds_[NmhtBins].size(); ++j) {
-	theBin++;
-	if (ht >= kinThresholds_[NmhtBins][j] && (j == kinThresholds_[NmhtBins].size()-1 || ht < kinThresholds_[NmhtBins][j+1])) return theBin;
-      }
-    }
-  }
-  if (mht < kinThresholds_[0][0] || ht < kinThresholds_[0][1]) return theBin;
-  for (int i = 0; i < NmhtBins; ++i) {
-    if (mht >= kinThresholds_[i][0] && (i == NmhtBins-1 || mht < kinThresholds_[i+1][0])) {
-      for (unsigned j = 1; j < kinThresholds_[i].size(); ++j) {
-	theBin++;
-	if (ht >= kinThresholds_[i][j] && (j == kinThresholds_[i].size()-1 || ht < kinThresholds_[i][j+1])) return theBin;
-      }
-    } else {
-      theBin += kinThresholds_[i].size() - 1;
-    }
-  }
-  return -2;  // Outside binned area (e.g., MHT > HT), though within preselection
 }  // ======================================================================================
 
 void

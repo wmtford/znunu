@@ -15,9 +15,9 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
 
   bool doHzvv = false;
   bool doHttzvv = false;
-  bool doHzmm = false;
-  bool doHzee = false;
-  bool doHphoton = true;
+  bool doHzmm = true;
+  bool doHzee = true;
+  bool doHphoton = false;
   bool doHdymm = false;
   bool doHdyee = false;
   bool doHttzmm = false;

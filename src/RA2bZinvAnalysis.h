@@ -46,7 +46,6 @@ public:
   std::vector<TH1*> makeHistograms(const char* sample);
   void dumpSelEvIDs(const char* sample, const char* idFileName);
   TCut getCuts(const TString sampleKey);
-  int kinBin(double& ht, double& mht);
   void setTriggerIndexList(const char* sample);
   void checkTrigPrescales(const char* sample);
   void runMakeClass(const std::string& sample);
@@ -192,7 +191,6 @@ private:
   string_map minDphiCutMap_;
   string_map MHTCutMap_;
   string_map sampleKeyMap_;
-  CCbinning::ivector_map toCCbin_, toCCbinjb_, toCCbinSpl_, toCCbinJb_;
   CCbinning* CCbins_;
   std::vector<const char*> activeBranches_;
 

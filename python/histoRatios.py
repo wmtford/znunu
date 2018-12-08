@@ -11,9 +11,11 @@ ROOT.gROOT.SetBatch(1)
 singleOutFile = True
 doMumu = True
 doEe = True
+doPhoton = True
 norm2016 = True
 fScaleM = 1
 fScaleE = 1
+fScaleP = 1
 MZmmMax = 0
 MZeeMax = 0
 ratioMin = None
@@ -22,6 +24,7 @@ ratioMax = None
 hists = []
 filehistsM = {}
 filehistsE = {}
+filehistsP = {}
 
 # iPeriod = 5
 # legList = ['2016 DY data', '2016 DY MC']
@@ -57,36 +60,13 @@ filehistsE = {}
 
 #  ========================================================================================
 
-iPeriod = 5
-# legList = ['2016 data V15 DeepCSV', '2016 data V15']
-legList = ['2016 data V15', '2016 data V12']
-Nfile = ROOT.TFile('../outputs/histsDY_2016v15.root')
-# Nfile = ROOT.TFile('../outputs/histsDY_2016v15_DeepCSV.root')
-# Dfile = ROOT.TFile('../outputs/histsDY_2016v15.root')
-Dfile = ROOT.TFile('../outputs/histsDY_2016v12.root')
-if (doMumu):
-  histnames = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm"]
-  filehistsM['N'] = (Nfile, histnames)
-  filehistsM['D'] = (Dfile, fScaleM, histnames)
-  hists.append(filehistsM)
-if (doEe):
-  histnames = ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee"]
-  filehistsE['N'] = (Nfile, histnames)
-  filehistsE['D'] = (Dfile, fScaleE, histnames)
-  hists.append(filehistsE)
-
-#  ========================================================================================
-
-# iPeriod = 6
-# Nfile = ROOT.TFile('../outputs/histsDY_2017v15_DeepCSV.root')
-# if (norm2016):
-#   legList = ['2017 data DeepCSV','2016 data DeepCSV, scaled']
-#   Dfile = ROOT.TFile('../outputs/histsDY_2016v15_DeepCSV.root')
-#   fScaleM = 41.5/35.9
-#   fScaleE = fScaleM
-# else:
-#   legList = ['2017 data from skim','2017 data from ntuples']
-#   Dfile = ROOT.TFile('../outputs/histsDY_2017v15_skimCuts.root')
+# iPeriod = 5
+# # legList = ['2016 data V15 DeepCSV', '2016 data V15']
+# legList = ['2016 data V15', '2016 data V12']
+# Nfile = ROOT.TFile('../outputs/histsDY_2016v15.root')
+# # Nfile = ROOT.TFile('../outputs/histsDY_2016v15_DeepCSV.root')
+# # Dfile = ROOT.TFile('../outputs/histsDY_2016v15.root')
+# Dfile = ROOT.TFile('../outputs/histsDY_2016v12.root')
 # if (doMumu):
 #   histnames = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm"]
 #   filehistsM['N'] = (Nfile, histnames)
@@ -97,6 +77,42 @@ if (doEe):
 #   filehistsE['N'] = (Nfile, histnames)
 #   filehistsE['D'] = (Dfile, fScaleE, histnames)
 #   hists.append(filehistsE)
+
+#  ========================================================================================
+
+iPeriod = 6
+NfileZll = ROOT.TFile('../outputs/histsDY_2017v15_DR0b.root')
+NfilePhoton = ROOT.TFile('../outputs/histsPhoton_2017v15_DR0b.root')
+if (norm2016):
+  legList = ['2017 0b data','2016 0b data, scaled']
+  DfileZll = ROOT.TFile('../outputs/histsDY_2016v15_DR0b.root')
+  DfilePhoton = ROOT.TFile('../outputs/histsPhoton_2016v15_DR0b.root')
+  fScaleM = 41.5/35.9
+  fScaleE = fScaleM
+  fScaleP = fScaleM
+  ratioMin = 0.85
+  ratioMax = 1.25
+else:
+  legList = ['2017 data from skim','2017 data from ntuples']
+  DfileZll = ROOT.TFile('../outputs/histsDY_2017v15_skimCuts.root')
+if (doMumu):
+  # histnames = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm"]
+  histnames = ["hHT_DR_zmm", "hMHT_DR_zmm", "hNJets_DR_zmm"]
+  filehistsM['N'] = (NfileZll, histnames)
+  filehistsM['D'] = (DfileZll, fScaleM, histnames)
+  hists.append(filehistsM)
+if (doEe):
+  # histnames = ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee"]
+  histnames = ["hHT_DR_zee", "hMHT_DR_zee", "hNJets_DR_zee"]
+  filehistsE['N'] = (NfileZll, histnames)
+  filehistsE['D'] = (DfileZll, fScaleE, histnames)
+  hists.append(filehistsE)
+if (doPhoton):
+  # histnames = ["hHT_photon", "hMHT_photon", "hNJets_photon", "hBTags_photon", "hZmass_photon", "hZpt_photon"]
+  histnames = ["hHT_DR_photon", "hMHT_DR_photon", "hNJets_DR_photon"]
+  filehistsP['N'] = (NfilePhoton, histnames)
+  filehistsP['D'] = (DfilePhoton, fScaleP, histnames)
+  hists.append(filehistsP)
 
 #  ========================================================================================
 
