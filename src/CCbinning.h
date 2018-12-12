@@ -33,8 +33,18 @@ public:
   Int_t binsjk() {return toCCbinjk_.size();};
   Int_t binsSpl() {return toCCbinSpl_.size();};
   Int_t binsJb() {return toCCbinJb_.size();};
-  int jbin(int nJets) {int bin = nJetThresholds_.size()-1;  while (nJets < nJetThresholds_[bin]) bin--;  return bin;};
-  int Jbin(int nJets) {int bin = nJet1Thresholds_.size()-1;  while (nJets < nJetThresholds_[bin]) bin--;  return bin;};
+  int jbin(int nJets) {
+    if (nJets < nJetThresholds_[0]) return -1;
+    int bin = nJetThresholds_.size()-1;
+    while (nJets < nJetThresholds_[bin]) bin--;
+    return bin;
+  };
+  int Jbin(int nJets) {
+    if (nJets < nJet1Thresholds_[0]) return -1;
+    int bin = nJet1Thresholds_.size()-1;
+    while (nJets < nJet1Thresholds_[bin]) bin--;
+    return bin;
+  };
   int bbin(int Nb) {int bin = nbThresholds_.size()-1;  while (Nb < nbThresholds_[bin]) bin--;  return bin;};
   int jbk(int j, int b, int k) {
     std::vector<int> jbk = {j, b, k};

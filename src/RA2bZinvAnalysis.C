@@ -11,7 +11,6 @@
 #include <TRegexp.h>
 #include <TCut.h>
 #include <TTreeCache.h>
-#include <TGraphErrors.h>
 
 #include <TMath.h>
 using TMath::Sqrt; using TMath::Power;
@@ -196,11 +195,6 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
       puHist_ = (TH1*) pufile->Get("pu_weights_down");
     }
     BTagSFfile_ = "../../Analysis/btag/CSVv2_Moriond17_B_H_mod.csv";
-    purityTrigEffFile_ = TFile::Open("../plots/histograms/effHists.root", "read");
-    muonSFfile_ = TFile::Open("../plots/histograms/SFcorrections.Muons.root", "read");
-    electronSFfile_ = TFile::Open("../plots/histograms/SFcorrections.Electrons.root", "read");
-    photonSFfile_ = TFile::Open("../plots/histograms/SFcorrections.Photons.root", "read");
-    fragCorrFile_ = TFile::Open("../plots/histograms/fragmentation.root", "read");
 
   } // runBlock 2016
 
@@ -209,8 +203,6 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   nJet1Thresholds_ = CCbins_->nJet1Thresholds();
   nJetThresholds_ = CCbins_->nJetThresholds();
   nbThresholds_ = CCbins_->nbThresholds();
-
-  fillCutMaps();
 
   cout << "After initialization," << endl;
   cout << "The verbosity level is " << verbosity_ << endl;
@@ -226,7 +218,9 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   cout << "The apply b-tag scale factors flag is " << applyBTagSF_ << endl;
   cout << "The apply pileup weight flag is " << applyPuWeight_ << endl;
   cout << "The custom pileup weight flag is " << customPuWeight_ << endl;
-
+  
+  fillCutMaps();
+  effPurCorr_.openFiles();
 
 }  // ======================================================================================
 
@@ -438,7 +432,6 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
   //
   // Define N - 1 (or N - multiple) cuts, book histograms.  Traverse the chain and fill.
   //
-  if (verbosity_ >= 1) cout << endl << "baseline = " << endl << baselineCuts << endl << endl;
   Int_t fCurrent;  // current Tree number in a TChain
   TChain* chain = getChain(sample, &fCurrent);
   TObjArray* forNotify = new TObjArray;
@@ -455,31 +448,10 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
     btagcorr_ = nullptr;
   }
 
-  // For purity, Fdir, trigger eff, reco eff
-  std::vector<TH1F*> hPurity, hTrigEff;
-  TH1F* hSFeff = nullptr;
-  TGraphErrors* FdirGraph = nullptr;
-  if (TString(sample).Contains("zmm")) {
-    hPurity.push_back((TH1F*) purityTrigEffFile_->Get("h_pur_m"));
-  } else if (TString(sample).Contains("zee")) {
-    hPurity.push_back((TH1F*) purityTrigEffFile_->Get("h_pur_e"));
-  } else if (TString(sample).Contains("photon")) {
-    hPurity.push_back((TH1F*) purityTrigEffFile_->Get("h_pur_eb"));
-    hPurity.push_back((TH1F*) purityTrigEffFile_->Get("h_pur_ec"));
-    FdirGraph = (TGraphErrors*) fragCorrFile_->Get("bin46_intHT_f");
-  } else if (TString(sample).Contains("dymm")) {
-    hTrigEff.push_back((TH1F*) purityTrigEffFile_->Get("h_trig_m1"));
-    hSFeff = (TH1F*) muonSFfile_->Get("h_MHT");
-  } else if (TString(sample).Contains("dyee")) {
-    hTrigEff.push_back((TH1F*) purityTrigEffFile_->Get("h_trig_e2"));
-    hSFeff = (TH1F*) electronSFfile_->Get("h_MHT");
-  } else if (TString(sample).Contains("gjets")) {
-    hTrigEff.push_back((TH1F*) purityTrigEffFile_->Get("h_trig_eb"));
-    hTrigEff.push_back((TH1F*) purityTrigEffFile_->Get("h_trig_ec"));
-    hSFeff = (TH1F*) photonSFfile_->Get("h_MHT");
-  }
-
+  effPurCorr_.getHistos(sample);  // For purity, Fdir, trigger eff, reco eff
   cutHistos cutHistFiller(chain, forNotify);  // for cutFlow histograms
+
+  if (verbosity_ >= 1) cout << endl << "baseline = " << endl << baselineCuts << endl << endl;
   for (auto & hg : histograms) {
     if (hg->NbinsY > 0) {
       hg->hist = new TH2F(hg->name, hg->title, hg->NbinsX, hg->rangeX.first, hg->rangeX.second,
@@ -573,47 +545,14 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       hg->NminusOneFormula->GetNdata();
       double selWt = hg->NminusOneFormula->EvalInstance(0);
       if (selWt == 0) continue;
-
-      int binNJets = nJetThresholds_.size()-1;  while (NJets < nJetThresholds_[binNJets]) binNJets--;
-      int binNb = nbThresholds_.size()-1;  while (BTags < nbThresholds_[binNb]) binNb--;
-      int binKin = CCbins_->kinBin(HT, MHT);
-      int CCbin = CCbins_->jbk(binNJets, binNb, binKin);
-
       double eventWt0 = eventWt;
+
       if (hg->name.Contains(TString("_DR"))) {
+	int CCbin = CCbins_->jbk(CCbins_->jbin(NJets), CCbins_->bbin(BTags), CCbins_->kinBin(HT, MHT));
       	if (CCbin <= 0 || BTags > 0) continue;
       	// For double ratio, apply weights for purity, Fdir, trigger eff, reco eff.
-      	effWt_ = 1;
-      	if (TString(sample).Contains("zmm") || TString(sample).Contains("zee") ) {
-      	  int binCCjb = CCbins_->jb(binNJets, binNb);
-      	  if (hPurity[0] != nullptr) effWt_ *= hPurity[0]->GetBinContent(binCCjb);
-      	} else if (TString(sample).Contains("photon")) {
-      	  std::vector<double> MHTthr = {0, 225, 250, 300, 350, 500};
-      	  int bin = MHTthr.size();  while (MHT < MHTthr[bin-1]) bin--;
-	  if(Photons_isEB->at(0) == 1 && hPurity[0] != nullptr) effWt_ *= hPurity[0]->GetBinContent(bin);
-	  if(Photons_isEB->at(0) == 0 && hPurity[1] != nullptr) effWt_ *= hPurity[1]->GetBinContent(bin);
-      	  int binNJets = nJetThresholds_.size()-1;  while (NJets < nJetThresholds_[binNJets]) binNJets--;
-      	  int CCbinjk = CCbins_->jk(binNJets, binKin);
-      	  if (CCbinjk > 0 && FdirGraph != nullptr && CCbinjk < FdirGraph->GetN()) effWt_ *= FdirGraph->GetY()[CCbinjk-1];
-      	  // FIXME:  For LDP, fill extra bins with value 0.825
-      	} else if (TString(sample).Contains("dymm") || TString(sample).Contains("dyee")) {
-      	  if (TString(sample).Contains("dymm") && hTrigEff[0] != nullptr) effWt_ *= hTrigEff[0]->GetBinContent(1);
-      	  if (TString(sample).Contains("dyee") && hTrigEff[0] != nullptr)
-      	    effWt_ *= HT < 1000 ? hTrigEff[0]->GetBinContent(1) : hTrigEff[0]->GetBinContent(2);  // FIXME:  hard-wired binning
-      	  std::vector<double> MHTthr = {0, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200};
-      	  int bin = MHTthr.size();  while (MHT < MHTthr[bin-1]) bin--;
-      	  if (hSFeff != nullptr) effWt_ *= hSFeff->GetBinContent(bin);
-      	} else if (TString(sample).Contains("gjets")) {
-      	  std::vector<double> MHTthrTrig = {0, 300, 350, 500, 750};
-      	  int bin = MHTthrTrig.size();  while (MHT < MHTthrTrig[bin-1]) bin--;
-      	  if(Photons_isEB->at(0) == 1 && hTrigEff[0] != nullptr) effWt_ *= hTrigEff[0]->GetBinContent(bin);
-      	  if(Photons_isEB->at(0) == 0 && hTrigEff[1] != nullptr) effWt_ *= hTrigEff[1]->GetBinContent(bin);
-      	  effWt_ /= min(HT, 900.0)*0.00009615+0.9071;  // FIXME:  hard-wired correction
-      	  std::vector<double> MHTthrSF = {0, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200};
-      	  bin = MHTthrSF.size();  while (MHT < MHTthrSF[bin-1]) bin--;
-      	  if (hSFeff != nullptr) effWt_ *= hSFeff->GetBinContent(bin);
-      	}
-      	eventWt *= effWt_;
+	effWt_ = effPurCorr_.weight(CCbins_, NJets, BTags, MHT, HT, *Photons_isEB);
+	eventWt *= effWt_;
       }
 
       if (hg->dvalue != nullptr) {
@@ -1036,7 +975,7 @@ RA2bZinvAnalysis::fillCC(TH1F* h, double wt) {
 
   // Filler for the analysis-bin jbk and jb histograms
   TString hName(h->GetName());
-  UInt_t binCC = 0, binCCjb = 0;
+  Int_t binCC = 0, binCCjb = 0;
 
   if (useTreeCCbin_) {
     binCC = RA2bin;
@@ -1510,6 +1449,101 @@ RA2bZinvAnalysis::cutHistos::fill(TH1F* hcf, Double_t wt, bool passTrg) {
     if (masscutf_->EvalInstance(0)) hcf->Fill(7.5, wt);
     if (commoncutf_->EvalInstance(0)) hcf->Fill(9.5, wt);
   }
+}  // ======================================================================================
+
+void 
+RA2bZinvAnalysis::efficiencyAndPurity::openFiles() {
+  TString plotDir("../plots/histograms/");
+  TString effs = "effHists.root";
+  TString SFm = "SFcorrections.Muons.root";
+  TString SFe = "SFcorrections.Electrons.root";
+  TString SFg = "SFcorrections.Photons.root";
+  TString frag = "fragmentation.root";
+  purityTrigEffFile_ = new TFile((plotDir+effs).Data(), "read");
+  muonSFfile_ = new TFile((plotDir+SFm).Data(), "read");
+  electronSFfile_ = new TFile((plotDir+SFe).Data(), "read");
+  photonSFfile_ = new TFile((plotDir+SFg).Data(), "read");
+  fragCorrFile_ = new TFile((plotDir+frag).Data(), "read");
+
+}  // ======================================================================================
+
+void
+RA2bZinvAnalysis::efficiencyAndPurity::getHistos(const char* sample) {
+  // For purity, Fdir, trigger eff, reco eff
+  theSample_ = TString(sample);
+  hSFeff_ = nullptr;
+  FdirGraph_ = nullptr;
+  hPurity_.clear();
+  hTrigEff_.clear();
+  if (theSample_.Contains("zmm")) {
+    hPurity_.push_back((TH1F*) purityTrigEffFile_->Get("h_pur_m"));
+    if (hPurity_.back() == nullptr) cout << "***** Histogram h_pur_m not found *****" << endl;
+  } else if (theSample_.Contains("zee")) {
+    hPurity_.push_back((TH1F*) purityTrigEffFile_->Get("h_pur_e"));
+    if (hPurity_.back() == nullptr) cout << "***** Histogram h_pur_e not found *****" << endl;
+  } else if (theSample_.Contains("photon")) {
+    hPurity_.push_back((TH1F*) purityTrigEffFile_->Get("h_pur_eb"));
+    if (hPurity_.back() == nullptr) cout << "***** Histogram h_pur_eb not found *****" << endl;
+    hPurity_.push_back((TH1F*) purityTrigEffFile_->Get("h_pur_ec"));
+    if (hPurity_.back() == nullptr) cout << "***** Histogram h_pur_ec not found *****" << endl;
+    FdirGraph_ = (TGraphErrors*) fragCorrFile_->Get("bin46_intHT_f");
+    if (FdirGraph_ == nullptr) cout << "***** Histogram bin46_intHT_f not found *****" << endl;
+  } else if (theSample_.Contains("dymm")) {
+    hTrigEff_.push_back((TH1F*) purityTrigEffFile_->Get("h_trig_m1"));
+    if (hTrigEff_.back() == nullptr) cout << "***** Histogram h_trig_m1 not found *****" << endl;
+    hSFeff_ = (TH1F*) muonSFfile_->Get("h_MHT");
+    if (hSFeff_ == nullptr) cout << "***** Histogram h_MHT not found *****" << endl;
+  } else if (theSample_.Contains("dyee")) {
+    hTrigEff_.push_back((TH1F*) purityTrigEffFile_->Get("h_trig_e2"));
+    if (hTrigEff_.back() == nullptr) cout << "***** Histogram h_trig_e2 not found *****" << endl;
+    hSFeff_ = (TH1F*) electronSFfile_->Get("h_MHT");
+    if (hSFeff_ == nullptr) cout << "***** Histogram h_MHT not found *****" << endl;
+  } else if (theSample_.Contains("gjets")) {
+    hTrigEff_.push_back((TH1F*) purityTrigEffFile_->Get("h_trig_eb"));
+    if (hTrigEff_.back() == nullptr) cout << "***** Histogram h_trig_eb not found *****" << endl;
+    hTrigEff_.push_back((TH1F*) purityTrigEffFile_->Get("h_trig_ec"));
+    if (hTrigEff_.back() == nullptr) cout << "***** Histogram h_trig_ec not found *****" << endl;
+    hSFeff_ = (TH1F*) photonSFfile_->Get("h_MHT");
+    if (hSFeff_ == nullptr) cout << "***** Histogram h_MHT not found *****" << endl;
+  }
+
+}  // ======================================================================================
+
+double
+RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, Int_t BTags,
+					      Double_t MHT, Double_t HT, vector<double> EBphoton) {
+  // For double ratio, apply weights for purity, Fdir, trigger eff, reco eff.
+  double effWt = 1;
+  if (theSample_.Contains("zmm") || theSample_.Contains("zee") ) {
+    int binCCjb = CCbins->jb(CCbins->jbin(NJets), CCbins->bbin(BTags));
+    if (hPurity_[0] != nullptr) effWt *= hPurity_[0]->GetBinContent(binCCjb);
+  } else if (theSample_.Contains("photon")) {
+    std::vector<double> MHTthr = {0, 225, 250, 300, 350, 500};
+    int bin = MHTthr.size();  while (MHT < MHTthr[bin-1]) bin--;
+    if(EBphoton.at(0) == 1 && hPurity_[0] != nullptr) effWt *= hPurity_[0]->GetBinContent(bin);
+    if(EBphoton.at(0) == 0 && hPurity_[1] != nullptr) effWt *= hPurity_[1]->GetBinContent(bin);
+    int CCbinjk = CCbins->jk(CCbins->jbin(NJets), CCbins->kinBin(HT, MHT));
+    if (CCbinjk > 0 && FdirGraph_ != nullptr && CCbinjk < FdirGraph_->GetN()) effWt *= FdirGraph_->GetY()[CCbinjk-1];
+    // FIXME:  For LDP, fill extra bins with value 0.825
+  } else if (theSample_.Contains("dymm") || theSample_.Contains("dyee")) {
+    if (theSample_.Contains("dymm") && hTrigEff_[0] != nullptr) effWt *= hTrigEff_[0]->GetBinContent(1);
+    if (theSample_.Contains("dyee") && hTrigEff_[0] != nullptr)
+      effWt *= HT < 1000 ? hTrigEff_[0]->GetBinContent(1) : hTrigEff_[0]->GetBinContent(2);  // FIXME:  hard-wired binning
+    std::vector<double> MHTthr = {0, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200};
+    int bin = MHTthr.size();  while (MHT < MHTthr[bin-1]) bin--;
+    if (hSFeff_ != nullptr) effWt *= hSFeff_->GetBinContent(bin);
+  } else if (theSample_.Contains("gjets")) {
+    std::vector<double> MHTthrTrig = {0, 300, 350, 500, 750};
+    int bin = MHTthrTrig.size();  while (MHT < MHTthrTrig[bin-1]) bin--;
+    if(EBphoton.at(0) == 1 && hTrigEff_[0] != nullptr) effWt *= hTrigEff_[0]->GetBinContent(bin);
+    if(EBphoton.at(0) == 0 && hTrigEff_[1] != nullptr) effWt *= hTrigEff_[1]->GetBinContent(bin);
+    effWt /= min(HT, 900.0)*0.00009615+0.9071;  // FIXME:  hard-wired correction
+    std::vector<double> MHTthrSF = {0, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200};
+    bin = MHTthrSF.size();  while (MHT < MHTthrSF[bin-1]) bin--;
+    if (hSFeff_ != nullptr) effWt *= hSFeff_->GetBinContent(bin);
+  }
+  return effWt;
+  
 }  // ======================================================================================
 
 void

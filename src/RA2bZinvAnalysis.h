@@ -18,6 +18,7 @@
 #include <TTreeReaderValue.h>
 #include <TH1F.h>
 #include <TH2F.h>
+#include <TGraphErrors.h>
 #include <TLorentzVector.h>
 #include <TTreeFormula.h>
 #include <TChainElement.h>
@@ -92,6 +93,21 @@ public:
     TTreeFormula* commoncutf_;
   };
 
+  class efficiencyAndPurity {
+  public:
+    efficiencyAndPurity() {};
+    ~efficiencyAndPurity() {};
+    void openFiles();
+    void getHistos(const char* sample);
+    double weight(CCbinning* CCbins, Int_t NJets, Int_t BTags, Double_t MHT, Double_t HT, vector<double> EBphoton);
+  private:
+    TFile *purityTrigEffFile_, *muonSFfile_, *electronSFfile_, *photonSFfile_, *fragCorrFile_;
+    TString theSample_;
+    std::vector<TH1F*> hPurity_, hTrigEff_;
+    TH1F* hSFeff_;
+    TGraphErrors* FdirGraph_;
+  };
+
 private:
 #if VERSION == 12
   const TString ntupleVersion_ = "V12";
@@ -128,11 +144,7 @@ private:
   TH1* puHist_;
   BTagCorrector* btagcorr_;
   const char* BTagSFfile_;
-  TFile* purityTrigEffFile_;
-  TFile* muonSFfile_;
-  TFile* electronSFfile_;
-  TFile* photonSFfile_;
-  TFile* fragCorrFile_;
+  efficiencyAndPurity effPurCorr_;
   std::vector< std::vector<double> > kinThresholds_;
   std::vector<int> nJetThresholds_;
   std::vector<int> nJet1Thresholds_;
