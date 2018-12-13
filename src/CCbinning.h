@@ -10,6 +10,10 @@
 #include <map>
 #include <TString.h>
 
+#include <iostream>
+using std::cout;
+using std::endl;
+
 class CCbinning {
 
 public:
@@ -17,9 +21,9 @@ public:
   virtual ~CCbinning() {};
   int kinBin(double& ht, double& mht);
   std::vector< std::vector<double> > kinThresholds() {return kinThresholds_;};
-  std::vector<int> nJetThresholds() {return nJetThresholds_;};
-  std::vector<int> nJet1Thresholds() {return nJet1Thresholds_;};
-  std::vector<int> nbThresholds() {return nbThresholds_;};
+  std::vector<int> nJetThresholds() {return jbThresholds_[0];};
+  std::vector<int> nJet1Thresholds() {return JbThresholds_[0];};
+  std::vector<int> nbThresholds() {return jbThresholds_[1];};
   unsigned kinSize() {return kinSize_;};
   std::vector< std::vector<int> > jetSubBins() {return jetSubBins_;};
   typedef std::map<std::vector<int>, Int_t> ivector_map;
@@ -33,19 +37,29 @@ public:
   Int_t binsjk() {return toCCbinjk_.size();};
   Int_t binsSpl() {return toCCbinSpl_.size();};
   Int_t binsJb() {return toCCbinJb_.size();};
+  int binsj() {return (int) jbThresholds_.size();};
+  int binsJ() {return (int) JbThresholds_.size();};
+  int binsb(int j) {return (int) jbThresholds_[j].size();};
   int jbin(int nJets) {
-    if (nJets < nJetThresholds_[0]) return -1;
-    int bin = nJetThresholds_.size()-1;
-    while (nJets < nJetThresholds_[bin]) bin--;
+    if (nJets < jbThresholds_[0][0]) return -1;
+    int bin = jbThresholds_.size()-1;
+    while (nJets < jbThresholds_[bin][0]) bin--;
     return bin;
   };
   int Jbin(int nJets) {
-    if (nJets < nJet1Thresholds_[0]) return -1;
-    int bin = nJet1Thresholds_.size()-1;
-    while (nJets < nJet1Thresholds_[bin]) bin--;
+    if (nJets < JbThresholds_[0][0]) return -1;
+    int bin = JbThresholds_.size()-1;
+    while (nJets < JbThresholds_[bin][0]) bin--;
     return bin;
   };
-  int bbin(int Nb) {int bin = nbThresholds_.size()-1;  while (Nb < nbThresholds_[bin]) bin--;  return bin;};
+  int bbin(int nJets, int Nb) {
+    if (nJets < jbThresholds_[0][0]) return -1;
+    int jbin = jbThresholds_.size()-1;
+    while (nJets < jbThresholds_[jbin][0]) jbin--;
+    int bbin = jbThresholds_[jbin].size()-1;
+    while (Nb < jbThresholds_[jbin][bbin]) bbin--;
+    return bbin - 1;
+  };
   int jbk(int j, int b, int k) {
     std::vector<int> jbk = {j, b, k};
     try {toCCbin_.at(jbk);}  catch (const std::out_of_range& oor) {return -1;}
@@ -76,9 +90,8 @@ private:
   std::string era_;  // "2016", ...
   std::string deltaPhi_;  // "nominal", "hdp", "ldp"
   std::vector< std::vector<double> > kinThresholds_;
-  std::vector<int> nJetThresholds_;
-  std::vector<int> nJet1Thresholds_;
-  std::vector<int> nbThresholds_;
+  std::vector< std::vector<int> > jbThresholds_;
+  std::vector< std::vector<int> > JbThresholds_;
   unsigned kinSize_;
   unsigned kinSizeNominal_;
   std::vector< std::vector<int> > jetSubBins_;

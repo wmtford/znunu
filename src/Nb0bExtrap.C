@@ -19,13 +19,8 @@ using TMath::Sqrt; using TMath::Power;
 void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "nominal") {
 
   CCbinning CCbins(era, deltaPhi);
-  std::vector< std::vector<double> > kinThresholds = CCbins.kinThresholds();
-  std::vector<int> nJet1Thresholds = CCbins.nJet1Thresholds();
-  std::vector<int> nJetThresholds = CCbins.nJetThresholds();
-  std::vector<int> nbThresholds = CCbins.nbThresholds();
   int kinSize = CCbins.kinSize();
-  int NbinsNJet = nJetThresholds.size();
-  int NbinsNb = nbThresholds.size();
+  int NbinsNJet = CCbins.binsj();
   std::vector< std::vector<int> > jetSubBins = CCbins.jetSubBins();
 
   bool doJfromData = false;
@@ -68,7 +63,7 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
   std::vector<float> DYstat;
   for (int j = 0; j < NbinsNJet; ++j) {
     float b0 = 0, b0err = 0, bb = 0, bberr = 0;
-    for (int b = 0; b < NbinsNb; ++b) {
+    for (int b = 0; b < CCbins.binsb(j); ++b) {
       int jj = j < extrapByMCthreshold ? j : j-1;
       int  binCCjb = CCbins.jb(jj, b);  if (binCCjb <= 0) continue;
       if (b == 0) {
@@ -130,7 +125,7 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
   // Take the Nphoton average of F over NJet sub-bins at each kin bin.
   std::vector<std::pair<float, float>> Jextrap, jb0;
   for (int j = 0; j <= extrapByMCthreshold; ++j) {
-    for (int b = 0; b < NbinsNb; ++b) {
+    for (int b = 0; b < CCbins.binsb(j); ++b) {
       for (int k = 0; k < kinSize; ++k) {
 	int binCC = CCbins.jbk(j, b, k);  if (binCC <= 0) continue;
 	float Npho = 0;
@@ -213,7 +208,7 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
   // Take the Nphoton average of F over NJet sub-bins at each kin bin.
   std::vector<float> Fextrap, fb0;
   for (int j = 0; j < NbinsNJet; ++j) {
-    for (int b = 0; b < NbinsNb; ++b) {
+    for (int b = 0; b < CCbins.binsb(j); ++b) {
       for (int k = 0; k < kinSize; ++k) {
 	int binCC = CCbins.jbk(j, b, k);  if (binCC <= 0) continue;
 	if (j < extrapByMCthreshold) {
@@ -267,7 +262,7 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
 	  " j b k|| Nmumu |  Nee  | Nb/0b | stat  |MC stat| ttz SF| syst+ | syst- | sysKin| sysPur"
 	  );
   for (int j = 0; j < NbinsNJet; ++j) {
-    for (int b = 0; b < NbinsNb; ++b) {
+    for (int b = 0; b < CCbins.binsb(j); ++b) {
       for (int k = 0; k < kinSize; ++k) {
 	int binCC = CCbins.jbk(j, b, k);  if (binCC <= 0) continue;
 	int binCCjb = CCbins.jb(j, b);  if (binCCjb <= 0) continue;

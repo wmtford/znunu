@@ -16,27 +16,41 @@ era_(era), deltaPhi_(deltaPhi) {
     kinThresholds_.push_back({500, 500, 1000});
     kinThresholds_.push_back({750, 750, 1500});
     kinThresholds_.push_back({250, 300, 500, 1000}); // QCD control bins
-    nJet1Thresholds_ = {2, 3, 4, 5, 6, 7, 8, 9};  // for Nb/0b extrapolation
-    nJetThresholds_ = {2, 3, 5, 7, 9};
-    nbThresholds_ = {0, 1, 2, 3};
+
+    jbThresholds_.push_back({2, 0, 1, 2});  // NJets threshold, {Nb thresholds}
+    jbThresholds_.push_back({3, 0, 1, 2, 3});
+    jbThresholds_.push_back({5, 0, 1, 2, 3});
+    jbThresholds_.push_back({7, 0, 1, 2, 3});
+    jbThresholds_.push_back({9, 0, 1, 2, 3});
+
+    JbThresholds_.push_back({2, 0, 1, 2});  // for Nb/0b extrapolation
+    JbThresholds_.push_back({3, 0, 1, 2, 3});
+    JbThresholds_.push_back({4, 0, 1, 2, 3});
+    JbThresholds_.push_back({5, 0, 1, 2, 3});
+    JbThresholds_.push_back({6, 0, 1, 2, 3});
+    JbThresholds_.push_back({7, 0, 1, 2, 3});
+    JbThresholds_.push_back({8, 0, 1, 2, 3});
+    JbThresholds_.push_back({9, 0, 1, 2, 3});
 
   } // era 2016
 
   //  The following loop fills the binning maps
   //  toCCbin_ for the main analysis NJet, Nb, (HT, MHT) histogram
-  //  toCCbinSpl_ with one NJet value per NJet bin, for Nb/0b extrapolation
   //  toCCbinjb_ for kinematics-integrated NJet, Nb histogram
+  //  toCCbinSpl_ for NJet (bin width 1), Nb, (HT, MHT) histogram
+  //  toCCbinJb_ for kinematics-integrated NJet (bin width 1), Nb histogram
+  //  toCCbinjk_ for Nb = 0 NJet, (HT, MHT) histogram
   Int_t binJbk = 0, binjbk = 0, binJb = 0, binjb = 0, binjk = 0;
-  jetSubBins_.resize(nJetThresholds_.size());
+  jetSubBins_.resize(jbThresholds_.size());
   unsigned j = 0;
-  for (unsigned J = 0; J < nJet1Thresholds_.size(); ++J) {
+  for (unsigned J = 0; J < JbThresholds_.size(); ++J) {
     jetSubBins_[j].push_back(J);
-    for (unsigned b = 0; b < nbThresholds_.size(); ++b) {
-      if (nbThresholds_[b] > nJetThresholds_[j]) continue;  // Exclude Nb > NJets
+    for (unsigned ib = 1; ib < jbThresholds_[j].size(); ++ib) {
+      unsigned b = jbThresholds_[j][ib];
       std::vector<int> Jb = {int(J), int(b)}, jb = {int(j), int(b)};
       binJb++;
       toCCbinJb_[Jb] = binJb;
-      if (nJet1Thresholds_[J] == nJetThresholds_[j]) {
+      if (JbThresholds_[J][0] == jbThresholds_[j][0]) {
 	binjb++;
 	toCCbinjb_[jb] = binjb;
       }
@@ -49,7 +63,7 @@ era_(era), deltaPhi_(deltaPhi) {
 	  std::vector<int> Jbk = {int(J), int(b), k};
 	  binJbk++;
 	  toCCbinSpl_[Jbk] = binJbk;
-	  if (nJet1Thresholds_[J] == nJetThresholds_[j]) {
+	  if (JbThresholds_[J][0] == jbThresholds_[j][0]) {
 	    std::vector<int> jbk = {int(j), int(b), k};
 	    binjbk++;
 	    toCCbin_[jbk] = binjbk;
@@ -63,7 +77,7 @@ era_(era), deltaPhi_(deltaPhi) {
 	}
       }
     }
-    if (J+1 < nJet1Thresholds_.size() && j+1 < nJetThresholds_.size() && nJet1Thresholds_[J+1] == nJetThresholds_[j+1]) j++;
+    if (J+1 < JbThresholds_.size() && j+1 < jbThresholds_.size() && JbThresholds_[J+1][0] == jbThresholds_[j+1][0]) j++;
   }
 
   kinSize_ = 0;  kinSizeNominal_ = 0;

@@ -199,10 +199,6 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   } // runBlock 2016
 
   CCbins_ = new CCbinning(era_, deltaPhi_);
-  kinThresholds_ = CCbins_->kinThresholds();
-  nJet1Thresholds_ = CCbins_->nJet1Thresholds();
-  nJetThresholds_ = CCbins_->nJetThresholds();
-  nbThresholds_ = CCbins_->nbThresholds();
 
   cout << "After initialization," << endl;
   cout << "The verbosity level is " << verbosity_ << endl;
@@ -390,11 +386,11 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
     //     cuts+=extraCuts
 
   if (isSkim_) {
-    HTcut_ = std::string("HT>=") + std::to_string(kinThresholds_[0][1]);
-    NJetscut_ = std::string("NJets>=") + std::to_string(nJetThresholds_[0]);
+    HTcut_ = std::string("HT>=") + std::to_string(CCbins_->kinThresholds()[0][1]);
+    NJetscut_ = std::string("NJets>=") + std::to_string(CCbins_->nJetThresholds()[0]);
   } else {
-    HTcut_ = std::string("HTclean>=") + std::to_string(kinThresholds_[0][1]);
-    NJetscut_ = std::string("NJetsclean>=") + std::to_string(nJetThresholds_[0]);
+    HTcut_ = std::string("HTclean>=") + std::to_string(CCbins_->kinThresholds()[0][1]);
+    NJetscut_ = std::string("NJetsclean>=") + std::to_string(CCbins_->nJetThresholds()[0]);
   }
   MHTcut_ = MHTCutMap_.at(deltaPhi_);
   objcut_ = objCutMap_.at(sampleKey);
@@ -548,7 +544,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       double eventWt0 = eventWt;
 
       if (hg->name.Contains(TString("_DR"))) {
-	int CCbin = CCbins_->jbk(CCbins_->jbin(NJets), CCbins_->bbin(BTags), CCbins_->kinBin(HT, MHT));
+	int CCbin = CCbins_->jbk(CCbins_->jbin(NJets), CCbins_->bbin(NJets, BTags), CCbins_->kinBin(HT, MHT));
       	if (CCbin <= 0 || BTags > 0) continue;
       	// For double ratio, apply weights for purity, Fdir, trigger eff, reco eff.
 	effWt_ = effPurCorr_.weight(CCbins_, NJets, BTags, MHT, HT, *Photons_isEB);
@@ -713,7 +709,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 
   std::vector<double> HTthresh1;
   // Check if CCbinning changes [
-  for (Size_t i = 1; i < kinThresholds_[0].size(); ++i) HTthresh1.push_back(kinThresholds_[0][i]);
+  for (Size_t i = 1; i < CCbins_->kinThresholds()[0].size(); ++i) HTthresh1.push_back(CCbins_->kinThresholds()[0][i]);
   HTthresh1.push_back(2500);
   // cout << "HTthresh1 = " ; for (Size_t i = 0; i < HTthresh1.size(); ++i) cout << HTthresh1[i] << ", "; cout << endl;
   //  ]
@@ -736,11 +732,11 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 
   std::vector<double> HTthresh2;
   // Check if CCbinning changes [
-  HTthresh2.push_back(kinThresholds_[0][1]);
-  HTthresh2.push_back(kinThresholds_[1][1]);
-  HTthresh2.push_back(kinThresholds_[2][1]);
-  HTthresh2.push_back(kinThresholds_[3][1]);
-  HTthresh2.push_back(kinThresholds_[3][2]);
+  HTthresh2.push_back(CCbins_->kinThresholds()[0][1]);
+  HTthresh2.push_back(CCbins_->kinThresholds()[1][1]);
+  HTthresh2.push_back(CCbins_->kinThresholds()[2][1]);
+  HTthresh2.push_back(CCbins_->kinThresholds()[3][1]);
+  HTthresh2.push_back(CCbins_->kinThresholds()[3][2]);
   HTthresh2.push_back(2500);
   // cout << "HTthresh2 = " ; for (Size_t i = 0; i < HTthresh2.size(); ++i) cout << HTthresh2[i] << ", "; cout << endl;
   //  ]
@@ -779,7 +775,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   if (isPhoton) histograms.push_back(&hMHT_DR_xWt);
 
   std::vector<double> MHTthresh;
-  for (auto thresh : kinThresholds_) MHTthresh.push_back(thresh[0]);
+  for (auto thresh : CCbins_->kinThresholds()) MHTthresh.push_back(thresh[0]);
   MHTthresh.insert(MHTthresh.begin(), MHTthresh.back());
   MHTthresh.pop_back();  MHTthresh.push_back(900);  // Check if CCbinning changes
   Double_t* hMHT_DRCC_bins = &MHTthresh[0];
@@ -807,7 +803,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   histograms.push_back(&hNJets_DR);
 
   std::vector<double> NJetsthresh;
-  for (auto thresh : nJetThresholds_) NJetsthresh.push_back(thresh);
+  for (auto thresh : CCbins_->nJetThresholds()) NJetsthresh.push_back(thresh);
   NJetsthresh.push_back(12);  // Check if CCbinning changes
   Double_t* hNJets_DRCC_bins = &NJetsthresh[0];
   histConfig hNJets_DRCC;
@@ -973,68 +969,49 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 void
 RA2bZinvAnalysis::fillCC(TH1F* h, double wt) {
 
-  // Filler for the analysis-bin jbk and jb histograms
+  // Filler for the analysis-bin histograms and variants
   TString hName(h->GetName());
   Int_t binCC = 0, binCCjb = 0;
 
-  if (useTreeCCbin_) {
-    binCC = RA2bin;
-    if (binCC > 0) {
-      if (hName.Contains("jb") || hName.Contains("Jb") || hName.Contains("spl")) {
-      // 	// Calculate binCCjb
-      // 	int binNjets = nJetThresholds_.size()-1;
-      // 	while (NJets < nJetThresholds_[binNjets]) binNjets--;
-      // 	int binNb = nbThresholds_.size()-1;
-      // 	while (BTags < nbThresholds_[binNb]) binNb--;
-      // 	std::vector<int> jb = {binNjets, binNb};
-      // 	try {binCCjb = toCCbinjb_.at(jb);}
-      // 	catch (const std::out_of_range& oor) {return;}
-      // 	h->Fill(Double_t(binCCjb), wt);
-      // } else {
-	h->Fill(Double_t(binCC), wt);
-      }
+  int binKin = CCbins_->kinBin(HT, MHT);
+  if (binKin < 0) return;
+  int binNjets = (hName.Contains("spl") || hName.Contains("Jb")) ? CCbins_->Jbin(NJets) : CCbins_->jbin(NJets);
+  if (binNjets < 0) return;
+  if (!applyBTagSF_) {
+    int binNb = CCbins_->bbin(NJets, BTags);
+    binCC = (hName.Contains("spl") || hName.Contains("Jb")) ?
+      CCbins_->Jbk(binNjets, binNb, binKin) : 
+      useTreeCCbin_ ? RA2bin : CCbins_->jbk(binNjets, binNb, binKin);
+    if (binCC <= 0) return;
+    if (verbosity_ >= 4) cout << "j = " << binNjets << ", b = " << binNb << ", k = " << binKin << ", binCC = "
+			      << binCC << ", RA2bin = " << RA2bin << endl;
+    if (hName.Contains("jb") || hName.Contains("Jb")) {
+      // Above test on j, b, k needed even here, to exclude j = 3,4, k = 0,3
+      binCCjb = hName.Contains("jb") ? CCbins_->jb(binNjets, binNb) : CCbins_->Jb(binNjets, binNb);
+      if (binCCjb > 0) h->Fill(Double_t(binCCjb), wt);
+    } else {
+      h->Fill(Double_t(binCC), wt);
     }
   } else {
-    // Calculate binCC
-    int binKin = CCbins_->kinBin(HT, MHT);
-    if (binKin < 0) return;
-    int binNjets = (hName.Contains("spl") || hName.Contains("Jb")) ? CCbins_->Jbin(NJets) : CCbins_->jbin(NJets);
-    if (binNjets < 0) return;
-    if (!applyBTagSF_) {
-      int binNb = CCbins_->bbin(BTags);
-      binCC = (hName.Contains("spl") || hName.Contains("Jb")) ?
-	CCbins_->Jbk(binNjets, binNb, binKin) : CCbins_->jbk(binNjets, binNb, binKin);
+    // apply BTagSF to all Nb bins
+    if (verbosity_ >= 4) cout << "Size of input Jets = " << Jets->size()
+			      << ", Jets_hadronFlavor = " << Jets_hadronFlavor->size()
+			      << " Jets_HTMask = " << Jets_HTMask->size() << endl;
+    vector<double> probNb = btagcorr_->GetCorrections(Jets, Jets_hadronFlavor, Jets_HTMask);
+    for (int binNb = 0; binNb < CCbins_->binsb(CCbins_->jbin(NJets)); ++binNb) {
+      binCC = hName.Contains("spl") ? CCbins_->Jbk(binNjets, binNb, binKin) : CCbins_->jbk(binNjets, binNb, binKin);
       if (binCC <= 0) return;
-      if (verbosity_ >= 4) cout << "j = " << binNjets << ", b = " << binNb << ", k = " << binKin << ", binCC = "
-				<< binCC << ", RA2bin = " << RA2bin << endl;
+      if (verbosity_ >= 4) cout << "j = " << binNjets << ", NbTags = " << BTags << ", b = " << binNb
+				<< ", b wt = " << probNb[binNb] << ", k = " << binKin << ", binCC = " << binCC << endl;
       if (hName.Contains("jb") || hName.Contains("Jb")) {
-	// Above test on j, b, k needed even here, to exclude j = 3,4, k = 0,3
 	binCCjb = hName.Contains("jb") ? CCbins_->jb(binNjets, binNb) : CCbins_->Jb(binNjets, binNb);
-	if (binCCjb > 0) h->Fill(Double_t(binCCjb), wt);
+	if (binCCjb <= 0) return;
+	h->Fill(Double_t(binCCjb), wt*probNb[binNb]);
       } else {
-	h->Fill(Double_t(binCC), wt);
+	h->Fill(Double_t(binCC), wt*probNb[binNb]);
       }
-    } else {
-      // apply BTagSF to all Nb bins
-      if (verbosity_ >= 4) cout << "Size of input Jets = " << Jets->size()
-				<< ", Jets_hadronFlavor = " << Jets_hadronFlavor->size()
-				<< " Jets_HTMask = " << Jets_HTMask->size() << endl;
-      vector<double> probNb = btagcorr_->GetCorrections(Jets, Jets_hadronFlavor, Jets_HTMask);
-      for (int binNb = 0; binNb < (int) nbThresholds_.size(); ++binNb) {
-	binCC = hName.Contains("spl") ? CCbins_->Jbk(binNjets, binNb, binKin) : CCbins_->jbk(binNjets, binNb, binKin);
-	if (binCC <= 0) return;
-	if (verbosity_ >= 4) cout << "j = " << binNjets << ", NbTags = " << BTags << ", b = " << binNb
-				  << ", b wt = " << probNb[binNb] << ", k = " << binKin << ", binCC = " << binCC << endl;
-	if (hName.Contains("jb")) {
-	  binCCjb = CCbins_->jb(binNjets, binNb);
-	  if (binCCjb <= 0) return;
-	  h->Fill(Double_t(binCCjb), wt*probNb[binNb]);
-	} else {
-	  h->Fill(Double_t(binCC), wt*probNb[binNb]);
-	}
-      }
-    }  // if apply BTagSF
-  }  // if useTreeCCbin
+    }
+  }  // if apply BTagSF
 
 }  // ======================================================================================
 
@@ -1515,7 +1492,7 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
   // For double ratio, apply weights for purity, Fdir, trigger eff, reco eff.
   double effWt = 1;
   if (theSample_.Contains("zmm") || theSample_.Contains("zee") ) {
-    int binCCjb = CCbins->jb(CCbins->jbin(NJets), CCbins->bbin(BTags));
+    int binCCjb = CCbins->jb(CCbins->jbin(NJets), CCbins->bbin(NJets, BTags));
     if (hPurity_[0] != nullptr) effWt *= hPurity_[0]->GetBinContent(binCCjb);
   } else if (theSample_.Contains("photon")) {
     std::vector<double> MHTthr = {0, 225, 250, 300, 350, 500};

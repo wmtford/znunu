@@ -145,10 +145,6 @@ private:
   BTagCorrector* btagcorr_;
   const char* BTagSFfile_;
   efficiencyAndPurity effPurCorr_;
-  std::vector< std::vector<double> > kinThresholds_;
-  std::vector<int> nJetThresholds_;
-  std::vector<int> nJet1Thresholds_;
-  std::vector<int> nbThresholds_;
   unsigned kinSize_;
   TString isoSFlepTksVeto_;
   TString isoSFlepTksCut_;
