@@ -21,9 +21,21 @@ public:
   virtual ~CCbinning() {};
   int kinBin(double& ht, double& mht);
   std::vector< std::vector<double> > kinThresholds() {return kinThresholds_;};
-  std::vector<int> nJetThresholds() {return jbThresholds_[0];};
-  std::vector<int> nJet1Thresholds() {return JbThresholds_[0];};
-  std::vector<int> nbThresholds() {return jbThresholds_[1];};
+  std::vector<int> nJetThresholds() {
+    std::vector<int> jThresh;
+    for (Size_t j = 0; j < jbThresholds_.size(); ++j) jThresh.push_back(jbThresholds_[j][0]);
+    return jThresh;
+  };
+  std::vector<int> nJet1Thresholds() {
+    std::vector<int> jThresh;
+    for (Size_t j = 0; j < JbThresholds_.size(); ++j) jThresh.push_back(JbThresholds_[j][0]);
+    return jThresh;
+  };
+  std::vector<int> nbThresholds(int jbin) {
+    std::vector<int> bThresh;
+    for (Size_t b = 1; b < jbThresholds_[jbin].size(); ++b) bThresh.push_back(jbThresholds_[jbin][b]);
+    return bThresh;
+  };
   unsigned kinSize() {return kinSize_;};
   std::vector< std::vector<int> > jetSubBins() {return jetSubBins_;};
   typedef std::map<std::vector<int>, Int_t> ivector_map;

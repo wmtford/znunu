@@ -135,17 +135,15 @@ private:
   bool applyMassCut_;
   bool applyPtCut_;
   bool applyMinDeltaRCut_;
-  // bool applySF_;
   bool useTreeCCbin_;
   bool useDeepCSV_;
   bool applyBTagSF_;
   bool applyPuWeight_;
   bool customPuWeight_;
   TH1* puHist_;
+  CCbinning* CCbins_;
   BTagCorrector* btagcorr_;
   const char* BTagSFfile_;
-  efficiencyAndPurity effPurCorr_;
-  unsigned kinSize_;
   TString isoSFlepTksVeto_;
   TString isoSFlepTksCut_;
   TString photonVeto_;
@@ -199,7 +197,6 @@ private:
   string_map minDphiCutMap_;
   string_map MHTCutMap_;
   string_map sampleKeyMap_;
-  CCbinning* CCbins_;
   std::vector<const char*> activeBranches_;
 
   void Init(const std::string& cfg_filename="");
@@ -207,6 +204,7 @@ private:
   void bookAndFillHistograms(const char* sample, std::vector<histConfig*>& histograms, TCut baselineCuts);
   void fillCutFlow(TH1F* hcf, Double_t wt);
   Int_t setBTags();
+  efficiencyAndPurity effPurCorr_;
 
   void cleanVars() {
 #ifndef ISSKIM

@@ -3,11 +3,21 @@
 //
 
 #include "CCbinning.h"
+#include <algorithm>  // for std::find()
 
 ClassImp(CCbinning)
 
 CCbinning::CCbinning(const std::string& era, const std::string& deltaPhi) :
 era_(era), deltaPhi_(deltaPhi) {
+
+  // Exclude some bins with high NJets, low HT
+  std::vector< std::vector<unsigned> > exclBins;
+  exclBins.push_back(std::vector<unsigned>({3, 0, 0}));  // j, m, h
+  exclBins.push_back(std::vector<unsigned>({3, 1, 0}));
+  exclBins.push_back(std::vector<unsigned>({3, 4, 0}));
+  exclBins.push_back(std::vector<unsigned>({4, 0, 0}));
+  exclBins.push_back(std::vector<unsigned>({4, 1, 0}));
+  exclBins.push_back(std::vector<unsigned>({4, 4, 0}));
 
   if (era_ == TString("2016")) {
 
@@ -32,7 +42,31 @@ era_(era), deltaPhi_(deltaPhi) {
     JbThresholds_.push_back({8, 0, 1, 2, 3});
     JbThresholds_.push_back({9, 0, 1, 2, 3});
 
-  } // era 2016
+  } else if (era_ == TString("Run2")) {
+    // From Alexx Perloff SUSY talk, 5 Dec 2018
+    kinThresholds_.push_back({300, 300, 700, 1200});  // mht threshold, {ht thresholds}
+    kinThresholds_.push_back({350, 350, 700, 1200});
+    kinThresholds_.push_back({600, 500, 1000});
+    kinThresholds_.push_back({850, 750, 1700});
+    kinThresholds_.push_back({250, 300, 500, 1000}); // QCD control bins
+
+    jbThresholds_.push_back({2, 0, 1, 2});  // NJets threshold, {Nb thresholds}
+    jbThresholds_.push_back({4, 0, 1, 2, 3});
+    jbThresholds_.push_back({6, 0, 1, 2, 3});
+    jbThresholds_.push_back({8, 0, 1, 2, 3});
+    jbThresholds_.push_back({10, 0, 1, 2, 3});
+
+    JbThresholds_.push_back({2, 0, 1, 2});  // for Nb/0b extrapolation
+    JbThresholds_.push_back({3, 0, 1, 2});
+    JbThresholds_.push_back({4, 0, 1, 2, 3});
+    JbThresholds_.push_back({5, 0, 1, 2, 3});
+    JbThresholds_.push_back({6, 0, 1, 2, 3});
+    JbThresholds_.push_back({7, 0, 1, 2, 3});
+    JbThresholds_.push_back({8, 0, 1, 2, 3});
+    JbThresholds_.push_back({9, 0, 1, 2, 3});
+    JbThresholds_.push_back({10, 0, 1, 2, 3});
+
+  } // era
 
   //  The following loop fills the binning maps
   //  toCCbin_ for the main analysis NJet, Nb, (HT, MHT) histogram
@@ -59,7 +93,7 @@ era_(era), deltaPhi_(deltaPhi) {
       for (unsigned m = 0; m < mmax; ++m) {
 	for (unsigned h = 1; h < kinThresholds_[m].size(); ++h) {
 	  k++;
-	  if (j > 2 && (m < 2 || m == kinThresholds_.size()-1) && h == 1) continue;   // Exclude (Njets3,4; HT0,3,(6))
+	  if (std::find(exclBins.begin(), exclBins.end(), std::vector<unsigned>({j, m, h-1})) != exclBins.end()) continue;
 	  std::vector<int> Jbk = {int(J), int(b), k};
 	  binJbk++;
 	  toCCbinSpl_[Jbk] = binJbk;
