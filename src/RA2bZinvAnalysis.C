@@ -386,11 +386,11 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
     //     cuts+=extraCuts
 
   if (isSkim_) {
-    HTcut_ = std::string("HT>=") + std::to_string(CCbins_->kinThresholds()[0][1]);
-    NJetscut_ = std::string("NJets>=") + std::to_string(CCbins_->nJetThresholds()[0]);
+    HTcut_ = std::string("HT>=") + std::to_string(CCbins_->htThreshold(0, 0));
+    NJetscut_ = std::string("NJets>=") + std::to_string(CCbins_->nJetThreshold(0));
   } else {
-    HTcut_ = std::string("HTclean>=") + std::to_string(CCbins_->kinThresholds()[0][1]);
-    NJetscut_ = std::string("NJetsclean>=") + std::to_string(CCbins_->nJetThresholds()[0]);
+    HTcut_ = std::string("HTclean>=") + std::to_string(CCbins_->htThreshold(0, 0));
+    NJetscut_ = std::string("NJetsclean>=") + std::to_string(CCbins_->nJetThreshold(0));
   }
   MHTcut_ = MHTCutMap_.at(deltaPhi_);
   objcut_ = objCutMap_.at(sampleKey);
@@ -709,7 +709,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 
   std::vector<double> HTthresh1;
   // Check if CCbinning changes [
-  for (Size_t i = 1; i < CCbins_->kinThresholds()[0].size(); ++i) HTthresh1.push_back(CCbins_->kinThresholds()[0][i]);
+  for (Size_t i = 0; i < CCbins_->binsht(0); ++i) HTthresh1.push_back(CCbins_->htThreshold(0, i));
   HTthresh1.push_back(2500);
   // cout << "HTthresh1 = " ; for (Size_t i = 0; i < HTthresh1.size(); ++i) cout << HTthresh1[i] << ", "; cout << endl;
   //  ]
@@ -732,11 +732,11 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 
   std::vector<double> HTthresh2;
   // Check if CCbinning changes [
-  HTthresh2.push_back(CCbins_->kinThresholds()[0][1]);
-  HTthresh2.push_back(CCbins_->kinThresholds()[1][1]);
-  HTthresh2.push_back(CCbins_->kinThresholds()[2][1]);
-  HTthresh2.push_back(CCbins_->kinThresholds()[3][1]);
-  HTthresh2.push_back(CCbins_->kinThresholds()[3][2]);
+  HTthresh2.push_back(CCbins_->htThreshold(0, 0));
+  HTthresh2.push_back(CCbins_->htThreshold(1, 0));
+  HTthresh2.push_back(CCbins_->htThreshold(2, 0));
+  HTthresh2.push_back(CCbins_->htThreshold(3, 0));
+  HTthresh2.push_back(CCbins_->htThreshold(3, 1));
   HTthresh2.push_back(2500);
   // cout << "HTthresh2 = " ; for (Size_t i = 0; i < HTthresh2.size(); ++i) cout << HTthresh2[i] << ", "; cout << endl;
   //  ]
@@ -775,7 +775,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   if (isPhoton) histograms.push_back(&hMHT_DR_xWt);
 
   std::vector<double> MHTthresh;
-  for (auto thresh : CCbins_->kinThresholds()) MHTthresh.push_back(thresh[0]);
+  for (Size_t m = 0; m < CCbins_->binsmht(); ++m) MHTthresh.push_back(CCbins_->mhtThreshold(m));
   MHTthresh.insert(MHTthresh.begin(), MHTthresh.back());
   MHTthresh.pop_back();  MHTthresh.push_back(900);  // Check if CCbinning changes
   Double_t* hMHT_DRCC_bins = &MHTthresh[0];

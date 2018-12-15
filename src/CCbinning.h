@@ -20,24 +20,28 @@ public:
   CCbinning(const std::string& era = "2016", const std::string& deltaPhi = "nominal");
   virtual ~CCbinning() {};
   int kinBin(double& ht, double& mht);
-  std::vector< std::vector<double> > kinThresholds() {return kinThresholds_;};
+  unsigned kinSize() {return kinSize_;};
+
   std::vector<int> nJetThresholds() {
     std::vector<int> jThresh;
     for (Size_t j = 0; j < jbThresholds_.size(); ++j) jThresh.push_back(jbThresholds_[j][0]);
     return jThresh;
   };
+  int nJetThreshold(int j) {return jbThresholds_[j][0];};
   std::vector<int> nJet1Thresholds() {
     std::vector<int> jThresh;
     for (Size_t j = 0; j < JbThresholds_.size(); ++j) jThresh.push_back(JbThresholds_[j][0]);
     return jThresh;
   };
+  int nJet1Threshold(int j) {return JbThresholds_[j][0];};
   std::vector<int> nbThresholds(int jbin) {
     std::vector<int> bThresh;
     for (Size_t b = 1; b < jbThresholds_[jbin].size(); ++b) bThresh.push_back(jbThresholds_[jbin][b]);
     return bThresh;
   };
-  unsigned kinSize() {return kinSize_;};
+  int nbThreshold(int j, int b) {return jbThresholds_[j][b];};
   std::vector< std::vector<int> > jetSubBins() {return jetSubBins_;};
+
   typedef std::map<std::vector<int>, Int_t> ivector_map;
   ivector_map toCCbin() {return toCCbin_;};
   ivector_map toCCbinjb() {return toCCbinjb_;};
@@ -49,9 +53,9 @@ public:
   Int_t binsjk() {return toCCbinjk_.size();};
   Int_t binsSpl() {return toCCbinSpl_.size();};
   Int_t binsJb() {return toCCbinJb_.size();};
-  int binsj() {return (int) jbThresholds_.size();};
-  int binsJ() {return (int) JbThresholds_.size();};
-  int binsb(int j) {return (int) jbThresholds_[j].size();};
+  Size_t binsj() {return jbThresholds_.size();};
+  Size_t binsJ() {return JbThresholds_.size();};
+  Size_t binsb(int j) {return jbThresholds_[j].size();};
   int jbin(int nJets) {
     if (nJets < jbThresholds_[0][0]) return -1;
     int bin = jbThresholds_.size()-1;
@@ -72,6 +76,13 @@ public:
     while (Nb < jbThresholds_[jbin][bbin]) bbin--;
     return bbin - 1;
   };
+
+  std::vector< std::vector<double> > kinThresholds() {return kinThresholds_;};
+  double mhtThreshold(int m) {return kinThresholds_[m][0];};
+  double htThreshold(int m, int h) {return kinThresholds_[m][1+h];};
+  Size_t binsmht() {return kinThresholds_.size();};
+  Size_t binsht(int m) {return kinThresholds_[m].size() - 1;};
+
   int jbk(int j, int b, int k) {
     std::vector<int> jbk = {j, b, k};
     try {toCCbin_.at(jbk);}  catch (const std::out_of_range& oor) {return -1;}
