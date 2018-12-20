@@ -10,6 +10,7 @@ Trigger efficiencies are hard coded below.
 Lepton scale factors are two separate files
 provided by Frank."""
 
+from array import array
 import RA2b
 import ROOT
 import histoZmassFits
@@ -25,8 +26,11 @@ doRA2bFits = False
 #### diel trigger drops at high HT  ##############
 #### diel HT binning [300-1000,1000+]
 trig_m = [(0.993,0.003)]
+trig_m_bins = array('d', [300, 2300])
+trig_title = "HT"
 trig_e = [(0.985,0.002),
           (0.943,0.002)]
+trig_e_bins = array('d', [300, 1000, 2300])
 
 ########## run fits to get purity ################
 if (doRA2bFits):
@@ -55,7 +59,9 @@ effFile = ROOT.TFile("effHists.root","UPDATE")  # wtf
 
 ######### set the purities found above ############
 h_pur_m = effFile.Get("h_pur_m")
+h_pur_m.GetXaxis().SetTitle("(NJets, Nb) bin")
 h_pur_e = effFile.Get("h_pur_e")
+h_pur_e.GetXaxis().SetTitle("(NJets, Nb) bin")
 
 Bin = 1
 for nj in range(1,6):
@@ -93,7 +99,11 @@ for lep in range(2):
 
 ######### set the trig effs from manuel ############
 h_trig_m = effFile.Get("h_trig_m1")
+h_trig_m.SetBins(len(trig_m_bins)-1, trig_m_bins)
+h_trig_m.GetXaxis().SetTitle(trig_title)
 h_trig_e = effFile.Get("h_trig_e2")
+h_trig_e.SetBins(len(trig_e_bins)-1, trig_e_bins)
+h_trig_e.GetXaxis().SetTitle(trig_title)
 
 for i in range(len(trig_m)):
     h_trig_m.SetBinContent(1,trig_m[i][0])

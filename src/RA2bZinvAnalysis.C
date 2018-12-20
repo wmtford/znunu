@@ -1430,7 +1430,8 @@ RA2bZinvAnalysis::cutHistos::fill(TH1F* hcf, Double_t wt, bool passTrg) {
 
 void 
 RA2bZinvAnalysis::efficiencyAndPurity::openFiles() {
-  TString plotDir("../plots/histograms/");
+  // TString plotDir("../plots/histograms/");
+  TString plotDir("../python/");
   TString effs = "effHists.root";
   TString SFm = "SFcorrections.Muons.root";
   TString SFe = "SFcorrections.Electrons.root";
@@ -1473,7 +1474,7 @@ RA2bZinvAnalysis::efficiencyAndPurity::getHistos(const char* sample) {
   } else if (theSample_.Contains("dyee")) {
     hTrigEff_.push_back((TH1F*) purityTrigEffFile_->Get("h_trig_e2"));
     if (hTrigEff_.back() == nullptr) cout << "***** Histogram h_trig_e2 not found *****" << endl;
-    hSFeff_ = (TH1F*) electronSFfile_->Get("h_MHT");
+    hSFeff_ = (TH1F*) electronSFfile_->Get("h_MHT");  // Maybe this should be h_NJets
     if (hSFeff_ == nullptr) cout << "***** Histogram h_MHT not found *****" << endl;
   } else if (theSample_.Contains("gjets")) {
     hTrigEff_.push_back((TH1F*) purityTrigEffFile_->Get("h_trig_eb"));
@@ -1491,33 +1492,55 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
 					      Double_t MHT, Double_t HT, vector<double> EBphoton) {
   // For double ratio, apply weights for purity, Fdir, trigger eff, reco eff.
   double effWt = 1;
-  if (theSample_.Contains("zmm") || theSample_.Contains("zee") ) {
+
+  if ((theSample_.Contains("zmm") || theSample_.Contains("zee")) && !theSample_.Contains("tt")) {
     int binCCjb = CCbins->jb(CCbins->jbin(NJets), CCbins->bbin(NJets, BTags));
     if (hPurity_[0] != nullptr) effWt *= hPurity_[0]->GetBinContent(binCCjb);
+
   } else if (theSample_.Contains("photon")) {
-    std::vector<double> MHTthr = {0, 225, 250, 300, 350, 500};
-    int bin = MHTthr.size();  while (MHT < MHTthr[bin-1]) bin--;
-    if(EBphoton.at(0) == 1 && hPurity_[0] != nullptr) effWt *= hPurity_[0]->GetBinContent(bin);
-    if(EBphoton.at(0) == 0 && hPurity_[1] != nullptr) effWt *= hPurity_[1]->GetBinContent(bin);
+    if(EBphoton.at(0) == 1 && hPurity_[0] != nullptr) {
+      int bin = hPurity_[0]->GetNbinsX();  while (MHT < hPurity_[0]->GetBinLowEdge(bin)) bin--;
+      effWt *= hPurity_[0]->GetBinContent(bin);
+    }
+    if(EBphoton.at(0) == 0 && hPurity_[1] != nullptr) {
+      int bin = hPurity_[1]->GetNbinsX();  while (MHT < hPurity_[1]->GetBinLowEdge(bin)) bin--;
+      effWt *= hPurity_[1]->GetBinContent(bin);
+    }
     int CCbinjk = CCbins->jk(CCbins->jbin(NJets), CCbins->kinBin(HT, MHT));
     if (CCbinjk > 0 && FdirGraph_ != nullptr && CCbinjk < FdirGraph_->GetN()) effWt *= FdirGraph_->GetY()[CCbinjk-1];
     // FIXME:  For LDP, fill extra bins with value 0.825
-  } else if (theSample_.Contains("dymm") || theSample_.Contains("dyee")) {
-    if (theSample_.Contains("dymm") && hTrigEff_[0] != nullptr) effWt *= hTrigEff_[0]->GetBinContent(1);
-    if (theSample_.Contains("dyee") && hTrigEff_[0] != nullptr)
-      effWt *= HT < 1000 ? hTrigEff_[0]->GetBinContent(1) : hTrigEff_[0]->GetBinContent(2);  // FIXME:  hard-wired binning
-    std::vector<double> MHTthr = {0, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200};
-    int bin = MHTthr.size();  while (MHT < MHTthr[bin-1]) bin--;
-    if (hSFeff_ != nullptr) effWt *= hSFeff_->GetBinContent(bin);
+
+  } else if (theSample_.Contains("dymm") || theSample_.Contains("dyee") ||
+	     theSample_.Contains("ttmm") || theSample_.Contains("ttee") ||
+	     theSample_.Contains("ttzmm") || theSample_.Contains("ttzee") ||
+	     theSample_.Contains("VVmm") || theSample_.Contains("VVee")) {
+    if (hTrigEff_[0] != nullptr) {
+      Double_t ht = HT >= hTrigEff_[0]->GetBinLowEdge(1) ? HT : hTrigEff_[0]->GetBinLowEdge(1);
+      int bin = hTrigEff_[0]->GetNbinsX();  while (ht < hTrigEff_[0]->GetBinLowEdge(bin)) bin--;
+      effWt *= hTrigEff_[0]->GetBinContent(bin);
+    }
+    if (hSFeff_ != nullptr) {
+      // Maybe this should be NJets for dyee:
+      Double_t mht = MHT >= hSFeff_->GetBinLowEdge(1) ? MHT : hSFeff_->GetBinLowEdge(1);
+      int bin = hSFeff_->GetNbinsX();  while (mht < hSFeff_->GetBinLowEdge(bin)) bin--;
+      effWt *= hSFeff_->GetBinContent(bin);
+    }
+
   } else if (theSample_.Contains("gjets")) {
-    std::vector<double> MHTthrTrig = {0, 300, 350, 500, 750};
-    int bin = MHTthrTrig.size();  while (MHT < MHTthrTrig[bin-1]) bin--;
-    if(EBphoton.at(0) == 1 && hTrigEff_[0] != nullptr) effWt *= hTrigEff_[0]->GetBinContent(bin);
-    if(EBphoton.at(0) == 0 && hTrigEff_[1] != nullptr) effWt *= hTrigEff_[1]->GetBinContent(bin);
+    if(EBphoton.at(0) == 1 && hTrigEff_[0] != nullptr) {
+      int bin = hTrigEff_[0]->GetNbinsX();  while (MHT < hTrigEff_[0]->GetBinLowEdge(bin)) bin--;
+      effWt *= hTrigEff_[0]->GetBinContent(bin);
+    }
+    if(EBphoton.at(0) == 0 && hTrigEff_[1] != nullptr) {
+      int bin = hTrigEff_[1]->GetNbinsX();  while (MHT < hTrigEff_[1]->GetBinLowEdge(bin)) bin--;
+      effWt *= hTrigEff_[1]->GetBinContent(bin);
+    }
     effWt /= min(HT, 900.0)*0.00009615+0.9071;  // FIXME:  hard-wired correction
-    std::vector<double> MHTthrSF = {0, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200};
-    bin = MHTthrSF.size();  while (MHT < MHTthrSF[bin-1]) bin--;
-    if (hSFeff_ != nullptr) effWt *= hSFeff_->GetBinContent(bin);
+    if (hSFeff_ != nullptr) {
+      Double_t mht = MHT >= hSFeff_->GetBinLowEdge(1) ? MHT : hSFeff_->GetBinLowEdge(1);
+      int bin = hSFeff_->GetNbinsX();  while (mht < hSFeff_->GetBinLowEdge(bin)) bin--;
+      effWt *= hSFeff_->GetBinContent(bin);
+    }
   }
   return effWt;
   
