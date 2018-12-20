@@ -58,8 +58,8 @@ pur_ec = [(0.8879, 0.0108),
 ###################################################
 
 ########## get the efficiency file ################
-# effFile = ROOT.TFile("../plots/histograms/effHists.root","UPDATE")
-effFile = ROOT.TFile("effHists.root","UPDATE")  # wtf
+effFile = ROOT.TFile("../plots/histograms/effHists.root","UPDATE")
+# effFile = ROOT.TFile("effHists.root","UPDATE")  # wtf
 
 ########## update the efficiency file #############
 h_SF_g1 = effFile.Get("h_SF_g1")

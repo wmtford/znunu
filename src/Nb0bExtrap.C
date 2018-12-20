@@ -82,8 +82,8 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
   }
 
   // Compute the purity uncertainties
-  // TFile effFile("../plots/histograms/effHists.root");  if (!effFile.IsOpen()) return;
-  TFile effFile("../python/effHists.root");  if (!effFile.IsOpen()) return;
+  TFile effFile("../plots/histograms/effHists.root");  if (!effFile.IsOpen()) return;
+  // TFile effFile("../python/effHists.root");  if (!effFile.IsOpen()) return;
     
   TH1F* h_pur_m = (TH1F*) effFile.Get("h_pur_m");
   TH1F* h_pur_e = (TH1F*) effFile.Get("h_pur_e");

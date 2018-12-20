@@ -53,8 +53,8 @@ else:
     fits = [fitjb[0], fitjb[1], fitjb[2], fitjb[2], fitjb[2]]
 
 ########## get the efficiency file ################
-# effFile = ROOT.TFile("../plots/histograms/effHists.root","UPDATE")
-effFile = ROOT.TFile("effHists.root","UPDATE")  # wtf
+effFile = ROOT.TFile("../plots/histograms/effHists.root","UPDATE")
+# effFile = ROOT.TFile("effHists.root","UPDATE")  # wtf
 
 
 ######### set the purities found above ############

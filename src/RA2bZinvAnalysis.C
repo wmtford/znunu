@@ -1430,8 +1430,8 @@ RA2bZinvAnalysis::cutHistos::fill(TH1F* hcf, Double_t wt, bool passTrg) {
 
 void 
 RA2bZinvAnalysis::efficiencyAndPurity::openFiles() {
-  // TString plotDir("../plots/histograms/");
-  TString plotDir("../python/");
+  TString plotDir("../plots/histograms/");
+  // TString plotDir("../python/");
   TString effs = "effHists.root";
   TString SFm = "SFcorrections.Muons.root";
   TString SFe = "SFcorrections.Electrons.root";
