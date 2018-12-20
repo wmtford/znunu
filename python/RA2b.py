@@ -4597,6 +4597,7 @@ def getDoubleRatioPlot(dr_graphs, binMeans=None, Title=None, xTitle=None, yTitle
         graph.Draw('e0p same')
 
         graph.SetMarkerStyle(20)
+        graph.SetMarkerSize(1)  # wtf
         graph.SetLineColor(1)
 
         fitGraph[0].SetMaximum(2.)
