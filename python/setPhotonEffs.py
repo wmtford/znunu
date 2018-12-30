@@ -56,24 +56,37 @@ pur_ec = [(0.8879, 0.0108),
           (0.9342, 0.0299),
           (0.9637, 0.0169),]
 ###################################################
+# h_SF_g1 = effFile.Get("h_SF_g1")
+# h_SF_g1.SetBinContent(1,SF[0])
+# h_SF_g1.SetBinError(1,SF[1])
+# h_SF_g1.Write(h_SF_g1.GetName(),2)
+
+# h_frag1 = effFile.Get("h_frag1")
+# h_frag1.SetBinContent(1,frag[0])
+# h_frag1.SetBinError(1,frag[1])
+# h_frag1.Write(h_frag1.GetName(),2)
+
+SFfile = ROOT.TFile("../plots/histograms/SFcorrections.Photons.root", "READ")
+h_SF_g = SFfile.Get("h_MHT")
+h_SF_g.SetName("h_SFg_MHT")
+
+FdirFile = ROOT.TFile("../plots/histograms/fragmentation.root", "READ")
+g_Fdir = FdirFile.Get("bin46_f")
 
 ########## get the efficiency file ################
 effFile = ROOT.TFile("../plots/histograms/effHists.root","UPDATE")
 # effFile = ROOT.TFile("effHists.root","UPDATE")  # wtf
 
 ########## update the efficiency file #############
-h_SF_g1 = effFile.Get("h_SF_g1")
-h_SF_g1.SetBinContent(1,SF[0])
-h_SF_g1.SetBinError(1,SF[1])
-h_SF_g1.Write(h_SF_g1.GetName(),2)
 
-h_frag1 = effFile.Get("h_frag1")
-h_frag1.SetBinContent(1,frag[0])
-h_frag1.SetBinError(1,frag[1])
-h_frag1.Write(h_frag1.GetName(),2)
+h_SF_g.Write(h_SF_g.GetName(), 2)
+g_Fdir.Write(g_Fdir.GetName(), 2)
 
 h_trig_eb = effFile.Get("h_trig_eb")
-h_trig_eb.SetBins(len(trig_bins)-1, trig_bins)
+if (not h_trig_eb):
+    h_trig_eb = ROOT.TH1F("h_trig_eb", "gJets trigger efficiencies, EB", len(trig_bins)-1, trig_bins)
+else:
+    h_trig_eb.SetBins(len(trig_bins)-1, trig_bins)
 h_trig_eb.GetXaxis().SetTitle(trig_title)
 for i in range(len(trig_eb)):
     h_trig_eb.SetBinContent(i+1,trig_eb[i][0])
@@ -81,7 +94,10 @@ for i in range(len(trig_eb)):
 h_trig_eb.Write(h_trig_eb.GetName(),2)
 
 h_trig_ec = effFile.Get("h_trig_ec")
-h_trig_ec.SetBins(len(trig_bins)-1, trig_bins)
+if (not h_trig_ec):
+    h_trig_ec = ROOT.TH1F("h_trig_ec", "gJets trigger efficiencies, EC", len(trig_bins)-1, trig_bins)
+else:
+    h_trig_ec.SetBins(len(trig_bins)-1, trig_bins)
 h_trig_ec.GetXaxis().SetTitle(trig_title)
 for i in range(len(trig_ec)):
     h_trig_ec.SetBinContent(i+1,trig_ec[i][0])
@@ -89,7 +105,10 @@ for i in range(len(trig_ec)):
 h_trig_ec.Write(h_trig_ec.GetName(),2)
 
 h_pur_eb = effFile.Get("h_pur_eb")
-h_pur_eb.SetBins(len(pur_bins)-1, pur_bins)
+if (not h_pur_eb):
+    h_pur_eb = ROOT.TH1F("h_pur_eb", "gJets purities, EB", len(pur_bins)-1, pur_bins)
+else:
+    h_pur_eb.SetBins(len(pur_bins)-1, pur_bins)
 h_pur_eb.GetXaxis().SetTitle(pur_title)
 for i in range(len(pur_eb)):
     h_pur_eb.SetBinContent(i+1,pur_eb[i][0])
@@ -97,7 +116,10 @@ for i in range(len(pur_eb)):
 h_pur_eb.Write(h_pur_eb.GetName(),2)
 
 h_pur_ec = effFile.Get("h_pur_ec")
-h_pur_ec.SetBins(len(pur_bins)-1, pur_bins)
+if (not h_pur_ec):
+    h_pur_ec = ROOT.TH1F("h_pur_ec", "gJets purities, EC", len(pur_bins)-1, pur_bins)
+else:
+    h_pur_ec.SetBins(len(pur_bins)-1, pur_bins)
 h_pur_ec.GetXaxis().SetTitle(pur_title)
 for i in range(len(pur_ec)):
     h_pur_ec.SetBinContent(i+1,pur_ec[i][0])

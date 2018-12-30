@@ -13,6 +13,7 @@ tree path = /nfs/data38/cms/mulholland/lpcTrees/Skims/Run2ProductionV12/ # Color
 # tree path = /eos/uscms/store/user/lpcsusyhad/SusyRA2Analysis2015/Skims/Run2ProductionV12/  # from cmslpc
 # tree path = root://cmseos.fnal.gov//store/user/lpcsusyhad/SusyRA2Analysis2015/Run2ProductionV15/  # ntuples, xrootd
 # tree path = root://cmseos.fnal.gov//store/user/lpcsusyhad/SusyRA2Analysis2015/Skims/Run2ProductionV15/  # xrootd
+# tree path = root://cmseos.fnal.gov//store/user/lpcsusyhad/SusyRA2Analysis2015/Skims/Run2ProductionV16/  # xrootd
 # tree path = /eos/uscms/store/user/lpcsusyhad/SusyRA2Analysis2015/Skims/Run2ProductionV15/  # from cmslpc
 root file index = ../datFiles/skimFilesV12.dat
 delta phi sample = nominal  # ldp, hdp

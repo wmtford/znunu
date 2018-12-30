@@ -15,23 +15,23 @@ def purityFits():
   print '\n'
   print "removeDYkfactor = "+str(removeDYkfactor)
   
-  period = 5  # 2016
-  lumimm = 35.9
-  lumiee = lumimm
-  # DataFileM = ROOT.TFile('../outputs/histsDY_2016v15.root')
-  DataFileM = ROOT.TFile('../outputs/histsDY_2016v12.root')
-  # DataFileE = ROOT.TFile('../outputs/histsDY_2016v12_skimCuts.root')  # Until we have v15 ee skims
-  DataFileE = DataFileM
-  MCfile = ROOT.TFile('../outputs/histsDYMC_2016v12_skimCuts.root')
-  # MCfile = ROOT.TFile('../outputs/histsDYMC_2016v12.root')
-  # MCfile = ROOT.TFile('../outputs/histsDYMC_2016v12_puWt.root')
-  
-  # period = 6  # 2017
-  # lumimm = 41.5
+  # period = 5  # 2016
+  # lumimm = 35.9
   # lumiee = lumimm
-  # DataFileM = ROOT.TFile('../outputs/histsDY_2017v15_skimCuts.root')
+  # DataFileM = ROOT.TFile('../outputs/histsDY_2016v15_DR0b.root')
+  # # DataFileM = ROOT.TFile('../src/histsZll.root')
+  # # DataFileM = ROOT.TFile('../outputs/histsDY_2016v12.root')
   # DataFileE = DataFileM
-  # MCfile = ROOT.TFile('../outputs/histsDYMC_2016v12_skimCuts.root')
+  # MCfile = ROOT.TFile('../outputs/histsDYMC_2016v12_DR0b.root')
+  # # MCfile = ROOT.TFile('../outputs/histsDYMC_2016v12.root')
+  # # MCfile = ROOT.TFile('../outputs/histsDYMC_2016v12_puWt.root')
+  
+  period = 6  # 2017
+  lumimm = 41.5
+  lumiee = lumimm
+  DataFileM = ROOT.TFile('../outputs/histsDY_2017v16.root')
+  DataFileE = DataFileM
+  MCfile = ROOT.TFile('../outputs/histsDYMC_2017v16.root')
   # MCscaleM = lumimm/35.9
   # MCscaleE = lumiee/35.9
   

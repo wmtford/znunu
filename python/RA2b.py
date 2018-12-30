@@ -5017,14 +5017,18 @@ def getZmassFitPlot(fitFunc=None, dataSet=None, mcSet=None, plotMC=None, doDiMu=
                     (doDiEl and ("hsEE" in stackhist.GetName())) or 
                     (doDiLep and ("hsLL" in stackhist.GetName()))):
                     hlist = stackhist.GetHists()
-                    hlist[0].SetFillColor(38)
-                    hlist[1].SetFillColor(5)
-                    hlist[2].SetFillColor(8)
-                    hlist[3].SetFillColor(2)
-                    mcList.append(hlist[3])
-                    mcList.append(hlist[1])
-                    mcList.append(hlist[2])
-                    mcList.append(hlist[0])
+                    if (len(hlist) >= 4):
+                        hlist[3].SetFillColor(2)
+                        mcList.append(hlist[3])
+                    if (len(hlist) >= 2):
+                        hlist[1].SetFillColor(5)
+                        mcList.append(hlist[1])
+                    if (len(hlist) >= 3):
+                        hlist[2].SetFillColor(8)
+                        mcList.append(hlist[2])
+                    if (len(hlist) >= 1):
+                        hlist[0].SetFillColor(38)
+                        mcList.append(hlist[0])
 
     canvas = []
     purityList = []
@@ -5099,7 +5103,9 @@ def getZmassFitPlot(fitFunc=None, dataSet=None, mcSet=None, plotMC=None, doDiMu=
 
         correctionFactor = {
             'CB': 0.9246,
-            'V': 0.9780,
+            # 'V': 0.9780,
+            'V': 0.9892,  # 2017v16
+            # 'V': 1.0,  # 2017v16
             'DG': 0.9478,
             'TG': 0.9505,
         }
@@ -5165,10 +5171,10 @@ def getZmassFitPlot(fitFunc=None, dataSet=None, mcSet=None, plotMC=None, doDiMu=
             model2 = ROOT.RooAddPdf("model2","model2",ROOT.RooArgList(fitFuncDict[fitFunc],bfit),ROOT.RooArgList(frac))
 
             if(it==0):
-                model.fitTo(Data)
+                model.fitTo(Data, ROOT.RooFit.SumW2Error(0))  # for fitting weighted MC; set 1 for wt-corrected errors
             else:
                 # model.fitTo(Data)
-                model2.fitTo(Data)
+                model2.fitTo(Data, ROOT.RooFit.SumW2Error(0))
                 
                 rooVarX.setRange("all",60,120)
                 rooVarX.setRange("selection",76.19,106.19)
@@ -5205,6 +5211,8 @@ def getZmassFitPlot(fitFunc=None, dataSet=None, mcSet=None, plotMC=None, doDiMu=
                 purity = (1/correctionFactor[fitFunc]) * selFraction / (Rbs + (1-Rbs)*selFraction)
                 Epurity = (1/correctionFactor[fitFunc]) * Rbs*selFractionE / (Rbs + (1-Rbs)*selFraction)**2
                 # print "purity orig, new = "+str(purity_orig)+"+/-"+str(Epurity_orig)+", "+str(purity)+"+/-"+str(Epurity)
+                # Take 1-correctionFactor as a systematic:  # wtf
+                Epurity = math.sqrt(Epurity**2 + (1-correctionFactor[fitFunc])**2)
                 
                 purityList.append((purity,Epurity))
 
@@ -5268,10 +5276,14 @@ def getZmassFitPlot(fitFunc=None, dataSet=None, mcSet=None, plotMC=None, doDiMu=
                     leg1.SetFillStyle(1001)
                     # leg1.SetFillColor(ROOT.kWhite) 
                     leg1.SetFillColor(0) 
-                    leg1.AddEntry(mcList[0],"Drell-Yan Sim","f")
-                    leg1.AddEntry(mcList[1],"t#bar{t}Z Sim","f")
-                    leg1.AddEntry(mcList[2],"VV Sim","f")
-                    leg1.AddEntry(mcList[3],"t#bar{t} Sim","f")
+                    if (len(mcList) / len(mcSet) >= 1):
+                        leg1.AddEntry(mcList[0],"Drell-Yan Sim","f")
+                    if (len(mcList) / len(mcSet) >= 2):
+                        leg1.AddEntry(mcList[1],"t#bar{t}Z Sim","f")
+                    if (len(mcList) / len(mcSet) >= 3):
+                        leg1.AddEntry(mcList[2],"VV Sim","f")
+                    if (len(mcList) / len(mcSet) >= 4):
+                        leg1.AddEntry(mcList[3],"t#bar{t} Sim","f")
                     leg1.AddEntry(data[key], dataStr, "p")
                     leg1.AddEntry(frame[key].findObject("fit"), "Fit to "+dataStr, "l")
 

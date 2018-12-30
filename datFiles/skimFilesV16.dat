@@ -1,0 +1,223 @@
+zmm2016 10   # DY->mumu data 2016
+tree_DYm_CleanVars/tree_SingleMuon_2016B.root
+tree_DYm_CleanVars/tree_SingleMuon_2016C.root
+tree_DYm_CleanVars/tree_SingleMuon_2016D.root
+tree_DYm_CleanVars/tree_SingleMuon_2016E.root
+tree_DYm_CleanVars/tree_SingleMuon_2016F.root
+tree_DYm_CleanVars/tree_SingleMuon_2016G.root
+tree_DYm_CleanVars/tree_SingleMuon_2016H.root
+##
+
+zmm2017 10   # DY->mumu data 2017
+tree_DYm_CleanVars/tree_SingleMuon_2017B.root
+tree_DYm_CleanVars/tree_SingleMuon_2017C.root
+tree_DYm_CleanVars/tree_SingleMuon_2017D.root
+tree_DYm_CleanVars/tree_SingleMuon_2017E.root
+tree_DYm_CleanVars/tree_SingleMuon_2017F.root
+##
+
+zmm2018 10   # DY->mumu data 2018
+tree_DYm_CleanVars/tree_SingleMuon_2018A1.root
+tree_DYm_CleanVars/tree_SingleMuon_2018A2.root
+tree_DYm_CleanVars/tree_SingleMuon_2018A3.root
+tree_DYm_CleanVars/tree_SingleMuon_2018B1.root
+##
+
+zee2016 10   # DY->ee data 2016
+tree_DYe_CleanVars/tree_SingleElectron_2016B.root
+tree_DYe_CleanVars/tree_SingleElectron_2016C.root
+tree_DYe_CleanVars/tree_SingleElectron_2016D.root
+tree_DYe_CleanVars/tree_SingleElectron_2016E.root
+tree_DYe_CleanVars/tree_SingleElectron_2016F.root
+tree_DYe_CleanVars/tree_SingleElectron_2016G.root
+tree_DYe_CleanVars/tree_SingleElectron_2016H.root
+##
+
+zee2017 10   # DY->ee data 2017
+tree_DYe_CleanVars/tree_SingleElectron_2017B.root
+tree_DYe_CleanVars/tree_SingleElectron_2017C.root
+tree_DYe_CleanVars/tree_SingleElectron_2017D.root
+tree_DYe_CleanVars/tree_SingleElectron_2017E.root
+tree_DYe_CleanVars/tree_SingleElectron_2017F.root
+##
+
+zee2018 10   # DY->ee data 2018
+tree_DYe_CleanVars/tree_EGamma_2018A1.root
+tree_DYe_CleanVars/tree_EGamma_2018A2.root
+tree_DYe_CleanVars/tree_EGamma_2018A3.root
+tree_DYe_CleanVars/tree_EGamma_2018B1.root
+##
+
+photon2016 10   # Photon data 2016
+tree_GJet_CleanVars/tree_SinglePhoton_2016B.root
+tree_GJet_CleanVars/tree_SinglePhoton_2016C.root
+tree_GJet_CleanVars/tree_SinglePhoton_2016D.root
+tree_GJet_CleanVars/tree_SinglePhoton_2016E.root
+tree_GJet_CleanVars/tree_SinglePhoton_2016F.root
+tree_GJet_CleanVars/tree_SinglePhoton_2016G.root
+tree_GJet_CleanVars/tree_SinglePhoton_2016H.root
+##
+
+photon2017 10   # Photon data 2017
+tree_GJet_CleanVars/tree_SinglePhoton_2017B.root
+tree_GJet_CleanVars/tree_SinglePhoton_2017C.root
+tree_GJet_CleanVars/tree_SinglePhoton_2017D.root
+tree_GJet_CleanVars/tree_SinglePhoton_2017E.root
+tree_GJet_CleanVars/tree_SinglePhoton_2017F.root
+##
+
+photon2018 10   # Photon data 2018
+tree_GJet_CleanVars/tree_EGamma_2018A1.root
+tree_GJet_CleanVars/tree_EGamma_2018A2.root
+tree_GJet_CleanVars/tree_EGamma_2018A3.root
+tree_GJet_CleanVars/tree_EGamma_2018B1.root
+##
+
+zmmldp2016 10   # DY->mumu data LDP 2016
+tree_DYmLDP_CleanVars/tree_SingleMuon_2016B.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2016C.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2016D.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2016E.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2016F.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2016G.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2016H.root
+##
+
+zmmldp2017 10   # DY->mumu data LDP 2017
+tree_DYmLDP_CleanVars/tree_SingleMuon_2017B.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2017C.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2017D.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2017E.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2017F.root
+##
+
+zmmldp2018 10   # DY->mumu data LDP 2018
+tree_DYmLDP_CleanVars/tree_SingleMuon_2018A1.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2018A2.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2018A3.root
+tree_DYmLDP_CleanVars/tree_SingleMuon_2018B1.root
+##
+
+zeeldp2016 10   # DY->ee data LDP 2016
+tree_DYeLDP_CleanVars/tree_SingleElectron_2016B.root
+tree_DYeLDP_CleanVars/tree_SingleElectron_2016C.root
+tree_DYeLDP_CleanVars/tree_SingleElectron_2016D.root
+tree_DYeLDP_CleanVars/tree_SingleElectron_2016E.root
+tree_DYeLDP_CleanVars/tree_SingleElectron_2016F.root
+tree_DYeLDP_CleanVars/tree_SingleElectron_2016G.root
+tree_DYeLDP_CleanVars/tree_SingleElectron_2016H.root
+##
+
+zeeldp2017 10   # DY->ee data LDP 2017
+tree_DYeLDP_CleanVars/tree_SingleElectron_2017B.root
+tree_DYeLDP_CleanVars/tree_SingleElectron_2017C.root
+tree_DYeLDP_CleanVars/tree_SingleElectron_2017D.root
+tree_DYeLDP_CleanVars/tree_SingleElectron_2017E.root
+tree_DYeLDP_CleanVars/tree_SingleElectron_2017F.root
+##
+
+zeeldp2018 10   # DY->ee data LDP 2018
+tree_DYeLDP_CleanVars/tree_EGamma_2018A1.root
+tree_DYeLDP_CleanVars/tree_EGamma_2018A2.root
+tree_DYeLDP_CleanVars/tree_EGamma_2018A3.root
+tree_DYeLDP_CleanVars/tree_EGamma_2018B1.root
+##
+
+photonldp2016 10   # Photon data LDP 2016
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2016B.root
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2016C.root
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2016D.root
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2016E.root
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2016F.root
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2016G.root
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2016H.root
+##
+
+photonldp2017 10   # Photon data LDP 2017
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2017B.root
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2017C.root
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2017D.root
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2017E.root
+tree_GJetLDP_CleanVars/tree_SinglePhoton_2017F.root
+##
+
+photonldp2018 10   # Photon data LDP 2018
+tree_GJetLDP_CleanVars/tree_EGamma_2018A1.root
+tree_GJetLDP_CleanVars/tree_EGamma_2018A2.root
+tree_GJetLDP_CleanVars/tree_EGamma_2018A3.root
+tree_GJetLDP_CleanVars/tree_EGamma_2018B1.root
+##
+
+# Monte Carlo  ------------------------------------------
+
+zinv2017 10   # Z->vv MC
+tree_signal/tree_ZJetsToNuNu_HT-100to200_MC2017.root
+tree_signal/tree_ZJetsToNuNu_HT-200to400_MC2017.root
+tree_signal/tree_ZJetsToNuNu_HT-400to600_MC2017.root
+tree_signal/tree_ZJetsToNuNu_HT-600to800_MC2017.root
+tree_signal/tree_ZJetsToNuNu_HT-800to1200_MC2017.root
+tree_signal/tree_ZJetsToNuNu_HT-1200to2500_MC2017.root
+tree_signal/tree_ZJetsToNuNu_HT-2500toInf_MC2017.root
+##
+
+ttzvv2017    # Z->ttzvv MC
+tree_signal/tree_TTZToLLNuNu_MC2017.root
+##
+
+ttzmm2017    # ttz->mumu MC
+tree_DYm_CleanVars/tree_TTZToLLNuNu_MC2017.root
+##
+
+ttzee2017    # ttz->ee MC
+tree_DYe_CleanVars/tree_TTZToLLNuNu_MC2017.root
+##
+
+VVmm2017    # VV->mumu MC
+tree_DYm_CleanVars/tree_ZZTo2L2Q_MC2017.root
+tree_DYm_CleanVars/tree_WWTo1L1Nu2Q_MC2017.root
+##
+
+VVee2017    # VV->ee MC
+tree_DYe_CleanVars/tree_ZZTo2L2Q_MC2017.root
+tree_DYe_CleanVars/tree_WWTo1L1Nu2Q_MC2017.root
+##
+
+ttmm2017    # ttbar->mumu MC
+tree_DYm_CleanVars/tree_TTJets_DiLept_MC2017.root
+tree_DYm_CleanVars/tree_TTJets_SingleLeptFromT_MC2017.root
+tree_DYm_CleanVars/tree_TTJets_SingleLeptFromTbar_MC2017.root
+##
+
+ttee2017    # ttbar->ee MC
+tree_DYe_CleanVars/tree_TTJets_DiLept_MC2017.root
+tree_DYe_CleanVars/tree_TTJets_SingleLeptFromT_MC2017.root
+tree_DYe_CleanVars/tree_TTJets_SingleLeptFromTbar_MC2017.root
+##
+
+gjets2017 10   # gJets MC
+tree_GJet_CleanVars/tree_GJets_HT-100to200_MC2017.root
+tree_GJet_CleanVars/tree_GJets_HT-200to400_MC2017.root
+tree_GJet_CleanVars/tree_GJets_HT-400to600_MC2017.root
+tree_GJet_CleanVars/tree_GJets_HT-600toInf_MC2017.root
+##
+
+dymm2017 10   # DY->mumu MC
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-100to200_MC2017.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-200to400_MC2017.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-400to600_MC2017.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-600to800_MC2017.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200_MC2017.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500_MC2017.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf_MC2017.root
+##
+
+dyee2017 10   # DY->ee MC
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-100to200_MC2017.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-200to400_MC2017.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-400to600_MC2017.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-600to800_MC2017.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200_MC2017.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500_MC2017.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf_MC2017.root
+##
+

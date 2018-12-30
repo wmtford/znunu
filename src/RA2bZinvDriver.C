@@ -15,9 +15,9 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
 
   bool doHzvv = false;
   bool doHttzvv = false;
-  bool doHzmm = true;
-  bool doHzee = true;
-  bool doHphoton = false;
+  bool doHzmm = false;
+  bool doHzee = false;
+  bool doHphoton = true;
   bool doHdymm = false;
   bool doHdyee = false;
   bool doHttzmm = false;
@@ -26,7 +26,7 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
   bool doHVVee = false;
   bool doHttmm = false;
   bool doHttee = false;
-  bool doHgJets = false;
+  bool doHgjets = false;
   const std::string makeClassSample = "";  // Must be compatible with compiler directives
   bool doListTrigPrescales = false;
   const std::string dumpSelEvIDsample("");
@@ -188,7 +188,7 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
     histoOutFile->Write();
   }
 
-  if (doHgJets) {
+  if (doHgjets) {
     fnroot = "histsGjets";
     const char* outfn = (fnroot + runBlock + ".root").data();
     TFile *histoOutFile = TFile::Open(outfn, "RECREATE");

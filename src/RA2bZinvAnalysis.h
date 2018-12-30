@@ -8,7 +8,7 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
-#define VERSION 15
+#define VERSION 16
 /* #define ISMC */
 #define ISSKIM
 
@@ -113,6 +113,8 @@ private:
   const TString ntupleVersion_ = "V12";
 #elif  VERSION == 15
   const TString ntupleVersion_ = "V15";
+#elif  VERSION == 16
+  const TString ntupleVersion_ = "V16";
 #endif
 #ifdef ISMC
   const bool isMC_ = true;
@@ -129,7 +131,7 @@ private:
   std::string treeLoc_;
   std::string fileListsFile_;
   std::string runBlock_;
-  std::string era_;  // "2016", ...
+  std::string era_;  // "2016", "Run2"
   double intLumi_;
   std::string deltaPhi_;  // "nominal", "hdp", "ldp"
   bool applyMassCut_;
@@ -154,7 +156,9 @@ private:
 #ifdef ISMC
 
   #if VERSION == 12
-  #include "LeafDeclaration_MC_V12.h"
+    #include "LeafDeclaration_MC_V12.h"
+  #elif VERSION == 16
+    #include "LeafDeclaration_MC_V16.h"
   #endif
 
 #else  // ISMC
@@ -167,6 +171,8 @@ private:
     #else
       #include "LeafDeclaration_unskimmed_data_V15.h"
     #endif
+  #elif VERSION == 16
+    #include "LeafDeclaration_data_V16.h"
 
   #endif  // VERSION
 
@@ -234,6 +240,7 @@ private:
   void fillnZcand(TH1F* h, double wt) {h->Fill(ZCandidates->size(), wt);}
   void fillZmass(TH1F* h, double wt) {for (auto & theZ : *ZCandidates) h->Fill(theZ.M(), wt);}
   void fillZmassjb(TH1F* h, double wt);
+  void fillPUwtvsNint(TH2F* h, double wt) {h->Fill(TrueNumInteractions, puWeight, wt);}
   void fillHT_DR_xWt(TH1F* h, double wt) {h->Fill(HT, wt*HT);}
   void fillMHT_DR_xWt(TH1F* h, double wt) {h->Fill(MHT, wt*MHT);}
   void fillNJets_DR_xWt(TH1F* h, double wt) {h->Fill(Double_t(NJets), wt*NJets);}

@@ -12,7 +12,7 @@ singleOutFile = True
 doMumu = True
 doEe = True
 doPhoton = True
-norm2016 = True
+norm2016 = False
 fScaleM = 1
 fScaleE = 1
 fScaleP = 1
@@ -62,27 +62,29 @@ filehistsP = {}
 
 # iPeriod = 5
 # # legList = ['2016 data V15 DeepCSV', '2016 data V15']
-# legList = ['2016 data V15', '2016 data V12']
-# Nfile = ROOT.TFile('../outputs/histsDY_2016v15.root')
+# legList = ['2016 data V12', '2016 MC V12']
+# Nfile = ROOT.TFile('../outputs/histsDY_2016v12_DR0b.root')
 # # Nfile = ROOT.TFile('../outputs/histsDY_2016v15_DeepCSV.root')
 # # Dfile = ROOT.TFile('../outputs/histsDY_2016v15.root')
-# Dfile = ROOT.TFile('../outputs/histsDY_2016v12.root')
+# Dfile = ROOT.TFile('../outputs/histsDYMC_2016v12_DR0b.root')
 # if (doMumu):
-#   histnames = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm"]
-#   filehistsM['N'] = (Nfile, histnames)
-#   filehistsM['D'] = (Dfile, fScaleM, histnames)
+#   histnamesN = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm", "hVertices_zmm", "hCC_zmm"]
+#   histnamesD = ["hHT_dymm", "hMHT_dymm", "hNJets_dymm", "hBTags_dymm", "hZmass_dymm", "hZpt_dymm", "hVertices_dymm", "hCC_dymm"]
+#   filehistsM['N'] = (Nfile, histnamesN)
+#   filehistsM['D'] = (Dfile, fScaleM, histnamesD)
 #   hists.append(filehistsM)
 # if (doEe):
-#   histnames = ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee"]
-#   filehistsE['N'] = (Nfile, histnames)
-#   filehistsE['D'] = (Dfile, fScaleE, histnames)
+#   histnamesN = ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee", "hVertices_dyee", "hCC_zee"]
+#   histnamesD = ["hHT_dyee", "hMHT_dyee", "hNJets_dyee", "hBTags_dyee", "hZmass_dyee", "hZpt_dyee", "hVertices_dyee", "hCC_dyee"]
+#   filehistsE['N'] = (Nfile, histnamesN)
+#   filehistsE['D'] = (Dfile, fScaleE, histnamesD)
 #   hists.append(filehistsE)
 
 #  ========================================================================================
 
 iPeriod = 6
-NfileZll = ROOT.TFile('../outputs/histsDY_2017v15_DR0b.root')
-NfilePhoton = ROOT.TFile('../outputs/histsPhoton_2017v15_DR0b.root')
+NfileZll = ROOT.TFile('../outputs/histsDY_2017v16.root')
+NfilePhoton = ROOT.TFile('../outputs/histsPhoton_2017v16.root')
 if (norm2016):
   legList = ['2017 0b data','2016 0b data, scaled']
   DfileZll = ROOT.TFile('../outputs/histsDY_2016v15_DR0b.root')
@@ -93,25 +95,29 @@ if (norm2016):
   ratioMin = 0.85
   ratioMax = 1.25
 else:
-  legList = ['2017 data from skim','2017 data from ntuples']
-  DfileZll = ROOT.TFile('../outputs/histsDY_2017v15_skimCuts.root')
+  legList = ['2017 data V16','2017 MC V16']
+  DfileZll = ROOT.TFile('../outputs/histsDYMC_2017v16.root')
+  DfilePhoton = ROOT.TFile('../outputs/histsGjets_2017v16.root')
 if (doMumu):
-  # histnames = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm"]
-  histnames = ["hHT_DR_zmm", "hMHT_DR_zmm", "hNJets_DR_zmm"]
-  filehistsM['N'] = (NfileZll, histnames)
-  filehistsM['D'] = (DfileZll, fScaleM, histnames)
+  histnamesN = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm", "hVertices_zmm", "hCC_zmm"]
+  histnamesD = ["hHT_dymm", "hMHT_dymm", "hNJets_dymm", "hBTags_dymm", "hZmass_dymm", "hZpt_dymm", "hVertices_dymm", "hCC_dymm"]
+  # histnames = ["hHT_DR_zmm", "hMHT_DR_zmm", "hNJets_DR_zmm"]
+  filehistsM['N'] = (NfileZll, histnamesN)
+  filehistsM['D'] = (DfileZll, fScaleM, histnamesD)
   hists.append(filehistsM)
 if (doEe):
-  # histnames = ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee"]
-  histnames = ["hHT_DR_zee", "hMHT_DR_zee", "hNJets_DR_zee"]
-  filehistsE['N'] = (NfileZll, histnames)
-  filehistsE['D'] = (DfileZll, fScaleE, histnames)
+  histnamesN = ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee", "hVertices_zee", "hCC_zee"]
+  histnamesD = ["hHT_dyee", "hMHT_dyee", "hNJets_dyee", "hBTags_dyee", "hZmass_dyee", "hZpt_dyee", "hVertices_dyee", "hCC_dyee"]
+  # histnames = ["hHT_DR_zee", "hMHT_DR_zee", "hNJets_DR_zee"]
+  filehistsE['N'] = (NfileZll, histnamesN)
+  filehistsE['D'] = (DfileZll, fScaleE, histnamesD)
   hists.append(filehistsE)
 if (doPhoton):
-  # histnames = ["hHT_photon", "hMHT_photon", "hNJets_photon", "hBTags_photon", "hZmass_photon", "hZpt_photon"]
-  histnames = ["hHT_DR_photon", "hMHT_DR_photon", "hNJets_DR_photon"]
-  filehistsP['N'] = (NfilePhoton, histnames)
-  filehistsP['D'] = (DfilePhoton, fScaleP, histnames)
+  histnamesN = ["hHT_photon", "hMHT_photon", "hNJets_photon", "hBTags_photon", "hVertices_photon", "hCC_photon"]
+  histnamesD = ["hHT_gjets", "hMHT_gjets", "hNJets_gjets", "hBTags_gjets", "hVertices_gjets", "hCC_gjets"]
+  # histnames = ["hHT_DR_photon", "hMHT_DR_photon", "hNJets_DR_photon"]
+  filehistsP['N'] = (NfilePhoton, histnamesN)
+  filehistsP['D'] = (DfilePhoton, fScaleP, histnamesD)
   hists.append(filehistsP)
 
 #  ========================================================================================
@@ -124,14 +130,14 @@ if (doPhoton):
 # fScaleE = 13.5/35.9
 # if (doMumu):
 #   # Nfile = ROOT.TFile('../outputs/histsDYmm_2018v15.root')
-#   histnames = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm"]
+#   histnames = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm", "hVertices_zmm", "hCC_zmm"]
 #   filehistsM['N'] = (Nfile, histnames)
 #   filehistsM['D'] = (Dfile, fScaleM, histnames)
 #   hists.append(filehistsM)
 #   MZmmMax = 750
 # if (doEe):
 #   # Nfile = ROOT.TFile('../outputs/histsDYee_2018v15.root')
-#   histnames = ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee"]
+#   histnames = ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee", "hVertices_zee", "hCC_zee"]
 #   filehistsE['N'] = (Nfile, histnames)
 #   filehistsE['D'] = (Dfile, fScaleE, histnames)
 #   hists.append(filehistsE)

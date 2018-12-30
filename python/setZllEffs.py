@@ -52,15 +52,26 @@ else:
     fitjb = histoZmassFits.purityFits()  # use Z mass histograms from RA2bZinvAnalysis
     fits = [fitjb[0], fitjb[1], fitjb[2], fitjb[2], fitjb[2]]
 
+########## get the scale factors files and extract histograms ################
+SFfile_m = ROOT.TFile("../plots/histograms/SFcorrections.Muons.root", "READ")
+h_SF_m = SFfile_m.Get("h_MHT")
+h_SF_m.SetName("h_SFm_MHT")
+SFfile_e = ROOT.TFile("../plots/histograms/SFcorrections.Electrons.root", "READ")
+h_SF_e = SFfile_e.Get("h_MHT")
+h_SF_e.SetName("h_SFe_MHT")
+
 ########## get the efficiency file ################
 effFile = ROOT.TFile("../plots/histograms/effHists.root","UPDATE")
 # effFile = ROOT.TFile("effHists.root","UPDATE")  # wtf
 
-
 ######### set the purities found above ############
 h_pur_m = effFile.Get("h_pur_m")
+if (not h_pur_m):
+    h_pur_m = ROOT.TH1F("h_pur_m", "Zmm purities vs (Njet, Nb)", 19, .5, 19.5)
 h_pur_m.GetXaxis().SetTitle("(NJets, Nb) bin")
 h_pur_e = effFile.Get("h_pur_e")
+if (not h_pur_e):
+    h_pur_e = ROOT.TH1F("h_pur_e", "Zee purities vs (Njet, Nb)", 19, .5, 19.5)
 h_pur_e.GetXaxis().SetTitle("(NJets, Nb) bin")
 
 Bin = 1
@@ -98,11 +109,17 @@ for lep in range(2):
         print " \\\\ "
 
 ######### set the trig effs from manuel ############
-h_trig_m = effFile.Get("h_trig_m1")
-h_trig_m.SetBins(len(trig_m_bins)-1, trig_m_bins)
+h_trig_m = effFile.Get("h_trig_m")
+if (not h_trig_m):
+    h_trig_m = ROOT.TH1F("h_trig_m", "Zmm trigger effs vs HT", len(trig_m_bins)-1, trig_m_bins)
+else:
+    h_trig_m.SetBins(len(trig_m_bins)-1, trig_m_bins)
 h_trig_m.GetXaxis().SetTitle(trig_title)
-h_trig_e = effFile.Get("h_trig_e2")
-h_trig_e.SetBins(len(trig_e_bins)-1, trig_e_bins)
+h_trig_e = effFile.Get("h_trig_e")
+if (not h_trig_e):
+    h_trig_e = ROOT.TH1F("h_trig_e", "Zee trigger effs vs HT", len(trig_e_bins)-1, trig_e_bins)
+else:
+    h_trig_e.SetBins(len(trig_e_bins)-1, trig_e_bins)
 h_trig_e.GetXaxis().SetTitle(trig_title)
 
 for i in range(len(trig_m)):
@@ -115,6 +132,11 @@ for i in range(len(trig_e)):
 
 h_trig_m.Write(h_trig_m.GetName(),2)
 h_trig_e.Write(h_trig_e.GetName(),2)
+
+######### set the scale factors from Frank's SF files ############
+h_SF_m.Write(h_SF_m.GetName(), 2)
+h_SF_e.Write(h_SF_e.GetName(), 2)
+
 
 effFile.Close()
 
