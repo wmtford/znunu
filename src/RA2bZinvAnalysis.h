@@ -9,7 +9,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #define VERSION 16
-/* #define ISMC */
+#define ISMC
 #define ISSKIM
 
 #include "CCbinning.h"
@@ -101,7 +101,8 @@ public:
     ~efficiencyAndPurity() {};
     void openFiles();
     void getHistos(const char* sample);
-    double weight(CCbinning* CCbins, Int_t NJets, Int_t BTags, Double_t MHT, Double_t HT, vector<double> EBphoton);
+    double weight(CCbinning* CCbins, Int_t NJets, Int_t BTags, Double_t MHT, Double_t HT,
+		  vector<TLorentzVector> ZCandidates, vector<double> EBphoton);
   private:
     TFile *purityTrigEffFile_, *muonSFfile_, *electronSFfile_, *photonSFfile_, *fragCorrFile_;
     TString theSample_;

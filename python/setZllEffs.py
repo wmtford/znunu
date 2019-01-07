@@ -25,12 +25,18 @@ doRA2bFits = False
 #### dimu trigger eff high and flat ##############
 #### diel trigger drops at high HT  ##############
 #### diel HT binning [300-1000,1000+]
-trig_m = [(0.993,0.003)]
-trig_m_bins = array('d', [300, 2300])
-trig_title = "HT"
-trig_e = [(0.985,0.002),
-          (0.943,0.002)]
-trig_e_bins = array('d', [300, 1000, 2300])
+# trig_m = [(0.993,0.003)]
+# trig_m_bins = array('d', [300, 2300])
+# trig_title = "HT"
+# trig_e = [(0.985,0.002),
+#           (0.943,0.002)]
+# trig_e_bins = array('d', [300, 1000, 2300])
+########## trigger effs from AN-18-271
+trig_title = "Pt(Z)"
+trig_m = [(0.986,0.009)]  # Alt. measurement [(0.981,0.006)]
+trig_m_bins = array('d', [250, 2300])
+trig_e = [(0.998,0.002)]  # Alt. measurement [(0.996,0.003)]
+trig_e_bins = array('d', [250, 2300])
 
 ########## run fits to get purity ################
 if (doRA2bFits):

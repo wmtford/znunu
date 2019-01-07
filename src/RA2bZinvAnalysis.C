@@ -566,7 +566,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 	int CCbin = CCbins_->jbk(CCbins_->jbin(NJets), CCbins_->bbin(NJets, BTags), CCbins_->kinBin(HT, MHT));
       	if (CCbin <= 0 || BTags > 0) continue;
       	// For double ratio, apply weights for purity, Fdir, trigger eff, reco eff.
-	effWt_ = effPurCorr_.weight(CCbins_, NJets, BTags, MHT, HT, *Photons_isEB);
+	effWt_ = effPurCorr_.weight(CCbins_, NJets, BTags, MHT, HT, *ZCandidates, *Photons_isEB);
 	eventWt *= effWt_;
       }
 
@@ -1281,15 +1281,15 @@ RA2bZinvAnalysis::fillCutMaps() {
     } else if (ntupleVersion_ == "V15" || ntupleVersion_ == "V16") {
 
       objCutMap_["sig"] = "NMuons==0 && NElectrons==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";
-      // objCutMap_["zmm"] = "NMuons==2 && NElectrons==0 && isoElectronTracks==0 && isoPionTracks==0 && (@Photons.size()==0) && isoMuonTracks==0";
+      // zmm skim cuts:  NMuons==2 && NElectrons==0 && isoElectronTracks==0 && isoPionTracks==0
       objCutMap_["zmm"] = "1";
-      // objCutMap_["zee"] = "NMuons==0 && NElectrons==2 && isoMuonTracks==0 && isoPionTracks==0 && (@Photons.size()==0) && isoElectronTracks==0";
+      // zee skim cuts:  NMuons==0 && NElectrons==2 && isoMuonTracks==0 && isoPionTracks==0
       objCutMap_["zee"] = "1";
       objCutMap_["zll"] = "((NMuons==2 && NElectrons==0 && isoElectronTracks==0 && isoPionTracks==0) || (NMuons==0 && NElectrons==2 && isoMuonTracks==0 && isoPionTracks==0))";
-      // objCutMap_["photon"] = "Sum$(Photons_fullID)==1 && (@Photons.size()==1 && Photons_hasPixelSeed==0) && NMuons==0 && NElectrons==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";  // Andrew recommendation
+      // photon skim cuts:  "Sum$(Photons_fullID)==1 && NMuons==0 && NElectrons==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0"
       objCutMap_["photon"] = "@Photons.size()==1 && Sum$(Photons_nonPrompt)==0 && Photons_hasPixelSeed==0";  // Andrew recommendation, no skim cuts
-      objCutMap_["photonqcd"] = "Sum$(Photons_nonPrompt)!=0 && @Photons.at(0).Pt()>=200 && NMuons==0 && NElectrons==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";
-      // objCutMap_["photonqcd"] = "Sum$(Photons_nonPrompt)!=0 && NMuons==0 && NElectrons==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";  // Troy mod+
+      // objCutMap_["photonqcd"] = "Sum$(Photons_nonPrompt)!=0 && @Photons.at(0).Pt()>=200 && NMuons==0 && NElectrons==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";
+      objCutMap_["photonqcd"] = "Sum$(Photons_nonPrompt)!=0 && NMuons==0 && NElectrons==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";  // Troy mod+
       objCutMap_["ttz"] = "NMuons==0 && NElectrons==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0 && (@GenMuons.size()==0 && @GenElectrons.size()==0 && @GenTaus.size()==0)";
       objCutMap_["slm"] = "NMuons==1 && NElectrons==0 && isoElectronTracks==0 && isoPionTracks==0";
       objCutMap_["sle"] = "NMuons==0 && NElectrons==1 && isoMuonTracks==0 && isoPionTracks==0";
@@ -1620,7 +1620,9 @@ RA2bZinvAnalysis::efficiencyAndPurity::getHistos(const char* sample) {
 
 double
 RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, Int_t BTags,
-					      Double_t MHT, Double_t HT, vector<double> EBphoton) {
+					      Double_t MHT, Double_t HT,
+					      vector<TLorentzVector> ZCandidates,
+					      vector<double> EBphoton) {
   // For double ratio, apply weights for purity, Fdir, trigger eff, reco eff.
   double effWt = 1;
 
@@ -1647,8 +1649,10 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
 	     theSample_.Contains("ttzmm") || theSample_.Contains("ttzee") ||
 	     theSample_.Contains("VVmm") || theSample_.Contains("VVee")) {
     if (hTrigEff_[0] != nullptr) {
-      Double_t ht = HT >= hTrigEff_[0]->GetBinLowEdge(1) ? HT : hTrigEff_[0]->GetBinLowEdge(1);
-      int bin = hTrigEff_[0]->GetNbinsX();  while (ht < hTrigEff_[0]->GetBinLowEdge(bin)) bin--;
+      Double_t zpt = ZCandidates.at(0).Pt();  zpt = max(hTrigEff_[0]->GetBinLowEdge(1), zpt);
+      int bin = hTrigEff_[0]->GetNbinsX();  while (zpt < hTrigEff_[0]->GetBinLowEdge(bin)) bin--;
+      // Double_t ht = HT >= hTrigEff_[0]->GetBinLowEdge(1) ? HT : hTrigEff_[0]->GetBinLowEdge(1);
+      // int bin = hTrigEff_[0]->GetNbinsX();  while (ht < hTrigEff_[0]->GetBinLowEdge(bin)) bin--;
       effWt *= hTrigEff_[0]->GetBinContent(bin);
     }
     if (hSFeff_ != nullptr) {
