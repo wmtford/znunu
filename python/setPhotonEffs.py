@@ -71,7 +71,8 @@ h_SF_g = SFfile.Get("h_MHT")
 h_SF_g.SetName("h_SFg_MHT")
 
 FdirFile = ROOT.TFile("../plots/histograms/fragmentation.root", "READ")
-g_Fdir = FdirFile.Get("bin46_f")
+h_Fdir = FdirFile.Get("bin46_NJets8910")
+h_Fdir.SetName("h_bin46_NJets8910")
 
 ########## get the efficiency file ################
 effFile = ROOT.TFile("../plots/histograms/effHists.root","UPDATE")
@@ -80,7 +81,7 @@ effFile = ROOT.TFile("../plots/histograms/effHists.root","UPDATE")
 ########## update the efficiency file #############
 
 h_SF_g.Write(h_SF_g.GetName(), 2)
-g_Fdir.Write(g_Fdir.GetName(), 2)
+h_Fdir.Write(h_Fdir.GetName(), 2)
 
 h_trig_eb = effFile.Get("h_trig_eb")
 if (not h_trig_eb):

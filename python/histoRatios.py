@@ -96,25 +96,25 @@ if (norm2016):
   ratioMax = 1.25
 else:
   legList = ['2017 data V16','2017 MC V16']
-  DfileZll = ROOT.TFile('../outputs/histsDYMC_2017v16.root')
-  DfilePhoton = ROOT.TFile('../outputs/histsGjets_2017v16.root')
+  DfileZll = ROOT.TFile('../outputs/histsDYMC_2017v16_noPUwt.root')
+  DfilePhoton = ROOT.TFile('../outputs/histsGjets_2017v16_noPUwt.root')
 if (doMumu):
-  histnamesN = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm", "hVertices_zmm", "hCC_zmm"]
-  histnamesD = ["hHT_dymm", "hMHT_dymm", "hNJets_dymm", "hBTags_dymm", "hZmass_dymm", "hZpt_dymm", "hVertices_dymm", "hCC_dymm"]
+  histnamesN = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm", "hMuonEta_zmm", "hVertices_zmm", "hCC_zmm"]
+  histnamesD = ["hHT_dymm", "hMHT_dymm", "hNJets_dymm", "hBTags_dymm", "hZmass_dymm", "hZpt_dymm", "hMuonEta_dymm", "hVertices_dymm", "hCC_dymm"]
   # histnames = ["hHT_DR_zmm", "hMHT_DR_zmm", "hNJets_DR_zmm"]
   filehistsM['N'] = (NfileZll, histnamesN)
   filehistsM['D'] = (DfileZll, fScaleM, histnamesD)
   hists.append(filehistsM)
 if (doEe):
-  histnamesN = ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee", "hVertices_zee", "hCC_zee"]
-  histnamesD = ["hHT_dyee", "hMHT_dyee", "hNJets_dyee", "hBTags_dyee", "hZmass_dyee", "hZpt_dyee", "hVertices_dyee", "hCC_dyee"]
+  histnamesN = ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee", "hElectronEta_zee", "hVertices_zee", "hCC_zee"]
+  histnamesD = ["hHT_dyee", "hMHT_dyee", "hNJets_dyee", "hBTags_dyee", "hZmass_dyee", "hZpt_dyee", "hElectronEta_dyee", "hVertices_dyee", "hCC_dyee"]
   # histnames = ["hHT_DR_zee", "hMHT_DR_zee", "hNJets_DR_zee"]
   filehistsE['N'] = (NfileZll, histnamesN)
   filehistsE['D'] = (DfileZll, fScaleE, histnamesD)
   hists.append(filehistsE)
 if (doPhoton):
-  histnamesN = ["hHT_photon", "hMHT_photon", "hNJets_photon", "hBTags_photon", "hVertices_photon", "hCC_photon"]
-  histnamesD = ["hHT_gjets", "hMHT_gjets", "hNJets_gjets", "hBTags_gjets", "hVertices_gjets", "hCC_gjets"]
+  histnamesN = ["hHT_photon", "hMHT_photon", "hNJets_photon", "hBTags_photon", "hPhotonPt_photon", "hPhotonEta_photon", "hVertices_photon", "hCC_photon"]
+  histnamesD = ["hHT_gjets", "hMHT_gjets", "hNJets_gjets", "hBTags_gjets", "hPhotonPt_gjets", "hPhotonEta_gjets", "hVertices_gjets", "hCC_gjets"]
   # histnames = ["hHT_DR_photon", "hMHT_DR_photon", "hNJets_DR_photon"]
   filehistsP['N'] = (NfilePhoton, histnamesN)
   filehistsP['D'] = (DfilePhoton, fScaleP, histnamesD)

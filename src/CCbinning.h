@@ -95,7 +95,7 @@ public:
   };
   int jk(int j, int k) {
     std::vector<int> jk = {j, k};
-    try {toCCbinjb_.at(jk);}  catch (const std::out_of_range& oor) {return -1;}
+    try {toCCbinjk_.at(jk);}  catch (const std::out_of_range& oor) {return -1;}
     return(toCCbinjk_.at(jk));
   };
   int Jbk(int J, int b, int k) {

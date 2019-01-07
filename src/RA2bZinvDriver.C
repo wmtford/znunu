@@ -15,9 +15,9 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
 
   bool doHzvv = false;
   bool doHttzvv = false;
-  bool doHzmm = false;
-  bool doHzee = false;
-  bool doHphoton = true;
+  bool doHzmm = true;
+  bool doHzee = true;
+  bool doHphoton = false;
   bool doHdymm = false;
   bool doHdyee = false;
   bool doHttzmm = false;
@@ -37,11 +37,11 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
   // RA2bZinvAnalysis analyzer("data2018.cfg", runBlock);
   // RA2bZinvAnalysis analyzer("lowDphi.cfg", runBlock);
 
-  std::string fnroot;
+  std::string fnstr;
 
   if (doHzvv || doHttzvv) {
-    fnroot = "histsZjets";
-    const char* outfn = (fnroot + runBlock + ".root").data();
+    fnstr = "histsZjets";  fnstr += runBlock + ".root";
+    char* outfn = new char[fnstr.length()+1];  std::strcpy (outfn, fnstr.c_str());
     TFile *histoOutFile = TFile::Open(outfn, "RECREATE");
     TH1F *hCCzvv = nullptr;
     if (doHzvv) {
@@ -75,15 +75,17 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
 
   if (doHzmm || doHzee) {
     TFile *histoOutFile;
-    fnroot = "histsZ";
+    fnstr = "histsZ";
     TH1F *hCCzmm = nullptr, *hCCjbzmm = nullptr, *hCCJbzmm = nullptr;
     if (doHzmm && doHzee) {
-      const char* outfn = (fnroot + "ll" + runBlock + ".root").data();
+      fnstr += "ll" + runBlock + ".root";
+      char* outfn = new char[fnstr.length()+1];  std::strcpy (outfn, fnstr.c_str());
       histoOutFile = TFile::Open(outfn, "RECREATE");
     }
     if (doHzmm) {
       if (!doHzee) {
-	const char* outfn = (fnroot + "mm" + runBlock + ".root").data();
+	fnstr += "mm" + runBlock + ".root";
+	char* outfn = new char[fnstr.length()+1];  std::strcpy (outfn, fnstr.c_str());
 	histoOutFile = TFile::Open(outfn, "RECREATE");
       }
       std::vector<TH1*> h_zmm = analyzer.makeHistograms("zmm");
@@ -101,7 +103,8 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
     }
     if (doHzee) {
       if (!doHzmm) {
-	const char* outfn = (fnroot + "ee" + runBlock + ".root").data();
+	fnstr += "ee" + runBlock + ".root";
+	char* outfn = new char[fnstr.length()+1];  std::strcpy (outfn, fnstr.c_str());
 	histoOutFile = TFile::Open(outfn, "RECREATE");
       }
       std::vector<TH1*> h_zee = analyzer.makeHistograms("zee");
@@ -133,8 +136,8 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
   }
 
   if (doHdymm || doHdyee || doHttzmm || doHttzee || doHVVmm || doHVVee || doHttmm || doHttee) {
-    fnroot = "histsDYMC";
-    const char* outfn = (fnroot + runBlock + ".root").data();
+    fnstr = "histsDYMC";  fnstr += runBlock + ".root";
+    char* outfn = new char[fnstr.length()+1];  std::strcpy (outfn, fnstr.c_str());
     TFile *histoOutFile = TFile::Open(outfn, "RECREATE");
 
     if (doHdymm) {
@@ -177,8 +180,8 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
   }
 
   if (doHphoton) {
-    fnroot = "histsPhoton";
-    const char* outfn = (fnroot + runBlock + ".root").data();
+    fnstr = "histsPhoton";  fnstr += runBlock + ".root";
+    char* outfn = new char[fnstr.length()+1];  std::strcpy (outfn, fnstr.c_str());
     TFile *histoOutFile = TFile::Open(outfn, "RECREATE");
     std::vector<TH1*> h_photon = analyzer.makeHistograms("photon");
     for (auto& theHist : h_photon) {
@@ -189,8 +192,8 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
   }
 
   if (doHgjets) {
-    fnroot = "histsGjets";
-    const char* outfn = (fnroot + runBlock + ".root").data();
+    fnstr = "histsGjets";  fnstr += runBlock + ".root";
+    char* outfn = new char[fnstr.length()+1];  std::strcpy (outfn, fnstr.c_str());
     TFile *histoOutFile = TFile::Open(outfn, "RECREATE");
     std::vector<TH1*> h_gJets = analyzer.makeHistograms("gjets");
     for (auto& theHist : h_gJets) {

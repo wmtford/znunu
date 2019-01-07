@@ -164,6 +164,26 @@ ttzvv2017    # Z->ttzvv MC
 tree_signal/tree_TTZToLLNuNu_MC2017.root
 ##
 
+dymm2017 10   # DY->mumu MC
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-100to200_MC2017.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-200to400_MC2017.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-400to600_MC2017.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-600to800_MC2017.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200_MC2017.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500_MC2017.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf_MC2017.root
+##
+
+dyee2017 10   # DY->ee MC
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-100to200_MC2017.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-200to400_MC2017.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-400to600_MC2017.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-600to800_MC2017.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200_MC2017.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500_MC2017.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf_MC2017.root
+##
+
 ttzmm2017    # ttz->mumu MC
 tree_DYm_CleanVars/tree_TTZToLLNuNu_MC2017.root
 ##
@@ -201,23 +221,13 @@ tree_GJet_CleanVars/tree_GJets_HT-400to600_MC2017.root
 tree_GJet_CleanVars/tree_GJets_HT-600toInf_MC2017.root
 ##
 
-dymm2017 10   # DY->mumu MC
-tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-100to200_MC2017.root
-tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-200to400_MC2017.root
-tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-400to600_MC2017.root
-tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-600to800_MC2017.root
-tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200_MC2017.root
-tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500_MC2017.root
-tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf_MC2017.root
-##
-
-dyee2017 10   # DY->ee MC
-tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-100to200_MC2017.root
-tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-200to400_MC2017.root
-tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-400to600_MC2017.root
-tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-600to800_MC2017.root
-tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200_MC2017.root
-tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500_MC2017.root
-tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf_MC2017.root
+gjetsqcd2017 10   # qcd MC for fragmentation photons
+tree_GJet_CleanVars/tree_QCD_HT-200to300_MC2017.root              
+tree_GJet_CleanVars/tree_QCD_HT-300to500_MC2017.root              
+tree_GJet_CleanVars/tree_QCD_HT-500to700_MC2017.root              
+tree_GJet_CleanVars/tree_QCD_HT-700to1000_MC2017.root             
+tree_GJet_CleanVars/tree_QCD_HT-1000to1500_MC2017.root            
+tree_GJet_CleanVars/tree_QCD_HT-1500to2000_MC2017.root            
+tree_GJet_CleanVars/tree_QCD_HT-2000toInf_MC2017.root             
 ##
 

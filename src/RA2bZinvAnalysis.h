@@ -17,6 +17,7 @@
 #include <TChain.h>
 #include <TTreeReaderValue.h>
 #include <TH1F.h>
+#include <TH1D.h>
 #include <TH2F.h>
 #include <TGraphErrors.h>
 #include <TLorentzVector.h>
@@ -65,7 +66,7 @@ public:
     Double_t* binsY;
     Double_t* dvalue;
     Int_t* ivalue;
-    void (RA2bZinvAnalysis::*filler1D)(TH1F* h, double wt);
+    void (RA2bZinvAnalysis::*filler1D)(TH1D* h, double wt);
     void (RA2bZinvAnalysis::*filler2D)(TH2F* h, double wt);
     std::vector<TString*> omitCuts;
     const char* addCuts;
@@ -79,8 +80,8 @@ public:
   public:
     cutHistos(TChain* chain, TObjArray* forNotify);
     ~cutHistos() {};
-    void setAxisLabels(TH1F* hcf);
-    void fill(TH1F* hcf, Double_t wt, bool passTrg);
+    void setAxisLabels(TH1D* hcf);
+    void fill(TH1D* hcf, Double_t wt, bool passTrg);
   private:
     TObjArray* forNotify_;
     TTreeFormula* HTcutf_;
@@ -90,6 +91,7 @@ public:
     TTreeFormula* objcutf_;
     TTreeFormula* ptcutf_;
     TTreeFormula* masscutf_;
+    TTreeFormula* photonDeltaRcutf_;
     TTreeFormula* commoncutf_;
   };
 
@@ -105,7 +107,8 @@ public:
     TString theSample_;
     std::vector<TH1F*> hPurity_, hTrigEff_;
     TH1F* hSFeff_;
-    TGraphErrors* FdirGraph_;
+    TH1D* FdirHist_;
+    /* TGraphErrors* FdirGraph_; */
   };
 
 private:
@@ -208,7 +211,7 @@ private:
   void Init(const std::string& cfg_filename="");
   void fillCutMaps();
   void bookAndFillHistograms(const char* sample, std::vector<histConfig*>& histograms, TCut baselineCuts);
-  void fillCutFlow(TH1F* hcf, Double_t wt);
+  void fillCutFlow(TH1D* hcf, Double_t wt);
   Int_t setBTags();
   efficiencyAndPurity effPurCorr_;
 
@@ -235,23 +238,27 @@ private:
   };
 
   // Functions to fill histograms with non-double, non-int types
-  void fillFilterCuts(TH1F* h, double wt);
-  void fillCC(TH1F* h, double wt);
-  void fillnZcand(TH1F* h, double wt) {h->Fill(ZCandidates->size(), wt);}
-  void fillZmass(TH1F* h, double wt) {for (auto & theZ : *ZCandidates) h->Fill(theZ.M(), wt);}
-  void fillZmassjb(TH1F* h, double wt);
+  void fillFilterCuts(TH1D* h, double wt);
+  void fillCC(TH1D* h, double wt);
+  void fillnZcand(TH1D* h, double wt) {h->Fill(ZCandidates->size(), wt);}
+  void fillZmass(TH1D* h, double wt) {for (auto & theZ : *ZCandidates) h->Fill(theZ.M(), wt);}
+  void fillZmassjb(TH1D* h, double wt);
   void fillPUwtvsNint(TH2F* h, double wt) {h->Fill(TrueNumInteractions, puWeight, wt);}
-  void fillHT_DR_xWt(TH1F* h, double wt) {h->Fill(HT, wt*HT);}
-  void fillMHT_DR_xWt(TH1F* h, double wt) {h->Fill(MHT, wt*MHT);}
-  void fillNJets_DR_xWt(TH1F* h, double wt) {h->Fill(Double_t(NJets), wt*NJets);}
-  void fillSFwt_DR(TH1F* h, double wt) {double wtt = effWt_ > 0 ? wt/effWt_ : wt;  h->Fill(effWt_, wtt);}
-  void fillZpt(TH1F* h, double wt) {for (auto & theZ : *ZCandidates) h->Fill(theZ.Pt(), wt);}
-  void fillGpt(TH1F* h, double wt) {for (auto & theG : *Photons) h->Fill(theG.Pt(), wt);}
-  void fillZGmass(TH1F* h, double wt);
-  void fillGJdR(TH1F* h, double wt);
+  void fillHT_DR_xWt(TH1D* h, double wt) {h->Fill(HT, wt*HT);}
+  void fillMHT_DR_xWt(TH1D* h, double wt) {h->Fill(MHT, wt*MHT);}
+  void fillNJets_DR_xWt(TH1D* h, double wt) {h->Fill(Double_t(NJets), wt*NJets);}
+  void fillSFwt_DR(TH1D* h, double wt) {double wtt = effWt_ > 0 ? wt/effWt_ : wt;  h->Fill(effWt_, wtt);}
+  void fillZpt(TH1D* h, double wt) {for (auto & theZ : *ZCandidates) h->Fill(theZ.Pt(), wt);}
+  void fillPhotonPt(TH1D* h, double wt) {for (auto & theG : *Photons) h->Fill(theG.Pt(), wt);}
+  void fillMuonEta(TH1D* h, double wt) {for (auto & theMu : *Muons) h->Fill(theMu.Eta(), wt);}
+  void fillElectronEta(TH1D* h, double wt) {for (auto & theE : *Electrons) h->Fill(theE.Eta(), wt);}
+  void fillPhotonEta(TH1D* h, double wt) {for (auto & theG : *Photons) h->Fill(theG.Eta(), wt);}
+  void fillGpt(TH1D* h, double wt) {for (auto & theG : *Photons) h->Fill(theG.Pt(), wt);}
+  void fillZGmass(TH1D* h, double wt);
+  void fillGJdR(TH1D* h, double wt);
   void fillZGdRvsM(TH2F* h, double wt);
-  void fillGLdRnoPixelSeed(TH1F* h, double wt);
-  void fillGLdRpixelSeed(TH1F* h, double wt);
+  void fillGLdRnoPixelSeed(TH1D* h, double wt);
+  void fillGLdRpixelSeed(TH1D* h, double wt);
 
   ClassDef(RA2bZinvAnalysis, 1) // 2nd arg is ClassVersionID
 };
