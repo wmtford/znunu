@@ -102,11 +102,14 @@ public:
     void openFiles();
     void getHistos(const char* sample);
     double weight(CCbinning* CCbins, Int_t NJets, Int_t BTags, Double_t MHT, Double_t HT,
-		  vector<TLorentzVector> ZCandidates, vector<double> EBphoton);
+		  vector<TLorentzVector> ZCandidates,
+		  vector<TLorentzVector> Photons,
+		  vector<double> EBphoton);
   private:
-    TFile *purityTrigEffFile_, *muonSFfile_, *electronSFfile_, *photonSFfile_, *fragCorrFile_;
+    TFile *purityTrigEffFile_;
     TString theSample_;
     std::vector<TH1F*> hPurity_, hTrigEff_;
+    std::vector<TF1*> fTrigEff_;
     TH1F* hSFeff_;
     TH1D* FdirHist_;
     /* TGraphErrors* FdirGraph_; */

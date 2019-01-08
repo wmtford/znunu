@@ -566,7 +566,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 	int CCbin = CCbins_->jbk(CCbins_->jbin(NJets), CCbins_->bbin(NJets, BTags), CCbins_->kinBin(HT, MHT));
       	if (CCbin <= 0 || BTags > 0) continue;
       	// For double ratio, apply weights for purity, Fdir, trigger eff, reco eff.
-	effWt_ = effPurCorr_.weight(CCbins_, NJets, BTags, MHT, HT, *ZCandidates, *Photons_isEB);
+	effWt_ = effPurCorr_.weight(CCbins_, NJets, BTags, MHT, HT, *ZCandidates, *Photons, *Photons_isEB);
 	eventWt *= effWt_;
       }
 
@@ -1608,10 +1608,16 @@ RA2bZinvAnalysis::efficiencyAndPurity::getHistos(const char* sample) {
     hSFeff_ = (TH1F*) purityTrigEffFile_->Get("h_SFe_MHT");  // Maybe this should be h_NJets
     if (hSFeff_ == nullptr) cout << "***** Histogram h_MHT not found *****" << endl;
   } else if (theSample_.Contains("gjets")) {
+    // Troy-style trigger efficiency histograms:
     hTrigEff_.push_back((TH1F*) purityTrigEffFile_->Get("h_trig_eb"));
     if (hTrigEff_.back() == nullptr) cout << "***** Histogram h_trig_eb not found *****" << endl;
     hTrigEff_.push_back((TH1F*) purityTrigEffFile_->Get("h_trig_ec"));
     if (hTrigEff_.back() == nullptr) cout << "***** Histogram h_trig_ec not found *****" << endl;
+    // Sam-style trigger efficiency functions:
+    fTrigEff_.push_back((TF1*) purityTrigEffFile_->Get("f_trig_eb"));
+    if (fTrigEff_.back() == nullptr) cout << "***** Histogram f_trig_eb not found *****" << endl;
+    fTrigEff_.push_back((TF1*) purityTrigEffFile_->Get("f_trig_ec"));
+    if (fTrigEff_.back() == nullptr) cout << "***** Histogram f_trig_ec not found *****" << endl;
     hSFeff_ = (TH1F*) purityTrigEffFile_->Get("h_SFg_MHT");  // Maybe this should be h_NJets
     if (hSFeff_ == nullptr) cout << "***** Histogram h_MHT not found *****" << endl;
   }
@@ -1622,6 +1628,7 @@ double
 RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, Int_t BTags,
 					      Double_t MHT, Double_t HT,
 					      vector<TLorentzVector> ZCandidates,
+					      vector<TLorentzVector> Photons,
 					      vector<double> EBphoton) {
   // For double ratio, apply weights for purity, Fdir, trigger eff, reco eff.
   double effWt = 1;
@@ -1663,15 +1670,21 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
     }
 
   } else if (theSample_.Contains("gjets")) {
-    if(EBphoton.at(0) == 1 && hTrigEff_[0] != nullptr) {
-      int bin = hTrigEff_[0]->GetNbinsX();  while (MHT < hTrigEff_[0]->GetBinLowEdge(bin)) bin--;
-      effWt *= hTrigEff_[0]->GetBinContent(bin);
+    // if(EBphoton.at(0) == 1 && hTrigEff_[0] != nullptr) {
+    //   int bin = hTrigEff_[0]->GetNbinsX();  while (MHT < hTrigEff_[0]->GetBinLowEdge(bin)) bin--;
+    //   effWt *= hTrigEff_[0]->GetBinContent(bin);
+    // }
+    // if(EBphoton.at(0) == 0 && hTrigEff_[1] != nullptr) {
+    //   int bin = hTrigEff_[1]->GetNbinsX();  while (MHT < hTrigEff_[1]->GetBinLowEdge(bin)) bin--;
+    //   effWt *= hTrigEff_[1]->GetBinContent(bin);
+    // }
+    if(EBphoton.at(0) == 1 && fTrigEff_[0] != nullptr) {
+      effWt *= fTrigEff_[0]->Eval(max(double(205), Photons.at(0).Pt()));  // hard-wired cutoff
     }
-    if(EBphoton.at(0) == 0 && hTrigEff_[1] != nullptr) {
-      int bin = hTrigEff_[1]->GetNbinsX();  while (MHT < hTrigEff_[1]->GetBinLowEdge(bin)) bin--;
-      effWt *= hTrigEff_[1]->GetBinContent(bin);
+    if(EBphoton.at(0) == 0 && fTrigEff_[1] != nullptr) {
+      effWt *= fTrigEff_[1]->Eval(max(double(205), Photons.at(0).Pt()));  // hard-wired cutoff
     }
-    effWt /= min(HT, 900.0)*0.00009615+0.9071;  // FIXME:  hard-wired correction
+    // effWt /= min(HT, 900.0)*0.00009615+0.9071;  // FIXME:  hard-wired correction
     if (hSFeff_ != nullptr) {
       Double_t mht = MHT >= hSFeff_->GetBinLowEdge(1) ? MHT : hSFeff_->GetBinLowEdge(1);
       int bin = hSFeff_->GetNbinsX();  while (mht < hSFeff_->GetBinLowEdge(bin)) bin--;

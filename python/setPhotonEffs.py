@@ -66,6 +66,13 @@ pur_ec = [(0.8879, 0.0108),
 # h_frag1.SetBinError(1,frag[1])
 # h_frag1.Write(h_frag1.GetName(),2)
 
+# First attempt to get trigger efficiencies from Sam's file
+trigEffFile = ROOT.TFile("../plots/histograms/triggersRa2bRun2_v1.root", "READ")
+f_trig_eb = trigEffFile.Get("tf1_SinglePhotonBarrelMedium_hists_Run2017_JetHT")
+f_trig_eb.SetName("f_trig_eb")
+f_trig_ec = trigEffFile.Get("tf1_SinglePhotonEndcapMedium_hists_Run2017_JetHT")
+f_trig_ec.SetName("f_trig_ec")
+
 SFfile = ROOT.TFile("../plots/histograms/SFcorrections.Photons.root", "READ")
 h_SF_g = SFfile.Get("h_MHT")
 h_SF_g.SetName("h_SFg_MHT")
@@ -79,6 +86,9 @@ effFile = ROOT.TFile("../plots/histograms/effHists.root","UPDATE")
 # effFile = ROOT.TFile("effHists.root","UPDATE")  # wtf
 
 ########## update the efficiency file #############
+
+f_trig_eb.Write(f_trig_eb.GetName(),2)
+f_trig_ec.Write(f_trig_ec.GetName(),2)
 
 h_SF_g.Write(h_SF_g.GetName(), 2)
 h_Fdir.Write(h_Fdir.GetName(), 2)
