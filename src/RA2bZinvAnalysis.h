@@ -9,7 +9,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #define VERSION 16
-#define ISMC
+/* #define ISMC */
 #define ISSKIM
 
 #include "CCbinning.h"

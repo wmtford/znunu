@@ -25,6 +25,8 @@ src/RA2bZinvLoadClasses.C
 src/RA2bZinvDriver.C
 src/RA2bZinvAnalysis.h
 src/RA2bZinvAnalysis.C
+src/CCbinning.h
+src/CCbinning.C
 src/RA2bZinvAnalysis.cfi
 src/LeafDeclaration_XXXX.h 
 src/YYYY.cfg  (optional)
@@ -49,8 +51,11 @@ The main source file, RA2bZinvAnalysis.C, defines a singleton class and
 some user-callable functions.  Its use is illustrated by the
 implementation in RA2bZinvDriver.C.
 
-The constructor takes one optional argument, a const char* with the name
-of the .cfg file to be used.  The .dat file, chosen in the .cfi or .cfg
+The constructor takes one required argument, a const char* with the name
+of the .cfg file to be used; it can be the empty string "".  The
+optional second argument is the name of a runBlock, overriding the value
+set in the .cfi or .cfg file (only needed when running parallel jobs on
+separate runBlocks).  The .dat file, chosen in the .cfi or .cfg
 file, is an index of the names of the TreeMaker ntuple files for each of
 the samples.  (The reason for having more than one index file is simply
 their size for the raw nutple root file sets.)
