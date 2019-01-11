@@ -16,7 +16,7 @@ using std::endl;
 #include "TMath.h"
 using TMath::Sqrt; using TMath::Power;
 
-void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "nominal") {
+void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "nominal") {
 
   CCbinning CCbins(era, deltaPhi);
   int kinSize = CCbins.kinSize();
@@ -28,9 +28,9 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
   // std::vector<int> extrapFromRange = {5, 6};
   float relErrXsec_ttz = 0.3;
 
-  TFile ZllData("../outputs/histsDY_2016v15_DR0b.root");  if (!ZllData.IsOpen()) return;
-  TFile photonData("../outputs/histsPhoton_2016v15_DR0b.root");  if (!photonData.IsOpen()) return;
-  TFile ZllXMC("../outputs/histsDYMC_2016v12_DR0b.root");  if (!ZllXMC.IsOpen()) return;
+  TFile ZllData("../outputs/histsDY_2017v16.root");  if (!ZllData.IsOpen()) return;
+  TFile photonData("../outputs/histsPhoton_2017v16.root");  if (!photonData.IsOpen()) return;
+  TFile ZllXMC("../outputs/histsDYMC_2017v16.root");  if (!ZllXMC.IsOpen()) return;
   
   // Get the Z->ll and photon data and MC histograms
   TH1F* hCC_zmm = (TH1F*) ZllData.Get("hCC_zmm");
@@ -112,8 +112,8 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
   // Compute the relative purity error averaged over Zmm, Zee, and bin groups
   for (int i = 0; i < (int) pbins.size(); ++i) {
     float y = 0, ype = 0;
-    for (int j = 0; j < (int) pbins[i].size(); ++j) {
-      int bin = pbins[i][j];
+    for (int j = 0; j < (int) pbins.at(i).size(); ++j) {
+      int bin = pbins.at(i).at(j);
       y += hCCjb_zmm->GetBinContent(bin) + hCCjb_zee->GetBinContent(bin);
       ype += hCCjb_zmm->GetBinContent(bin)*h_pur_m->GetBinError(bin)/h_pur_m->GetBinContent(bin)
        	   + hCCjb_zee->GetBinContent(bin)*h_pur_e->GetBinError(bin)/h_pur_e->GetBinContent(bin);
@@ -130,7 +130,7 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
 	int binCC = CCbins.jbk(j, b, k);  if (binCC <= 0) continue;
 	float Npho = 0;
 	std::pair<float, float> jbb, NphoF;
-	for (auto J : jetSubBins[j]) {
+	for (auto J : jetSubBins.at(j)) {
 	  int binCCJb = CCbins.Jb(J, b);  if (binCCJb <= 0) continue;
 	  int binCCjb = CCbins.jb(j, b);  if (binCCjb <= 0) continue;
 	  std::pair<float, float> nMC;
@@ -165,13 +165,13 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
 	    Jextrap.push_back(std::pair<float, float>(jbb.first, jbb.second));
 	}
 	if (j >= extrapByMCthreshold) {
-	  // Compute ratio of NJets = 9+ to NJets = 7-8
-	  float relErrjbk = Jextrap[binCC - 1].second;
-	  float relErrjm1bk = Jextrap[CCbins.jbk(j-1, b, k) - 1].second;
-	  Jextrap[binCC - 1].first /= Jextrap[CCbins.jbk(j-1, b, k) - 1].first;
-	  Jextrap[binCC - 1].second = Sqrt(Power(relErrjbk, 2) + Power(relErrjm1bk, 2));
-	  if (k == k) cout << "j, b, k, Jextrap = " << j << ", " << b << ", " << k << ", " <<
-			Jextrap[binCC - 1].first << ", rel err = " << Jextrap[binCC - 1].second << endl;
+	  // Compute ratio of highest to next-highest NJets bins
+	  float relErrjbk = Jextrap.at(binCC - 1).second;
+	  float relErrjm1bk = Jextrap.at(CCbins.jbk(j-1, b, k) - 1).second;
+	  Jextrap.at(binCC - 1).first /= Jextrap.at(CCbins.jbk(j-1, b, k) - 1).first;
+	  Jextrap.at(binCC - 1).second = Sqrt(Power(relErrjbk, 2) + Power(relErrjm1bk, 2));
+	  cout << "j, b, k, Jextrap = " << j << ", " << b << ", " << k << ", " <<
+	    Jextrap.at(binCC - 1).first << ", rel err = " << Jextrap.at(binCC - 1).second << endl;
 	}
       }
     }
@@ -211,11 +211,11 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
     for (int b = 0; b < CCbins.binsb(j); ++b) {
       for (int k = 0; k < kinSize; ++k) {
 	int binCC = CCbins.jbk(j, b, k);  if (binCC <= 0) continue;
+	int binCCjb = CCbins.jb(j, b);  if (binCCjb <= 0) continue;
 	if (j < extrapByMCthreshold) {
 	  float Npho = 0, NphoF = 0, fbb = 0;
-	  for (auto J : jetSubBins[j]) {
+	  for (auto J : jetSubBins.at(j)) {
 	    int binCCJb = CCbins.Jb(J, b);  if (binCCJb <= 0) continue;
-	    int binCCjb = CCbins.jb(j, b);  if (binCCjb <= 0) continue;
 	    float Nemuxp = hCCJb_zmm->GetBinContent(binCCJb) * h_pur_m->GetBinContent(binCCjb)
 	                 + hCCJb_zee->GetBinContent(binCCJb) * h_pur_e->GetBinContent(binCCjb);
 	    if (J >= (int) fb0.size()) {
@@ -233,13 +233,23 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
 	  if (b == 0) {
 	    Fextrap.push_back(1);
 	  } else {
-	    Fextrap.push_back(NphoF/Npho);
+	    float f = NphoF/Npho;
+	    if (f == 0) {
+	      // Fall back to unsplit yields
+	      int binCCj0 = CCbins.jb(j, 0);
+	      f = hCCjb_zmm->GetBinContent(binCCjb) * h_pur_m->GetBinContent(binCCjb)
+		+ hCCjb_zee->GetBinContent(binCCjb) * h_pur_e->GetBinContent(binCCjb);
+	      f /= hCCjb_zmm->GetBinContent(binCCj0) * h_pur_m->GetBinContent(binCCj0)
+	      	+ hCCjb_zee->GetBinContent(binCCj0) * h_pur_e->GetBinContent(binCCj0);
+	      f /= Npho;
+	    }
+	    Fextrap.push_back(f);
 	  }
 	} else {
-	  // Set F(9+) = F(7,8) * J(7,8;9+)
+	  // Set F(binsj) = F(binsj-1) * J(binsj-1;binsj)
 	  // cout << "j, b, k, Jextrap (rel. err) = " << j << ", " << b << ", " << k << ", " <<
-	  //   Jextrap[binCC - 1].first << " (" << Jextrap[binCC - 1].second << ")" << endl;
-	  Fextrap.push_back(Fextrap[CCbins.jbk(j-1, b, k) - 1] * Jextrap[binCC - 1].first);
+	  //   Jextrap.at(binCC - 1).first << " (" << Jextrap.at(binCC - 1).second << ")" << endl;
+	  Fextrap.push_back(Fextrap.at(CCbins.jbk(j-1, b, k) - 1) * Jextrap.at(binCC - 1).first);
 	}
       }
     }
@@ -248,16 +258,13 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
   // kin systematics derived from analysis of the closure plot
   std::vector<float> systKin = {0, 0.07, 0.10, 0.20};
 
-
-
-
   // Create and write the output dat file
   FILE* outFile;
   std::string outFileName("DY_");
   if (deltaPhi == "nominal") outFileName += "signal";
   else outFileName += deltaPhi;
   outFileName += ".dat";
-  outFile = fopen(outFileName.data(), "w");
+  outFile = fopen(outFileName.c_str(), "w");
   fprintf(outFile, "%s\n",
 	  " j b k|| Nmumu |  Nee  | Nb/0b | stat  |MC stat| ttz SF| syst+ | syst- | sysKin| sysPur"
 	  );
@@ -271,7 +278,7 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
 	  JextrapErr = 0;
 	  ttzErr = 0;
 	} else {
-	  JextrapErr = Jextrap[binCC - 1].second;
+	  JextrapErr = Jextrap.at(binCC - 1).second;
 	  // Factors in the Jextrap double ratio are fully correlated
 	  ttzErr = relErrXsec_ttz * (hCCjb_MCttzFrac->GetBinContent(binCCjb) -
 				     hCCjb_MCttzFrac->GetBinContent(CCbins.jb(j-1, b)) -
@@ -282,14 +289,14 @@ void Nb0bExtrap(const std::string& era = "2016", const std::string& deltaPhi = "
   	fprintf(outFile, " %1d %1d %1d||%7d|%7d|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f\n", j, b, k,
 		(int) hCC_zmm->GetBinContent(binCC),
 		(int) hCC_zee->GetBinContent(binCC),
-		Fextrap[binCC - 1],
-		DYstat[binCCjb - 1],
+		Fextrap.at(binCC - 1),
+		DYstat.at(binCCjb - 1),
 		JextrapErr,
 		ttzErr,
-		j >= extrapByMCthreshold ? systJ[b] : 0,
-		j >= extrapByMCthreshold ? systJ[b] : 0,
-		systKin[b],
-		DYpurSys[binCCjb - 1]
+		j >= extrapByMCthreshold ? systJ.at(b) : 0,
+		j >= extrapByMCthreshold ? systJ.at(b) : 0,
+		systKin.at(b),
+		DYpurSys.at(binCCjb - 1)
 		);
       }
     }
