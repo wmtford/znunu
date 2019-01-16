@@ -36,25 +36,59 @@ trig_ec = [(0.953, 0.004),
            (0.989, 0.003),
            (0.980, 0.019),]
 
-## photon purity (Andrew provides these Feb 17 email)
+# Get trigger efficiencies from Sam's file for Run2, 2017
+trigEffFile = ROOT.TFile("../plots/histograms/triggersRa2bRun2_v1.root", "READ")
+f_trig_eb = trigEffFile.Get("tf1_SinglePhotonBarrelLoose_hists_Run2017_JetHT")
+f_trig_eb.SetName("f_trig_eb")
+f_trig_ec = trigEffFile.Get("tf1_SinglePhotonEndcapLoose_hists_Run2017_JetHT")
+f_trig_ec.SetName("f_trig_ec")
+
+SFfile = ROOT.TFile("../plots/histograms/SFcorrections.Photons.root", "READ")
+h_SF_g = SFfile.Get("h_MHT")
+h_SF_g.SetName("h_SFg_MHT")
+
+FdirFile = ROOT.TFile("../plots/histograms/fragmentation.root", "READ")
+h_Fdir = FdirFile.Get("bin46_NJets8910")
+h_Fdir.SetName("h_bin46_NJets8910")
+
+## photon purity (Andrew provides these Feb 17 email, for 2016 analysis)
 ## apply to data
 ## split by barrel (eb) and endcap (ec)
 ## binning in MHT: [<225, 225-250, 250-300, 300-350, 350-500, 500+]
-pur_bins = array('d', [0, 225, 250, 300, 350, 500, 1000])
-pur_title = "MHT"
-pur_eb = [(0.9580, 0.0267),
-          (0.9623, 0.0028),
-          (0.9729, 0.0098),
-          (0.9690, 0.0196),
-          (0.9622, 0.0456),
-          (0.9780, 0.0264),]
+# pur_title = "MHT"
+# pur_bins = array('d', [0, 225, 250, 300, 350, 500, 1000])
+# pur_eb = [(0.9580, 0.0267),
+#           (0.9623, 0.0028),
+#           (0.9729, 0.0098),
+#           (0.9690, 0.0196),
+#           (0.9622, 0.0456),
+#           (0.9780, 0.0264),]
 
-pur_ec = [(0.8879, 0.0108),
-          (0.8570, 0.0114),
-          (0.8969, 0.0174),
-          (0.9037, 0.0175),
-          (0.9342, 0.0299),
-          (0.9637, 0.0169),]
+# pur_ec = [(0.8879, 0.0108),
+#           (0.8570, 0.0114),
+#           (0.8969, 0.0174),
+#           (0.9037, 0.0175),
+#           (0.9342, 0.0299),
+#           (0.9637, 0.0169),]
+## photon purity (Andrew provides these Jan 15, 2019 email)
+## for 2017
+# x: [275, 325, 475, 800]
+# EB['avg'] [0.9220364075090001, 0.9165495814580001, 0.935175461539, 0.9610830087516667]
+# EB['avgErr'] [0.012587804680000092, 0.02129023792400009, 0.016343402514999994, 0.013802011657333302]
+# EE['avg'] [0.8503618908233334, 0.859453235025, 0.8668725049456666, 0.8334821231056667]
+# EE['avgErr'] [0.026438397048666684, 0.03769281117199996, 0.028872674388333408, 0.0368792779756667]
+pur_title = "MHT"
+pur_bins = array('d', [0, 300, 350, 600, 2500])  # First bin measured from 250, last bin to 1000
+pur_eb = [(0.9220, 0.0126),
+          (0.9165, 0.0213),
+          (0.9352, 0.0163),
+          (0.9611, 0.0138)]
+
+pur_ec = [(0.8504, 0.0264),
+          (0.8594, 0.0377),
+          (0.8669, 0.0289),
+          (0.8335, 0.0369)]
+
 ###################################################
 # h_SF_g1 = effFile.Get("h_SF_g1")
 # h_SF_g1.SetBinContent(1,SF[0])
@@ -65,21 +99,6 @@ pur_ec = [(0.8879, 0.0108),
 # h_frag1.SetBinContent(1,frag[0])
 # h_frag1.SetBinError(1,frag[1])
 # h_frag1.Write(h_frag1.GetName(),2)
-
-# First attempt to get trigger efficiencies from Sam's file
-trigEffFile = ROOT.TFile("../plots/histograms/triggersRa2bRun2_v1.root", "READ")
-f_trig_eb = trigEffFile.Get("tf1_SinglePhotonBarrelMedium_hists_Run2017_JetHT")
-f_trig_eb.SetName("f_trig_eb")
-f_trig_ec = trigEffFile.Get("tf1_SinglePhotonEndcapMedium_hists_Run2017_JetHT")
-f_trig_ec.SetName("f_trig_ec")
-
-SFfile = ROOT.TFile("../plots/histograms/SFcorrections.Photons.root", "READ")
-h_SF_g = SFfile.Get("h_MHT")
-h_SF_g.SetName("h_SFg_MHT")
-
-FdirFile = ROOT.TFile("../plots/histograms/fragmentation.root", "READ")
-h_Fdir = FdirFile.Get("bin46_NJets8910")
-h_Fdir.SetName("h_bin46_NJets8910")
 
 ########## get the efficiency file ################
 effFile = ROOT.TFile("../plots/histograms/effHists.root","UPDATE")

@@ -226,6 +226,12 @@
    vector<int>     *TriggerPrescales;
    vector<int>     *TriggerVersion;
    vector<TLorentzVector> *ZCandidates;
+   Bool_t          METRatioFilter;
+   Bool_t          MuonJetFilter;
+   Bool_t          FakeJetFilter;
+   Bool_t          EcalNoiseJetFilter;
+   Bool_t          HTRatioFilter;
+   Bool_t          HTRatioDPhiFilter;
    UInt_t          RA2bin;
 
    // List of branches
@@ -451,6 +457,12 @@
    TBranch        *b_TriggerPrescales;   //!
    TBranch        *b_TriggerVersion;   //!
    TBranch        *b_ZCandidates;   //!
+   TBranch        *b_METRatioFilter;   //!
+   TBranch        *b_MuonJetFilter;   //!
+   TBranch        *b_FakeJetFilter;   //!
+   TBranch        *b_EcalNoiseJetFilter;   //!
+   TBranch        *b_HTRatioFilter;   //!
+   TBranch        *b_HTRatioDPhiFilter;   //!
    TBranch        *b_RA2binBranch;   //!
 
   void setBranchAddress(TChain* fChain) {
@@ -841,6 +853,12 @@
    fChain->SetBranchAddress("TriggerPrescales", &TriggerPrescales, &b_TriggerPrescales);
    fChain->SetBranchAddress("TriggerVersion", &TriggerVersion, &b_TriggerVersion);
    fChain->SetBranchAddress("ZCandidates", &ZCandidates, &b_ZCandidates);
+   fChain->SetBranchAddress("METRatioFilter", &METRatioFilter, &b_METRatioFilter);
+   fChain->SetBranchAddress("MuonJetFilter", &MuonJetFilter, &b_MuonJetFilter);
+   fChain->SetBranchAddress("FakeJetFilter", &FakeJetFilter, &b_FakeJetFilter);
+   fChain->SetBranchAddress("EcalNoiseJetFilter", &EcalNoiseJetFilter, &b_EcalNoiseJetFilter);
+   fChain->SetBranchAddress("HTRatioFilter", &HTRatioFilter, &b_HTRatioFilter);
+   fChain->SetBranchAddress("HTRatioDPhiFilter", &HTRatioDPhiFilter, &b_HTRatioDPhiFilter);
    fChain->SetBranchAddress("RA2bin", &RA2bin, &b_RA2binBranch);
    /* Notify(); */
   };

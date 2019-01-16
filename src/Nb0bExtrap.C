@@ -9,6 +9,7 @@
 #include "TH1F.h"
 #include "TFile.h"
 
+#include <fstream>
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -259,15 +260,20 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
   std::vector<float> systKin = {0, 0.07, 0.10, 0.20};
 
   // Create and write the output dat file
-  FILE* outFile;
-  std::string outFileName("DY_");
-  if (deltaPhi == "nominal") outFileName += "signal";
-  else outFileName += deltaPhi;
-  outFileName += ".dat";
-  outFile = fopen(outFileName.c_str(), "w");
-  fprintf(outFile, "%s\n",
-	  " j b k|| Nmumu |  Nee  | Nb/0b | stat  |MC stat| ttz SF| syst+ | syst- | sysKin| sysPur"
-	  );
+  ofstream outFile("DY_signal.dat");
+  // std::string outFileName("DY_");
+  // if (deltaPhi == "nominal") outFileName += "signal";
+  // else outFileName += deltaPhi;
+  // outFileName += ".dat";
+  // ofstream outFile(outFileName.c_str());
+
+  // File* outFile = fopen(outFileName.c_str(), "w");
+  // fprintf(outFile, "%s\n",
+  char linebuf[2048];
+  sprintf(linebuf, "%s\n",
+  	  " j b k|| Nmumu |  Nee  | Nb/0b | stat  |MC stat| ttz SF| syst+ | syst- | sysKin| sysPur"
+  	  );
+  outFile << linebuf;
   for (int j = 0; j < NbinsNJet; ++j) {
     for (int b = 0; b < CCbins.binsb(j); ++b) {
       for (int k = 0; k < kinSize; ++k) {
@@ -286,7 +292,8 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
 				     hCCjb_MCttzFrac->GetBinContent(CCbins.jb(j-1, 0))
 				     );
 	}
-  	fprintf(outFile, " %1d %1d %1d||%7d|%7d|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f\n", j, b, k,
+  	// fprintf(outFile, " %1d %1d %1d||%7d|%7d|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f\n", j, b, k,
+  	sprintf(linebuf, " %1d %1d %1d||%7d|%7d|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f\n", j, b, k,
 		(int) hCC_zmm->GetBinContent(binCC),
 		(int) hCC_zee->GetBinContent(binCC),
 		Fextrap.at(binCC - 1),
@@ -298,9 +305,11 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
 		systKin.at(b),
 		DYpurSys.at(binCCjb - 1)
 		);
+	outFile << linebuf;
       }
     }
   }
-  fclose(outFile);
+  outFile.close();
+  // fclose(outFile);
 
 }

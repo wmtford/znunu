@@ -87,6 +87,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   puWeight = 1;  // overridden from tree if isMC_
   Weight = 1;  // overridden from tree if isMC_
   TrueNumInteractions = 20;  // overridden from tree if isMC_
+  NonPrefiringProb = 1;  // overridden from tree if isMC_
   RA2bin = 0;  // overridden from tree if isSkim_
   NElectrons = 0;  // overridden from tree if >=V15
   NMuons = 0;  // overridden from tree if >=V15
@@ -178,6 +179,11 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   activeBranches_.push_back("BadChargedCandidateFilter");
   activeBranches_.push_back("BadPFMuonFilter");
   activeBranches_.push_back("PFCaloMETRatio");
+  activeBranches_.push_back("METRatioFilter");
+  activeBranches_.push_back("EcalNoiseJetFilter");
+  activeBranches_.push_back("HTRatioDPhiFilter");
+  activeBranches_.push_back("HTRatioFilter");
+
   activeBranches_.push_back("nAllVertices");
   if (isMC_) {
     activeBranches_.push_back("puWeight");
@@ -187,6 +193,9 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
     activeBranches_.push_back("GenMuons");
     activeBranches_.push_back("GenElectrons");
     activeBranches_.push_back("GenTaus");
+    activeBranches_.push_back("NonPrefiringProb");
+    activeBranches_.push_back("NonPrefiringProbUp");
+    activeBranches_.push_back("NonPrefiringProbDn");
   }
 
   // For now we have only 2016 correction files
@@ -360,24 +369,41 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
   // }
 
   if (ntupleVersion_ == "V12" || ntupleVersion_ == "V15")
-    commonCuts_ = "globalTightHalo2016Filter==1";
+    commonCuts_ =    "globalTightHalo2016Filter==1";
   else
-    commonCuts_ = "globalSuperTightHalo2016Filter==1";
-  commonCuts_ += " && HBHENoiseFilter==1 && HBHEIsoNoiseFilter==1 && EcalDeadCellTriggerPrimitiveFilter==1 && BadChargedCandidateFilter && BadPFMuonFilter && NVtx > 0";
-  if (ntupleVersion_ != "V12") commonCuts_ += " && ecalBadCalibFilter==1";  // Added for 94X
-  if (!isMC_) commonCuts_ += " && eeBadScFilter==1";
+    commonCuts_ =    "globalSuperTightHalo2016Filter==1";
+  commonCuts_ += " && HBHENoiseFilter==1";
+  commonCuts_ += " && HBHEIsoNoiseFilter==1"; 
+  commonCuts_ += " && EcalDeadCellTriggerPrimitiveFilter==1";
+  commonCuts_ += " && BadChargedCandidateFilter";
+  commonCuts_ += " && BadPFMuonFilter";
+  commonCuts_ += " && NVtx > 0";
+  if (ntupleVersion_ != "V12")
+    // commonCuts_ += " && ecalBadCalibFilter==1";  // Added for 94X
+  if (!isMC_)
+    commonCuts_ += " && eeBadScFilter==1";
   // Kevin Pedro, re V16:  Please note that I have included only the JetID "event cleaning" cut in these skims. 
   // The PFCaloMETRatio, HT5/HT, and noMuonJet cuts are left out,
   // so the impact of these cuts can be tested and refined if necessary.
   if (isSkim_ && ntupleVersion_ == "V16") {
-    commonCuts_ += " && PFCaloMETRatio < 5";
-    commonCuts_ += " && HT5/HT <= 2";
+    commonCuts_ += " && METRatioFilter";
+    if (!isMC_ && runBlock_.find("2017") != std::string::npos)
+      commonCuts_ += " && EcalNoiseJetFilter";
+    if (era_ == "2016")
+      commonCuts_ += " && HTRatioFilter";
+    else
+      commonCuts_ += " && HTRatioDPhiFilter";
+      // Commoncuts_ += " && HT5/HT <= (DeltaPhi1 - (-0.5875))/1.025";
+      // above implements "DeltaPhi1 >= 1.025*HT5/HT - 0.5875", avoiding "+" and "*" for regexp;
     // commonCuts_ += " && noMuonJet";  // Defined in loop, applied in skimming (xV16), single lepton
   }
   if (!isSkim_) {
     commonCuts_ += " && JetIDclean";
     commonCuts_ += " && PFCaloMETRatio < 5";
-    commonCuts_ += " && HT5clean/HTclean <= 2";
+    if (era_ == "2016")
+      commonCuts_ += " && HT5clean/HTclean <= 2";
+    else
+      commonCuts_ += " && HT5clean/HTclean <= (DeltaPhi1clean - (-0.5875))/1.025";
     // commonCuts_ += " && noMuonJet";  // Defined in loop, applied in skimming (xV16), single lepton
     // commonCuts_ += " && noFakeJet";  // Defined in loop, applied in skimming FastSim
   }
@@ -528,18 +554,22 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 
     // Compute event weight factors
     Double_t eventWt = 1;
+    Double_t MCwt = 1;
     Double_t PUweight = 1;
-    if (applyPuWeight_) {
-      if (customPuWeight_ && puHist_ != nullptr) {
-	// This PU weight recipe from Kevin Pedro, https://twiki.cern.ch/twiki/bin/viewauth/CMS/RA2b13TeVProduction
-	PUweight = puHist_->GetBinContent(puHist_->GetXaxis()->FindBin(min(TrueNumInteractions, puHist_->GetBinLowEdge(puHist_->GetNbinsX()+1))));
-      } else
-	PUweight = puWeight;  // Take puWeight directly from the tree
-    }
-
+    Double_t NoPrefireWt = 1.;
     if (isMC_) {
-      eventWt = 1000*intLumi_*Weight*PUweight;
-      if (eventWt < 0) eventWt *= -1;
+      MCwt = 1000*intLumi_*Weight;  if (MCwt < 0) MCwt *= -1;
+      if (applyPuWeight_) {
+	if (customPuWeight_ && puHist_ != nullptr) {
+	  // This PU weight recipe from Kevin Pedro, https://twiki.cern.ch/twiki/bin/viewauth/CMS/RA2b13TeVProduction
+	  PUweight = puHist_->GetBinContent(puHist_->GetXaxis()->FindBin(min(TrueNumInteractions, puHist_->GetBinLowEdge(puHist_->GetNbinsX()+1))));
+	} else
+	  PUweight = puWeight;  // Take puWeight directly from the tree
+	MCwt *= PUweight;
+      }
+      if (runBlock_.find("2016")!=std::string::npos || runBlock_.find("2017")!=std::string::npos) NoPrefireWt = NonPrefiringProb;
+      MCwt *= NoPrefireWt;
+      eventWt *= MCwt;
     }
 
     // Trigger requirements
@@ -624,7 +654,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 
   histConfig hFilterCuts;
   hFilterCuts.name = TString("hFilterCuts_") + sample;  hFilterCuts.title = "Filter cuts";
-  hFilterCuts.NbinsX = 15;  hFilterCuts.rangeX.first = 0;  hFilterCuts.rangeX.second = 15;
+  hFilterCuts.NbinsX = 16;  hFilterCuts.rangeX.first = 0;  hFilterCuts.rangeX.second = 16;
   hFilterCuts.axisTitles.first = "";  hFilterCuts.axisTitles.second = "Events failing";
   hFilterCuts.filler1D = &RA2bZinvAnalysis::fillFilterCuts;
   hFilterCuts.omitCuts.push_back(&commonCuts_);
@@ -1122,7 +1152,12 @@ RA2bZinvAnalysis::fillFilterCuts(TH1D* h, double wt) {
   if (!isMC_ && !(ecalBadCalibFilter==1)) h->Fill(10.5, wt);
   if (!(JetID)) h->Fill(12.5, wt);
   if (!(PFCaloMETRatio < 5)) h->Fill(13.5, wt);
-  if (!(HT5/HT <= 2)) h->Fill(14.5, wt);
+  if (era_ == "2016" && !(HT5/HT <= 2))
+    h->Fill(14.5, wt);
+  else if (!(DeltaPhi1 >= 1.025*HT5/HT - 0.5875))
+    h->Fill(14.5, wt);
+  if (isSkim_ && ntupleVersion_ == "V16" && runBlock_.find("2017") != std::string::npos && !EcalNoiseJetFilter)
+    h->Fill(15.5, wt);
 
 }  // ======================================================================================
 
@@ -1287,7 +1322,7 @@ RA2bZinvAnalysis::fillCutMaps() {
       objCutMap_["zee"] = "1";
       objCutMap_["zll"] = "((NMuons==2 && NElectrons==0 && isoElectronTracks==0 && isoPionTracks==0) || (NMuons==0 && NElectrons==2 && isoMuonTracks==0 && isoPionTracks==0))";
       // photon skim cuts:  "Sum$(Photons_fullID)==1 && NMuons==0 && NElectrons==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0"
-      objCutMap_["photon"] = "@Photons.size()==1 && Sum$(Photons_nonPrompt)==0 && Photons_hasPixelSeed==0";  // Andrew recommendation, no skim cuts
+      objCutMap_["photon"] = "@Photons.size()==1 && Sum$(Photons_nonPrompt)==0";  // Andrew recommendation, no skim cuts
       // objCutMap_["photonqcd"] = "Sum$(Photons_nonPrompt)!=0 && @Photons.at(0).Pt()>=200 && NMuons==0 && NElectrons==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";
       objCutMap_["photonqcd"] = "Sum$(Photons_nonPrompt)!=0 && NMuons==0 && NElectrons==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";  // Troy mod+
       objCutMap_["ttz"] = "NMuons==0 && NElectrons==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0 && (@GenMuons.size()==0 && @GenElectrons.size()==0 && @GenTaus.size()==0)";
@@ -1449,7 +1484,7 @@ RA2bZinvAnalysis::setBTags() {
   Int_t BTagsOrig = BTags;
   if (useDeepCSV_) {
     BTags = BTagsDeepCSV;
-  } else if (ntupleVersion_ == "V15" && runBlock_.find("2016")==std::string::npos) {
+  } else if (ntupleVersion_ == "V15" && runBlock_.find("2016") == std::string::npos) {
     // Recompute BTags with a different discriminator threshold
     BTags = 0;
     for (size_t j = 0; j < Jets->size(); ++j) {
@@ -1488,8 +1523,9 @@ RA2bZinvAnalysis::cutHistos::setAxisLabels(TH1D* hcf) {
     hcf->GetXaxis()->SetBinLabel(11, "11 ecalBadCal");
     hcf->GetXaxis()->SetBinLabel(12, "12");
     hcf->GetXaxis()->SetBinLabel(13, "13 JetID");
-    hcf->GetXaxis()->SetBinLabel(14, "14 PFCaloMETR");
-    hcf->GetXaxis()->SetBinLabel(15, "15 HT5/HT");
+    hcf->GetXaxis()->SetBinLabel(14, "14 METRatio");
+    hcf->GetXaxis()->SetBinLabel(15, "15 HTdPhiRatio");
+    hcf->GetXaxis()->SetBinLabel(16, "16 EcalNoiseJet");
     hcf->GetXaxis()->LabelsOption("vu");
   }
   if (TString(hcf->GetName()).Contains(TString("hCut"))) {
@@ -1615,9 +1651,19 @@ RA2bZinvAnalysis::efficiencyAndPurity::getHistos(const char* sample) {
     if (hTrigEff_.back() == nullptr) cout << "***** Histogram h_trig_ec not found *****" << endl;
     // Sam-style trigger efficiency functions:
     fTrigEff_.push_back((TF1*) purityTrigEffFile_->Get("f_trig_eb"));
-    if (fTrigEff_.back() == nullptr) cout << "***** Histogram f_trig_eb not found *****" << endl;
+    if (fTrigEff_.back() == nullptr) {
+      cout << "***** Histogram f_trig_eb not found *****" << endl;
+    } else {
+      cout << "Asymptotic EB trigger efficiency = " << 1 + fTrigEff_[0]->GetParameter(0)
+	   << "+/-" << fTrigEff_[0]->GetParError(0) << endl;
+    }
     fTrigEff_.push_back((TF1*) purityTrigEffFile_->Get("f_trig_ec"));
-    if (fTrigEff_.back() == nullptr) cout << "***** Histogram f_trig_ec not found *****" << endl;
+    if (fTrigEff_.back() == nullptr) {
+      cout << "***** Histogram f_trig_ec not found *****" << endl;
+    } else {
+      cout << "Asymptotic EC trigger efficiency = " << 1 + fTrigEff_[1]->GetParameter(0)
+	   << "+/-" << fTrigEff_[1]->GetParError(0) << endl;
+    }
     hSFeff_ = (TH1F*) purityTrigEffFile_->Get("h_SFg_MHT");  // Maybe this should be h_NJets
     if (hSFeff_ == nullptr) cout << "***** Histogram h_MHT not found *****" << endl;
   }
@@ -1684,7 +1730,11 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
     if(EBphoton.at(0) == 0 && fTrigEff_[1] != nullptr) {
       effWt *= fTrigEff_[1]->Eval(max(double(205), Photons.at(0).Pt()));  // hard-wired cutoff
     }
-    // effWt /= min(HT, 900.0)*0.00009615+0.9071;  // FIXME:  hard-wired correction
+    // effWt /= (min(MHT, 900.0) - 397.4)*( -0.0005284 *2/3) + 0.8457;  // FIXME:  hard-wired correction
+    // effWt /= min(MHT, 900.0)*( -0.0005284) + 1.056;  // FIXME:  hard-wired correction
+    // Function parameter 0 (b):  1.05573811023 +/- 0.0477482811381
+    // Function parameter 1 (a):  -0.000528398892501 +/- 0.000117012474678
+    // Average y0 = 0.8457.  x0 = (y0 -b) / a
     if (hSFeff_ != nullptr) {
       Double_t mht = MHT >= hSFeff_->GetBinLowEdge(1) ? MHT : hSFeff_->GetBinLowEdge(1);
       int bin = hSFeff_->GetNbinsX();  while (mht < hSFeff_->GetBinLowEdge(bin)) bin--;

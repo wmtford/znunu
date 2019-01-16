@@ -31,7 +31,7 @@ def purityFits():
   lumiee = lumimm
   DataFileM = ROOT.TFile('../outputs/histsDY_2017v16.root')
   DataFileE = DataFileM
-  MCfile = ROOT.TFile('../outputs/histsDYMC_2017v16_noPUwt.root')
+  MCfile = ROOT.TFile('../outputs/histsDYMC_2017v16.root')
   # MCscaleM = lumimm/35.9
   # MCscaleE = lumiee/35.9
   

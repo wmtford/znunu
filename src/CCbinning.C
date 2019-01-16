@@ -43,12 +43,12 @@ era_(era), deltaPhi_(deltaPhi) {
     JbThresholds_.push_back({9, 0, 1, 2, 3});
 
   } else if (era_ == TString("Run2")) {
-    // From Alexx Perloff SUSY talk, 5 Dec 2018
-    kinThresholds_.push_back({300, 300, 700, 1200});  // mht threshold, {ht thresholds}
-    kinThresholds_.push_back({350, 350, 700, 1200});
-    kinThresholds_.push_back({600, 500, 1000});
-    kinThresholds_.push_back({850, 750, 1700});
-    kinThresholds_.push_back({250, 300, 500, 1000}); // QCD control bins
+    // From Alexx Perloff RA2b talk, 8 Jan 2019
+    kinThresholds_.push_back({300, 300, 600, 1200});  // mht threshold, {ht thresholds}
+    kinThresholds_.push_back({350, 350, 600, 1200});
+    kinThresholds_.push_back({600, 600, 1200});
+    kinThresholds_.push_back({850, 850, 1700});
+    kinThresholds_.push_back({250, 300, 600, 1200}); // QCD control bins
 
     jbThresholds_.push_back({2, 0, 1, 2});  // NJets threshold, {Nb thresholds}
     jbThresholds_.push_back({4, 0, 1, 2, 3});
@@ -127,6 +127,7 @@ era_(era), deltaPhi_(deltaPhi) {
 int
 CCbinning::kinBin(double& ht, double& mht) {
   int theBin = -1;
+  if (era_ == "Run2" && mht > ht) return theBin;
   int NmhtBins = kinThresholds_.size() - 1;
   if (deltaPhi_ != TString("nominal")) {
     // ldp or hdp

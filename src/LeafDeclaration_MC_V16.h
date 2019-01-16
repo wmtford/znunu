@@ -367,6 +367,15 @@
    Double_t        TrueNumInteractions;
    Double_t        Weight;
    vector<TLorentzVector> *ZCandidates;
+   Double_t        NonPrefiringProb;
+   Double_t        NonPrefiringProbUp;
+   Double_t        NonPrefiringProbDn;
+   Bool_t          METRatioFilter;
+   Bool_t          MuonJetFilter;
+   Bool_t          FakeJetFilter;
+   Bool_t          EcalNoiseJetFilter;
+   Bool_t          HTRatioFilter;
+   Bool_t          HTRatioDPhiFilter;
    UInt_t          RA2bin;
    vector<unsigned int> *RA2bins;
 
@@ -734,6 +743,15 @@
    TBranch        *b_TrueNumInteractions;   //!
    TBranch        *b_Weight;   //!
    TBranch        *b_ZCandidates;   //!
+   TBranch        *b_prob;   //!
+   TBranch        *b_probup;   //!
+   TBranch        *b_probdn;   //!
+   TBranch        *b_METRatioFilter;   //!
+   TBranch        *b_MuonJetFilter;   //!
+   TBranch        *b_FakeJetFilter;   //!
+   TBranch        *b_EcalNoiseJetFilter;   //!
+   TBranch        *b_HTRatioFilter;   //!
+   TBranch        *b_HTRatioDPhiFilter;   //!
    TBranch        *b_RA2binBranch;   //!
    TBranch        *b_RA2bins;   //!
 
@@ -1334,6 +1352,15 @@
    fChain->SetBranchAddress("TrueNumInteractions", &TrueNumInteractions, &b_TrueNumInteractions);
    fChain->SetBranchAddress("Weight", &Weight, &b_Weight);
    fChain->SetBranchAddress("ZCandidates", &ZCandidates, &b_ZCandidates);
+   fChain->SetBranchAddress("NonPrefiringProb", &NonPrefiringProb, &b_prob);
+   fChain->SetBranchAddress("NonPrefiringProbUp", &NonPrefiringProbUp, &b_probup);
+   fChain->SetBranchAddress("NonPrefiringProbDn", &NonPrefiringProbDn, &b_probdn);
+   fChain->SetBranchAddress("METRatioFilter", &METRatioFilter, &b_METRatioFilter);
+   fChain->SetBranchAddress("MuonJetFilter", &MuonJetFilter, &b_MuonJetFilter);
+   fChain->SetBranchAddress("FakeJetFilter", &FakeJetFilter, &b_FakeJetFilter);
+   fChain->SetBranchAddress("EcalNoiseJetFilter", &EcalNoiseJetFilter, &b_EcalNoiseJetFilter);
+   fChain->SetBranchAddress("HTRatioFilter", &HTRatioFilter, &b_HTRatioFilter);
+   fChain->SetBranchAddress("HTRatioDPhiFilter", &HTRatioDPhiFilter, &b_HTRatioDPhiFilter);
    fChain->SetBranchAddress("RA2bin", &RA2bin, &b_RA2binBranch);
    fChain->SetBranchAddress("RA2bins", &RA2bins, &b_RA2bins);
    /* Notify(); */

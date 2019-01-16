@@ -20,11 +20,18 @@ if len(sys.argv) > 1:
         doSample.append(sys.argv[i])
 else:
     ## default runs over all 
-    doSample = ['sig','hdp','ldp']
+    # doSample = ['sig','hdp','ldp']
+    doSample = ['sig']
 #################################################
 
 haveHistograms = True
 runBlock = "2017"
+if (runBlock is "2016"):
+    iPeriod = 5
+elif (runBlock is "2017"):
+    iPeriod = 6
+elif (runBlock is "2018"):
+    iPeriod = 8
 
 DYkfactor = 1.23
 
@@ -75,13 +82,14 @@ for sample in doSample:
             mcLumiRatio_ee = 1
             mcLumiRatio_photon = 1
         elif (runBlock is "2017"):
-            dataZllFile = ROOT.TFile('../outputs/histsDY_2017v15_DR0b.root')
-            dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_2017v15_DR0b.root')
-            mcZllFile = ROOT.TFile('../outputs/histsDYMC_2016v12_sf.root')
-            mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2016v12_sf.root')
-            mcLumiRatio_mm = 41.5/39.5
-            mcLumiRatio_ee = 41.5/39.5
-            mcLumiRatio_photon = 41.5/39.5
+            dataZllFile = ROOT.TFile('../outputs/histsDY_2017v16.root')
+            dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_2017v16.root')
+            mcZllFile = ROOT.TFile('../outputs/histsDYMC_2017v16.root')
+            mcPhotonFile = ROOT.TFile('../src/histsGjets.root')
+            # mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2017v16.root')
+            mcLumiRatio_mm = 1
+            mcLumiRatio_ee = 1
+            mcLumiRatio_photon = 1
         histoNJets['pho_da'] = dataPhotonFile.Get("hNJets_DR_photon")
         histoNJets['pho_cg'] = histoNJets['pho_da'].Clone()
         for i in range(1, histoNJets['pho_cg'].GetNbinsX()+1):
@@ -151,7 +159,7 @@ for sample in doSample:
         binMeans['HT'] = binMeanHT
 
         ## get the double ratio plots with values and uncertainties
-        dr_out = RA2b.getDoubleRatioPlot([nj_dr,mht_dr,ht_dr], binMeans = binMeans)
+        dr_out = RA2b.getDoubleRatioPlot([nj_dr, mht_dr, ht_dr], binMeans = binMeans, iPeriod = iPeriod)
 
     # raw_input("Press the <ENTER> key to continue...")
     if (sample == "sig"):
@@ -217,8 +225,8 @@ for sample in doSample:
         
     h_pur_m = effFile.Get("h_pur_m")
     h_pur_e = effFile.Get("h_pur_e")
-    h_trig_m = effFile.Get("h_trig_m1")    
-    h_trig_e = effFile.Get("h_trig_e1")    
+    h_trig_m = effFile.Get("h_trig_m")    
+    h_trig_e = effFile.Get("h_trig_e")    
     
     ## hard code the btag SF and error for now
     btagSF = 1.

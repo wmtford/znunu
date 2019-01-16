@@ -18,6 +18,7 @@ import histoZmassFits
 ROOT.gROOT.Reset()
 ROOT.gROOT.SetBatch(1)
 
+doPurityFits = False
 doRA2bFits = False
 
 ########## trigger effs from manuel ##############
@@ -38,25 +39,26 @@ trig_m_bins = array('d', [250, 2300])
 trig_e = [(0.998,0.002)]  # Alt. measurement [(0.996,0.003)]
 trig_e_bins = array('d', [250, 2300])
 
-########## run fits to get purity ################
-if (doRA2bFits):
-    fit_2j = []
-    fit_3to4j = []
-    fit_5jplus = []
+if (doPurityFits):
+    ########## run fits to get purity ################
+    if (doRA2bFits):
+        fit_2j = []
+        fit_3to4j = []
+        fit_5jplus = []
 
-    # nb=12 is nb>=2
-    for nb in [0,1,12]:
-        fit_2j.append(RA2b.getZmassFitPlot(bJetBin=nb,nJetBin=1,savePlot=True,plotMC=False))  # wtf
-        fit_3to4j.append(RA2b.getZmassFitPlot(bJetBin=nb,nJetBin=2,savePlot=True,plotMC=False))  # wtf
-        fit_5jplus.append(RA2b.getZmassFitPlot(bJetBin=nb,extraCuts='NJets>=5',savePlot=True,plotMC=False))  # wtf
-        # fit_2j.append(RA2b.getZmassFitPlot(bJetBin=nb,nJetBin=1,savePlot=True))
-        # fit_3to4j.append(RA2b.getZmassFitPlot(bJetBin=nb,nJetBin=2,savePlot=True))
-        # fit_5jplus.append(RA2b.getZmassFitPlot(bJetBin=nb,extraCuts='NJets>=5',savePlot=True))
+        # nb=12 is nb>=2
+        for nb in [0,1,12]:
+            fit_2j.append(RA2b.getZmassFitPlot(bJetBin=nb,nJetBin=1,savePlot=True,plotMC=False))  # wtf
+            fit_3to4j.append(RA2b.getZmassFitPlot(bJetBin=nb,nJetBin=2,savePlot=True,plotMC=False))  # wtf
+            fit_5jplus.append(RA2b.getZmassFitPlot(bJetBin=nb,extraCuts='NJets>=5',savePlot=True,plotMC=False))  # wtf
+            # fit_2j.append(RA2b.getZmassFitPlot(bJetBin=nb,nJetBin=1,savePlot=True))
+            # fit_3to4j.append(RA2b.getZmassFitPlot(bJetBin=nb,nJetBin=2,savePlot=True))
+            # fit_5jplus.append(RA2b.getZmassFitPlot(bJetBin=nb,extraCuts='NJets>=5',savePlot=True))
 
-    fits = [fit_2j,fit_3to4j,fit_5jplus,fit_5jplus,fit_5jplus]
-else:
-    fitjb = histoZmassFits.purityFits()  # use Z mass histograms from RA2bZinvAnalysis
-    fits = [fitjb[0], fitjb[1], fitjb[2], fitjb[2], fitjb[2]]
+        fits = [fit_2j,fit_3to4j,fit_5jplus,fit_5jplus,fit_5jplus]
+    else:
+        fitjb = histoZmassFits.purityFits()  # use Z mass histograms from RA2bZinvAnalysis
+        fits = [fitjb[0], fitjb[1], fitjb[2], fitjb[2], fitjb[2]]
 
 ########## get the scale factors files and extract histograms ################
 SFfile_m = ROOT.TFile("../plots/histograms/SFcorrections.Muons.root", "READ")
@@ -70,49 +72,50 @@ h_SF_e.SetName("h_SFe_MHT")
 effFile = ROOT.TFile("../plots/histograms/effHists.root","UPDATE")
 # effFile = ROOT.TFile("effHists.root","UPDATE")  # wtf
 
-######### set the purities found above ############
-h_pur_m = effFile.Get("h_pur_m")
-if (not h_pur_m):
-    h_pur_m = ROOT.TH1F("h_pur_m", "Zmm purities vs (Njet, Nb)", 19, .5, 19.5)
-h_pur_m.GetXaxis().SetTitle("(NJets, Nb) bin")
-h_pur_e = effFile.Get("h_pur_e")
-if (not h_pur_e):
-    h_pur_e = ROOT.TH1F("h_pur_e", "Zee purities vs (Njet, Nb)", 19, .5, 19.5)
-h_pur_e.GetXaxis().SetTitle("(NJets, Nb) bin")
+if (doPurityFits):
+    ######### set the purities found above ############
+    h_pur_m = effFile.Get("h_pur_m")
+    if (not h_pur_m):
+        h_pur_m = ROOT.TH1F("h_pur_m", "Zmm purities vs (Njet, Nb)", 19, .5, 19.5)
+    h_pur_m.GetXaxis().SetTitle("(NJets, Nb) bin")
+    h_pur_e = effFile.Get("h_pur_e")
+    if (not h_pur_e):
+        h_pur_e = ROOT.TH1F("h_pur_e", "Zee purities vs (Njet, Nb)", 19, .5, 19.5)
+    h_pur_e.GetXaxis().SetTitle("(NJets, Nb) bin")
 
-Bin = 1
-for nj in range(1,6):
-    for nb in range(4):
-        if(nb==3):
-            if(nj==1):
-                continue
+    Bin = 1
+    for nj in range(1,6):
+        for nb in range(4):
+            if(nb==3):
+                if(nj==1):
+                    continue
+                else:
+                    h_pur_m.SetBinContent(Bin,fits[nj-1][nb-1][0][0])
+                    h_pur_m.SetBinError(Bin,fits[nj-1][nb-1][0][1])
+                    h_pur_e.SetBinContent(Bin,fits[nj-1][nb-1][1][0])
+                    h_pur_e.SetBinError(Bin,fits[nj-1][nb-1][1][1])
             else:
-                h_pur_m.SetBinContent(Bin,fits[nj-1][nb-1][0][0])
-                h_pur_m.SetBinError(Bin,fits[nj-1][nb-1][0][1])
-                h_pur_e.SetBinContent(Bin,fits[nj-1][nb-1][1][0])
-                h_pur_e.SetBinError(Bin,fits[nj-1][nb-1][1][1])
-        else:
-            h_pur_m.SetBinContent(Bin,fits[nj-1][nb][0][0])
-            h_pur_m.SetBinError(Bin,fits[nj-1][nb][0][1])
-            h_pur_e.SetBinContent(Bin,fits[nj-1][nb][1][0])
-            h_pur_e.SetBinError(Bin,fits[nj-1][nb][1][1])
-        Bin+=1
-h_pur_m.Write(h_pur_m.GetName(),2)
-h_pur_e.Write(h_pur_e.GetName(),2)
+                h_pur_m.SetBinContent(Bin,fits[nj-1][nb][0][0])
+                h_pur_m.SetBinError(Bin,fits[nj-1][nb][0][1])
+                h_pur_e.SetBinContent(Bin,fits[nj-1][nb][1][0])
+                h_pur_e.SetBinError(Bin,fits[nj-1][nb][1][1])
+            Bin+=1
+    h_pur_m.Write(h_pur_m.GetName(),2)
+    h_pur_e.Write(h_pur_e.GetName(),2)
 
-zDict = {0: '\multirow{3}{*}{\zmm}',
-         1: '\multirow{3}{*}{\zee}',}
-njDict = {0: '& $\\njets=2$        ',
-          1: '& $3\leq\\njets\leq4$',
-          2: '& $\\njets\geq5$     ',}
-for lep in range(2):
-    print '\hline'
-    print zDict[lep],
-    for nj in range(3):
-        print njDict[nj],
-        for nb in range(3):
-            print " & $"+str(round(fits[nj][nb][lep][0],3))+'\pm'+str(round(fits[nj][nb][lep][1],3))+"$",
-        print " \\\\ "
+    zDict = {0: '\multirow{3}{*}{\zmm}',
+             1: '\multirow{3}{*}{\zee}',}
+    njDict = {0: '& $\\njets=2$        ',
+              1: '& $3\leq\\njets\leq4$',
+              2: '& $\\njets\geq5$     ',}
+    for lep in range(2):
+        print '\hline'
+        print zDict[lep],
+        for nj in range(3):
+            print njDict[nj],
+            for nb in range(3):
+                print " & $"+str(round(fits[nj][nb][lep][0],3))+'\pm'+str(round(fits[nj][nb][lep][1],3))+"$",
+            print " \\\\ "
 
 ######### set the trig effs from manuel ############
 h_trig_m = effFile.Get("h_trig_m")

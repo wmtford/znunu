@@ -4339,7 +4339,9 @@ def getDoubleRatioFit(hist, func, returnDiff=False):
     freeParsPairList = []
     size = func.GetNpar()
     covMatSize = 0
+    print str(hist.GetName())
     for ipar in range(size):
+        print "Function parameter "+str(ipar)+":  "+str(func.GetParameter(ipar))+" +/- "+str(func.GetParError(ipar))
         # Free params will have finite error
         if func.GetParError(ipar) > 0:
             covMatSize+=1

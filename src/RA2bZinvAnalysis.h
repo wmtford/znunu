@@ -188,6 +188,7 @@ private:
   Double_t        puWeight;
   Double_t        Weight;
   Double_t        TrueNumInteractions;
+  Double_t        NonPrefiringProb;
 
 #endif  // !ISMC
 
