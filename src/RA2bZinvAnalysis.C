@@ -609,8 +609,8 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 	int CCbin = CCbins_->jbk(CCbins_->jbin(NJets), CCbins_->bbin(NJets, BTags), CCbins_->kinBin(HT, MHT));
       	if (CCbin <= 0 || BTags > 0) continue;
       	// For double ratio, apply weights for purity, Fdir, trigger eff, reco eff.
-	effWt_ = effPurCorr_.weight(CCbins_, NJets, BTags, MHT, HT,
-				    *ZCandidates, *Photons, *Photons_isEB, applyDRfitWt_);
+	effWt_ = effPurCorr_.weight(CCbins_, NJets, BTags, MHT, HT, *ZCandidates, *Photons,
+				    *Electrons, *Muons, *Photons_isEB, applyDRfitWt_);
 	eventWt *= effWt_;
       }
 
@@ -1629,7 +1629,15 @@ void
 RA2bZinvAnalysis::efficiencyAndPurity::openFiles() {
   TString plotDir("../plots/histograms/");
   TString effs = "effHists.root";
+  TString path_photon = "2017_PhotonsLoose.root";
+  TString path_elec = "ElectronScaleFactors_Run2017.root";
+  TString path_muID = "RunBCDEF_Muon2017_SF_ID.root";
+  TString path_muIso = "SF_Muon2017_NUM_MiniIso02Cut_DEN_MediumID_PAR_pt_eta.root";
   purityTrigEffFile_ = new TFile((plotDir+effs).Data(), "read");
+  photonSFFile_ = new TFile((plotDir+path_photon).Data(), "read");
+  elecSFFile_ = new TFile((plotDir+path_elec).Data(), "read");
+  muonIDSFFile_ = new TFile((plotDir+path_muID).Data(), "read");
+  muonIsoSFFile_ = new TFile((plotDir+path_muIso).Data(), "read");
 
 }  // ======================================================================================
 
@@ -1637,7 +1645,8 @@ void
 RA2bZinvAnalysis::efficiencyAndPurity::getHistos(const char* sample) {
   // For purity, Fdir, trigger eff, reco eff
   theSample_ = TString(sample);
-  hSFeff_ = nullptr;
+  // hSFeff_ = nullptr;
+  hSFeff_.clear();
   FdirHist_ = nullptr;
   hPurity_.clear();
   hTrigEff_.clear();
@@ -1659,13 +1668,21 @@ RA2bZinvAnalysis::efficiencyAndPurity::getHistos(const char* sample) {
   } else if (theSample_.Contains("dymm")) {
     hTrigEff_.push_back((TH1F*) purityTrigEffFile_->Get("h_trig_m"));
     if (hTrigEff_.back() == nullptr) cout << "***** Histogram h_trig_m not found *****" << endl;
-    hSFeff_ = (TH1F*) purityTrigEffFile_->Get("h_SFm_MHT");
-    if (hSFeff_ == nullptr) cout << "***** Histogram h_MHT not found *****" << endl;
+    // hSFeff_ = (TH1F*) purityTrigEffFile_->Get("h_SFm_MHT");
+    // if (hSFeff_ == nullptr) cout << "***** Histogram h_MHT not found *****" << endl;
+    hSFeff_.push_back((TH2F*) muonIDSFFile_->Get("NUM_MediumID_DEN_genTracks_pt_abseta"));
+    if (hSFeff_.back() == nullptr) cout << "***** Histogram for muon ID SFs not found *****" << endl;
+    hSFeff_.push_back((TH2F*) muonIsoSFFile_->Get("TnP_MC_NUM_MiniIso02Cut_DEN_MediumID_PAR_pt_eta"));
+    if (hSFeff_.back() == nullptr) cout << "***** Histogram for muon iso SFs not found *****" << endl;
   } else if (theSample_.Contains("dyee")) {
     hTrigEff_.push_back((TH1F*) purityTrigEffFile_->Get("h_trig_e"));
     if (hTrigEff_.back() == nullptr) cout << "***** Histogram h_trig_e not found *****" << endl;
-    hSFeff_ = (TH1F*) purityTrigEffFile_->Get("h_SFe_MHT");  // Maybe this should be h_NJets
-    if (hSFeff_ == nullptr) cout << "***** Histogram h_MHT not found *****" << endl;
+    // hSFeff_ = (TH1F*) purityTrigEffFile_->Get("h_SFe_MHT");  // Maybe this should be h_NJets
+    // if (hSFeff_ == nullptr) cout << "***** Histogram h_MHT not found *****" << endl;
+    hSFeff_.push_back((TH2F*) elecSFFile_->Get("Run2017_CutBasedVetoNoIso94XV2"));
+    if (hSFeff_.back() == nullptr) cout << "***** Histogram for electron ID SFs not found *****" << endl;
+    hSFeff_.push_back((TH2F*) elecSFFile_->Get("Run2017_MVAVLooseTightIP2DMini"));
+    if (hSFeff_.back() == nullptr) cout << "***** Histogram for electron iso SFs not found *****" << endl;
   } else if (theSample_.Contains("gjets")) {
     // Troy-style trigger efficiency histograms:
     hTrigEff_.push_back((TH1F*) purityTrigEffFile_->Get("h_trig_eb"));
@@ -1687,8 +1704,10 @@ RA2bZinvAnalysis::efficiencyAndPurity::getHistos(const char* sample) {
       cout << "Asymptotic EC trigger efficiency = " << 1 + fTrigEff_[1]->GetParameter(0)
 	   << "+/-" << fTrigEff_[1]->GetParError(0) << endl;
     }
-    hSFeff_ = (TH1F*) purityTrigEffFile_->Get("h_SFg_MHT");  // Maybe this should be h_NJets
-    if (hSFeff_ == nullptr) cout << "***** Histogram h_MHT not found *****" << endl;
+    // hSFeff_ = (TH1F*) purityTrigEffFile_->Get("h_SFg_MHT");  // Maybe this should be h_NJets
+    // if (hSFeff_ == nullptr) cout << "***** Histogram h_MHT not found *****" << endl;
+    hSFeff_.push_back((TH2F*) photonSFFile_->Get("EGamma_SF2D"));
+    if (hSFeff_.back() == nullptr) cout << "***** Histogram for photon SFs not found *****" << endl;
   }
 
 }  // ======================================================================================
@@ -1698,6 +1717,8 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
 					      Double_t MHT, Double_t HT,
 					      vector<TLorentzVector> ZCandidates,
 					      vector<TLorentzVector> Photons,
+					      vector<TLorentzVector> Electrons,
+					      vector<TLorentzVector> Muons,
 					      vector<double> EBphoton,
 					      bool applyDRfitWt) {
   // For double ratio, apply weights for purity, Fdir, trigger eff, reco eff.
@@ -1732,11 +1753,37 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
       // int bin = hTrigEff_[0]->GetNbinsX();  while (ht < hTrigEff_[0]->GetBinLowEdge(bin)) bin--;
       effWt *= hTrigEff_[0]->GetBinContent(bin);
     }
-    if (hSFeff_ != nullptr) {
-      // Maybe this should be NJets for dyee:
-      Double_t mht = MHT >= hSFeff_->GetBinLowEdge(1) ? MHT : hSFeff_->GetBinLowEdge(1);
-      int bin = hSFeff_->GetNbinsX();  while (mht < hSFeff_->GetBinLowEdge(bin)) bin--;
-      effWt *= hSFeff_->GetBinContent(bin);
+    // if (hSFeff_ != nullptr) {
+    //   // Maybe this should be NJets for dyee:
+    //   Double_t mht = MHT >= hSFeff_->GetBinLowEdge(1) ? MHT : hSFeff_->GetBinLowEdge(1);
+    //   int bin = hSFeff_->GetNbinsX();  while (mht < hSFeff_->GetBinLowEdge(bin)) bin--;
+    //   effWt *= hSFeff_->GetBinContent(bin);
+    // }
+    if (hSFeff_[0] != nullptr && hSFeff_[1] != nullptr) {
+      float pt = 0; float eta = 0;
+      int globalbin_ID = 0; int globalbin_ISO = 0;
+
+      if (theSample_.Contains("ee")) {
+	int numElectrons = Electrons.size();
+	for (int i=0; i<numElectrons; i++){
+	  pt  = Electrons.at(i).Pt();
+	  eta = Electrons.at(i).Eta();
+	  if (pt>500) pt=499.9;
+	  globalbin_ID  = hSFeff_[0]->FindBin(eta,pt); globalbin_ISO = hSFeff_[1]->FindBin(eta,pt);
+	  effWt *= hSFeff_[0]->GetBinContent(globalbin_ID)*hSFeff_[1]->GetBinContent(globalbin_ISO);
+	}
+      }
+
+      else if (theSample_.Contains("mm")) {
+	int numMuons = Muons.size();
+	for (int i=0; i<numMuons; i++){
+	  pt = Muons.at(i).Pt();
+	  eta = fabs(Muons.at(i).Eta());
+	  if (pt>120) pt=119.9;
+	  globalbin_ID  = hSFeff_[0]->FindBin(pt,eta); globalbin_ISO = hSFeff_[1]->FindBin(pt,eta);
+	  effWt *= hSFeff_[0]->GetBinContent(globalbin_ID)*hSFeff_[1]->GetBinContent(globalbin_ISO);
+	}
+      }
     }
 
   } else if (theSample_.Contains("gjets")) {
@@ -1761,10 +1808,21 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
       // Function parameter 1:  -0.00050983094812 +/- 0.000112511842395
       // Average y0 = 0.8134.  x0 = (y0 -p0) / p1
     }
-    if (hSFeff_ != nullptr) {
-      Double_t mht = MHT >= hSFeff_->GetBinLowEdge(1) ? MHT : hSFeff_->GetBinLowEdge(1);
-      int bin = hSFeff_->GetNbinsX();  while (mht < hSFeff_->GetBinLowEdge(bin)) bin--;
-      effWt *= hSFeff_->GetBinContent(bin);
+    // if (hSFeff_ != nullptr) {
+    //   Double_t mht = MHT >= hSFeff_->GetBinLowEdge(1) ? MHT : hSFeff_->GetBinLowEdge(1);
+    //   int bin = hSFeff_->GetNbinsX();  while (mht < hSFeff_->GetBinLowEdge(bin)) bin--;
+    //   effWt *= hSFeff_->GetBinContent(bin);
+    // }
+    if (hSFeff_[0] != nullptr) {
+      float photon_pt = 0; float photon_eta = 0;
+      int globalbin_photon = 0;
+      int numPhotons = Photons.size();
+      for (int i=0; i<numPhotons; i++){
+	photon_pt = Photons.at(i).Pt(); photon_eta = Photons.at(i).Eta();
+	if (photon_pt>500) photon_pt=499.9;
+	globalbin_photon  = hSFeff_[0]->FindBin(photon_eta,photon_pt);
+	effWt *= hSFeff_[0]->GetBinContent(globalbin_photon);
+      }
     }
   }
   return effWt;

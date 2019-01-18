@@ -9,7 +9,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #define VERSION 16
-/* #define ISMC */
+#define ISMC
 #define ISSKIM
 
 #include "CCbinning.h"
@@ -104,14 +104,21 @@ public:
     double weight(CCbinning* CCbins, Int_t NJets, Int_t BTags, Double_t MHT, Double_t HT,
 		  vector<TLorentzVector> ZCandidates,
 		  vector<TLorentzVector> Photons,
+		  vector<TLorentzVector> Electrons,
+		  vector<TLorentzVector> Muons,
 		  vector<double> EBphoton,
 		  bool applyDRfitWt);
   private:
     TFile *purityTrigEffFile_;
+    TFile *photonSFFile_;
+    TFile *elecSFFile_;
+    TFile *muonIDSFFile_;
+    TFile *muonIsoSFFile_;
     TString theSample_;
     std::vector<TH1F*> hPurity_, hTrigEff_;
     std::vector<TF1*> fTrigEff_;
-    TH1F* hSFeff_;
+    /* TH1F* hSFeff_; */
+    std::vector<TH2F*> hSFeff_;
     TH1D* FdirHist_;
     /* TGraphErrors* FdirGraph_; */
   };

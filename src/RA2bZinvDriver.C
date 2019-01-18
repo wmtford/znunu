@@ -15,18 +15,19 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
 
   bool doHzvv = false;
   bool doHttzvv = false;
-  bool doHzmm = true;
-  bool doHzee = true;
+  bool doHzmm = false;
+  bool doHzee = false;
   bool doHphoton = false;
-  bool doHdymm = false;
-  bool doHdyee = false;
-  bool doHttzmm = false;
-  bool doHttzee = false;
-  bool doHVVmm = false;
-  bool doHVVee = false;
-  bool doHttmm = false;
-  bool doHttee = false;
+  bool doHdymm = true;
+  bool doHdyee = true;
+  bool doHttzmm = true;
+  bool doHttzee = true;
+  bool doHVVmm = true;
+  bool doHVVee = true;
+  bool doHttmm = true;
+  bool doHttee = true;
   bool doHgjets = false;
+  bool doHgjetsqcd = false;
   const std::string makeClassSample = "";  // Must be compatible with compiler directives
   bool doListTrigPrescales = false;
   const std::string dumpSelEvIDsample("");
@@ -191,14 +192,17 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
     histoOutFile->Write();
   }
 
-  if (doHgjets) {
+  if (doHgjets || doHgjetsqcd) {
     fnstr = "histsGjets";  fnstr += runBlock + ".root";
     char* outfn = new char[fnstr.length()+1];  std::strcpy (outfn, fnstr.c_str());
     TFile *histoOutFile = TFile::Open(outfn, "RECREATE");
-    std::vector<TH1*> h_gJets = analyzer.makeHistograms("gjets");
-    for (auto& theHist : h_gJets) {
-      theHist->Print();
-      theHist->Draw();
+    if (doHgjets) {
+      std::vector<TH1*> h_gJets = analyzer.makeHistograms("gjets");
+      for (auto& theHist : h_gJets) {theHist->Print();  theHist->Draw();}
+    }
+    if (doHgjetsqcd) {
+      std::vector<TH1*> h_gjetsqcd = analyzer.makeHistograms("gjetsqcd");
+      for (auto& theHist : h_gjetsqcd) {theHist->Print();  theHist->Draw();}
     }
     histoOutFile->Write();
   }
