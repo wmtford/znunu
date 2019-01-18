@@ -18,10 +18,17 @@ fScaleE = 1
 fScaleP = 1
 MZmmMax = 0
 MZeeMax = 0
+setMin = None
+setMax = None
 ratioMin = None
 ratioMax = None
 
 legList = []
+# legCoordsDefault = [0.6,0.6,0.89,0.89]
+legCoordsDefault = [0.68,0.6,0.89,0.89]
+drawText = False
+textCoordsDefault = [0.35,0.75,.55,.88]
+
 reaction = -1
 
 hists = []
@@ -110,33 +117,59 @@ else:
   DfilePhoton = ROOT.TFile('../outputs/histsGjets_2017v16.root')
 if (doMumu):
   reaction += 1
-  legList.append(['Z#mu#mu 2017 data V16','        2017 MC V16'])
+  legend = []
   histnamesN = ["hHT_zmm", "hMHT_zmm", "hNJets_zmm", "hBTags_zmm", "hZmass_zmm", "hZpt_zmm", "hMuonEta_zmm", "hVertices_zmm", "hCC_zmm"]
+  legend.append('Z#mu#mu 2017 data V16')
   # histnamesD = histnamesN
-  histnamesD = ["hHT_dymm", "hMHT_dymm", "hNJets_dymm", "hBTags_dymm", "hZmass_dymm", "hZpt_dymm", "hMuonEta_dymm", "hVertices_dymm", "hCC_dymm"]
+  histnamesD = []
+  histnamesD.append(["hHT_ttmm", "hMHT_ttmm", "hNJets_ttmm", "hBTags_ttmm", "hZmass_ttmm", "hZpt_ttmm", "hMuonEta_ttmm", "hVertices_ttmm", "hCC_ttmm"])
+  legend.append('        ttbar')
+  histnamesD.append(["hHT_VVmm", "hMHT_VVmm", "hNJets_VVmm", "hBTags_VVmm", "hZmass_VVmm", "hZpt_VVmm", "hMuonEta_VVmm", "hVertices_VVmm", "hCC_VVmm"])
+  legend.append('        VV')
+  histnamesD.append(["hHT_ttzmm", "hMHT_ttzmm", "hNJets_ttzmm", "hBTags_ttzmm", "hZmass_ttzmm", "hZpt_ttzmm", "hMuonEta_ttzmm", "hVertices_ttzmm", "hCC_ttzmm"])
+  legend.append('        ttZ')
+  histnamesD.append(["hHT_dymm", "hMHT_dymm", "hNJets_dymm", "hBTags_dymm", "hZmass_dymm", "hZpt_dymm", "hMuonEta_dymm", "hVertices_dymm", "hCC_dymm"])
+  legend.append('        DY')
   # histnames = ["hHT_DR_zmm", "hMHT_DR_zmm", "hNJets_DR_zmm"]
   filehistsM['N'] = (NfileZll, histnamesN)
   filehistsM['D'] = (DfileZll, fScaleM, histnamesD)
   hists.append(filehistsM)
+  legList.append(legend)
 if (doEe):
   reaction += 1
-  legList.append(['Zee 2017 data V16','       2017 MC V16'])
+  legend = []
   histnamesN = ["hHT_zee", "hMHT_zee", "hNJets_zee", "hBTags_zee", "hZmass_zee", "hZpt_zee", "hElectronEta_zee", "hVertices_zee", "hCC_zee"]
+  legend.append('Zee 2017 data V16')
   # histnamesD = histnamesN
-  histnamesD = ["hHT_dyee", "hMHT_dyee", "hNJets_dyee", "hBTags_dyee", "hZmass_dyee", "hZpt_dyee", "hElectronEta_dyee", "hVertices_dyee", "hCC_dyee"]
+  histnamesD = []
+  histnamesD.append(["hHT_ttee", "hMHT_ttee", "hNJets_ttee", "hBTags_ttee", "hZmass_ttee", "hZpt_ttee", "hElectronEta_ttee", "hVertices_ttee", "hCC_ttee"])
+  legend.append('        ttbar')
+  histnamesD.append(["hHT_VVee", "hMHT_VVee", "hNJets_VVee", "hBTags_VVee", "hZmass_VVee", "hZpt_VVee", "hElectronEta_VVee", "hVertices_VVee", "hCC_VVee"])
+  legend.append('        VV')
+  histnamesD.append(["hHT_ttzee", "hMHT_ttzee", "hNJets_ttzee", "hBTags_ttzee", "hZmass_ttzee", "hZpt_ttzee", "hElectronEta_ttzee", "hVertices_ttzee", "hCC_ttzee"])
+  legend.append('        ttZ')
+  histnamesD.append(["hHT_dyee", "hMHT_dyee", "hNJets_dyee", "hBTags_dyee", "hZmass_dyee", "hZpt_dyee", "hElectronEta_dyee", "hVertices_dyee", "hCC_dyee"])
+  legend.append('        DY')
   # histnames = ["hHT_DR_zee", "hMHT_DR_zee", "hNJets_DR_zee"]
   filehistsE['N'] = (NfileZll, histnamesN)
   filehistsE['D'] = (DfileZll, fScaleE, histnamesD)
   hists.append(filehistsE)
+  legList.append(legend)
 if (doPhoton):
   reaction += 1
-  legList.append(['#gamma+jets 2017 data V16','           2017 MC V16'])
+  legend = []
   histnamesN = ["hHT_photon", "hMHT_photon", "hNJets_photon", "hBTags_photon", "hPhotonPt_photon", "hPhotonEta_photon", "hVertices_photon", "hCC_photon"]
-  histnamesD = ["hHT_gjets", "hMHT_gjets", "hNJets_gjets", "hBTags_gjets", "hPhotonPt_gjets", "hPhotonEta_gjets", "hVertices_gjets", "hCC_gjets"]
+  legend.append('#gamma incl. 2017 data V16')
+  histnamesD = []
+  histnamesD.append(["hHT_gjetsqcd", "hMHT_gjetsqcd", "hNJets_gjetsqcd", "hBTags_gjetsqcd", "hPhotonPt_gjetsqcd", "hPhotonEta_gjetsqcd", "hVertices_gjetsqcd", "hCC_gjetsqcd"])
+  legend.append('QCD')
+  histnamesD.append(["hHT_gjets", "hMHT_gjets", "hNJets_gjets", "hBTags_gjets", "hPhotonPt_gjets", "hPhotonEta_gjets", "hVertices_gjets", "hCC_gjets"])
+  legend.append('#gamma+jets')
   # histnames = ["hHT_DR_photon", "hMHT_DR_photon", "hNJets_DR_photon"]
   filehistsP['N'] = (NfilePhoton, histnamesN)
   filehistsP['D'] = (DfilePhoton, fScaleP, histnamesD)
   hists.append(filehistsP)
+  legList.append(legend)
 
 #  ========================================================================================
 
@@ -185,11 +218,14 @@ for samples in hists:
     print str(nhName)
     hNumer = Nfile.Get(nhName)
     hNumer.SetName(str(nhName)+"N")
-    dhName = samples['D'][2][i]  # scale is stored in samples['D'][1]
-    print str(dhName)
-    hDen   = Dfile.Get(dhName)
-    hDen.SetName(str(dhName)+"D")
-    hDen.Scale(samples['D'][1])
+    hDenList = []
+    for c in range(len(samples['D'][2])):  # Denominator may have multiple components
+      dhName = samples['D'][2][c][i]  # scale is stored in samples['D'][1]
+      print str(dhName)
+      hDen = Dfile.Get(dhName)
+      hDen.SetName(str(dhName)+"D")
+      hDen.Scale(samples['D'][1])
+      hDenList.append(hDen)
     if ("hZmass" in nhName):
       doLogy = False
       if ("mm" in nhName and MZmmMax != 0):
@@ -198,12 +234,22 @@ for samples in hists:
         hNumer.SetMaximum(MZeeMax)
     else:
       doLogy = True
+    if ("Eta" in nhName and not "Photon" in nhName):
+      setMin = 1
+      legCoords = [0.6,0.6,0.89,0.89]
+      # drawText = True
+      textCoords = [0.35,0.75,.55,.88]
+    else:
+      setMin = None
+      legCoords = legCoordsDefault
+      # drawText = True
+      textCoords = textCoordsDefault
     canvTuple = RA2b.getPlotAndRatio(
-      numHists=hNumer, denomHists=hDen, doRatio=True,
+      numHists=hNumer, denomHists=hDenList, doRatio=True,
       doLogy=doLogy, doCMSlumi=True, iPeriod=iPeriod, drawHorizontalLine=True,
       xTitle=hNumer.GetXaxis().GetTitle(), yTitle=hNumer.GetYaxis().GetTitle(),
-      ratioMin=ratioMin, ratioMax=ratioMax,
-      legList = legList[reaction]
+      ratioMin=ratioMin, ratioMax=ratioMax, setMin=setMin, setMax=setMax,
+      legList = legList[reaction], legCoords = legCoords, drawText = drawText, textCoords = textCoords
       )
     # For 174-bin plot
     # canvas = RA2b.getPlotAndRatio(

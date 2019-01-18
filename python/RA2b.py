@@ -3489,7 +3489,8 @@ def getPlotAndRatio(numHists, denomHists=None, bottomPlots=None, doStack=None, T
     if(legCoords==None):
         legCoords = [0.6,0.6,0.89,0.89]
     if(textCoords==None):
-        textCoords = [0.20,0.70,.40,.83]
+        textCoords = [0.35,0.75,.55,.88]  # wtf
+        # textCoords = [0.20,0.70,.40,.83]
     if(canvasSize==None):
         canvasSize = [900,600]
     if(canvasName==None):
@@ -3883,7 +3884,7 @@ def getPlotAndRatio(numHists, denomHists=None, bottomPlots=None, doStack=None, T
         Max*=1.2
         if(doStack==True): # goofy ROOT THStack max min issue
             hs.SetMinimum(Min)
-            hs.SetMaximum(Max/(1+ROOT.gStyle.GetHistTopMargin()))
+            # hs.SetMaximum(Max/(1+ROOT.gStyle.GetHistTopMargin()))  # wtf causes a segv
 
     
     denomHist.SetMinimum(Min)
@@ -3926,7 +3927,7 @@ def getPlotAndRatio(numHists, denomHists=None, bottomPlots=None, doStack=None, T
                 continue
             if(i>=len(numHists)):
                 if(doStack==True):
-                    leg.AddEntry(denomHists[i-len(denomHists)], legList[i],'f')
+                    leg.AddEntry(denomHists[i-len(numHists)], legList[i],'f')  # wtf
                 elif(drawErrorBand==True):
                     leg.AddEntry(errorBandHist, legList[i], 'fl')
                 elif(denomDrawStyle=='HIST' or denomDrawStyle=='hist'):

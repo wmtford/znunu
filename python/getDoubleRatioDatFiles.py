@@ -85,8 +85,7 @@ for sample in doSample:
             dataZllFile = ROOT.TFile('../outputs/histsDY_2017v16.root')
             dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_2017v16.root')
             mcZllFile = ROOT.TFile('../outputs/histsDYMC_2017v16.root')
-            mcPhotonFile = ROOT.TFile('../src/histsGjets.root')
-            # mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2017v16.root')
+            mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2017v16.root')
             mcLumiRatio_mm = 1
             mcLumiRatio_ee = 1
             mcLumiRatio_photon = 1
