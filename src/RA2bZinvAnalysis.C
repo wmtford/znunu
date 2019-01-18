@@ -62,12 +62,13 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
     ("integrated luminosity", po::value<double>(&intLumi_))
     ("apply Z mass cut", po::value<bool>(&applyMassCut_))
     ("apply Z/gamma Pt cut", po::value<bool>(&applyPtCut_))
-    ("apply photon min Delta R cut", po::value<bool>(&applyMinDeltaRCut_))
     ("use analysis bin from tree", po::value<bool>(&useTreeCCbin_))
     ("use DeepCSV", po::value<bool>(&useDeepCSV_))
     ("apply b-tag SF", po::value<bool>(&applyBTagSF_))
     ("apply pileup weight", po::value<bool>(&applyPuWeight_))
     ("use custom pileup weight", po::value<bool>(&customPuWeight_))
+    ("apply double-ratio fit weight", po::value<bool>(&applyDRfitWt_))
+
     ;
   po::variables_map vm;
   std::ifstream cfi_file("RA2bZinvAnalysis.cfi");
@@ -192,6 +193,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
     activeBranches_.push_back("madMinPhotonDeltaR");
     activeBranches_.push_back("GenMuons");
     activeBranches_.push_back("GenElectrons");
+    activeBranches_.push_back("GenHT");
     activeBranches_.push_back("GenTaus");
     activeBranches_.push_back("NonPrefiringProb");
     activeBranches_.push_back("NonPrefiringProbUp");
@@ -220,13 +222,13 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   cout << "The path to input files is " << treeLoc_ << endl;
   cout << "The minDeltaPhi cuts are " << deltaPhi_ << endl;
   cout << "Apply Z/gamma Pt cut is " << applyPtCut_ << endl;
-  cout << "Apply photon min Delta R cut is " << applyMinDeltaRCut_ << endl;
   cout << "Use analysis bin from tree is " << useTreeCCbin_ << endl;
   cout << "Use DeepCSV is " << useDeepCSV_ << endl;
   cout << "Apply b-tag scale factors is " << applyBTagSF_ << endl;
   cout << "Apply pileup weight is " << applyPuWeight_ << endl;
   cout << "The custom pileup weight flag is " << customPuWeight_ << endl;
-  
+  cout << "The apply double-ratio fit weight flag is " << applyDRfitWt_ << endl;
+
   fillCutMaps();
   effPurCorr_.openFiles();
 
@@ -253,6 +255,7 @@ RA2bZinvAnalysis::getChain(const char* sample, Int_t* fCurrent, bool makeClass) 
   else if (theSample.Contains("zmm")) key = TString("zmm");
   else if (theSample.Contains("zee")) key = TString("zee");
   else if (theSample.Contains("photon")) key = TString("photon");
+  else if (theSample.Contains("gjetsqcd")) key = TString("gjetsqcd");
   else if (theSample.Contains("gjets")) key = TString("gjets");
   if (deltaPhi_ == "ldp" && isSkim_) key += "ldp";
   if (!runBlock_.empty()) key += runBlock_;
@@ -416,10 +419,10 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
   if ((sampleKey == "zmm" || sampleKey == "zee" || sampleKey == "zll") && applyPtCut_)
     ptCut_ = "@ZCandidates.size()==1 && ZCandidates.Pt()>=200.";
 
-  photonDeltaRcut_ = "1";
+  photonDeltaRcut_ = "1";  // For cut histograms only; incorporated into objCutMap
   if (sampleKey == "photon") {
     if (applyPtCut_) ptCut_ = "@Photons.size()==1 && Photons.Pt()>=200.";
-    if (isMC_ && applyMinDeltaRCut_) photonDeltaRcut_ = "madMinPhotonDeltaR>=0.4";
+    if (isMC_) photonDeltaRcut_ = "madMinPhotonDeltaR>=0.4";
   }
 
   if (isSkim_) {
@@ -452,7 +455,6 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
   if (!isSkim_) cuts += minDphicut_;
   cuts += ptCut_;
   cuts += massCut_;
-  cuts += photonDeltaRcut_;
   cuts += commonCuts_;
 
   return cuts;
@@ -502,7 +504,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
     hg->hist->GetXaxis()->SetTitle(hg->axisTitles.first);
     hg->hist->GetYaxis()->SetTitle(hg->axisTitles.second);
     if (hg->name.Contains(TString("Cut"))) cutHistFiller.setAxisLabels((TH1D*) hg->hist);
-    if (hg->name.Contains(TString("hCut"))) {
+    if (hg->name.Contains(TString("hCut")) || hg->name.Contains(TString("hgen"))) {
       hg->NminusOneCuts = "1";
     } else {
       hg->NminusOneCuts = baselineCuts;
@@ -521,6 +523,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
   chain->SetNotify(forNotify);
 
   // Traverse the tree and fill histograms
+  double MCwtCorr = 1.;
   Long64_t Nentries = chain->GetEntries();
   if (verbosity_ >= 1) cout << "Nentries in tree = " << Nentries << endl;
   int count = 0;
@@ -536,11 +539,21 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       TFile* thisFile = chain->GetCurrentFile();
       if (thisFile) {
     	if (btagcorr_) btagcorr_->SetEffs(thisFile);
-	if (verbosity_ >= 1) cout << "Current file in chain: " << thisFile->GetName() << endl;
+	TString path = thisFile->GetName();
+	if (verbosity_ >= 1) cout << "Current file in chain: " << path << endl;
+	// Set MCwtCorr for this file
+	// if (path.Contains("V16") && path.Contains("MC2017") && path.Contains("DYJetsToLL")) {
+	//   if      (path.Contains("HT-200to400")) MCwtCorr = 1.09646;
+	//   else if (path.Contains("HT-400to600")) MCwtCorr = 1.13147;
+	//   else if (path.Contains("HT-600to800")) MCwtCorr = 1.17537;
+	//   else if (path.Contains("HT-800to1200")) MCwtCorr = 1.18242;
+	//   else if (path.Contains("HT-1200to2500")) MCwtCorr = 1.17144;
+	//   else if (path.Contains("HT-2500toInf")) MCwtCorr = 1.12722;
+	// }
       }
       chain->GetEntry(entry);  // Pull in tree variables for reinitialization
       setTriggerIndexList(sample);
-      if (isMC_ && verbosity_ >= 1) cout << "MC weight for this file is " << Weight << endl;
+      if (isMC_ && verbosity_ >= 1) cout << "MC weight for this file is " << Weight << " times correction " << MCwtCorr << endl;
     }
     chain->GetEntry(entry);
 
@@ -558,7 +571,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
     Double_t PUweight = 1;
     Double_t NoPrefireWt = 1.;
     if (isMC_) {
-      MCwt = 1000*intLumi_*Weight;  if (MCwt < 0) MCwt *= -1;
+      MCwt = 1000*intLumi_*Weight*MCwtCorr;  if (MCwt < 0) MCwt *= -1;
       if (applyPuWeight_) {
 	if (customPuWeight_ && puHist_ != nullptr) {
 	  // This PU weight recipe from Kevin Pedro, https://twiki.cern.ch/twiki/bin/viewauth/CMS/RA2b13TeVProduction
@@ -596,7 +609,8 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 	int CCbin = CCbins_->jbk(CCbins_->jbin(NJets), CCbins_->bbin(NJets, BTags), CCbins_->kinBin(HT, MHT));
       	if (CCbin <= 0 || BTags > 0) continue;
       	// For double ratio, apply weights for purity, Fdir, trigger eff, reco eff.
-	effWt_ = effPurCorr_.weight(CCbins_, NJets, BTags, MHT, HT, *ZCandidates, *Photons, *Photons_isEB);
+	effWt_ = effPurCorr_.weight(CCbins_, NJets, BTags, MHT, HT,
+				    *ZCandidates, *Photons, *Photons_isEB, applyDRfitWt_);
 	eventWt *= effWt_;
       }
 
@@ -637,7 +651,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   TCut baselineCuts = getCuts(sample);
   TString sampleKey = sampleKeyMap_.count(sample) > 0 ? sampleKeyMap_.at(sample) : TString("none");
   bool isZll = (sampleKey == "zmm" || sampleKey == "zee" || sampleKey == "zll");
-  bool isPhoton = (sampleKey == "photon");
+  bool isPhoton = (sampleKey == "photon" || sampleKey =="photonqcd");
 
   histConfig hCutFlow;
   hCutFlow.name = TString("hCutFlow_") + sample;  hCutFlow.title = "Cut flow";
@@ -704,6 +718,13 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hCCjk.axisTitles.first = "Njets, (HT, MHT)";  hCCjk.axisTitles.second = "Events / bin";
   hCCjk.filler1D = &RA2bZinvAnalysis::fillCC;
   histograms.push_back(&hCCjk);
+
+  histConfig hgenHT;
+  hgenHT.name = TString("hgenHT_") + sample;  hgenHT.title = "Generated HT";
+  hgenHT.NbinsX = 60;  hgenHT.rangeX.first = 0;  hgenHT.rangeX.second = 3000;
+  hgenHT.axisTitles.first = "HT [GeV]";  hgenHT.axisTitles.second = "Events / 50 GeV";
+  hgenHT.dvalue = &HT;
+  if (isMC_) histograms.push_back(&hgenHT);
 
   histConfig hHT;
   hHT.name = TString("hHT_") + sample;  hHT.title = "HT";
@@ -1321,10 +1342,12 @@ RA2bZinvAnalysis::fillCutMaps() {
       // zee skim cuts:  NMuons==0 && NElectrons==2 && isoMuonTracks==0 && isoPionTracks==0
       objCutMap_["zee"] = "1";
       objCutMap_["zll"] = "((NMuons==2 && NElectrons==0 && isoElectronTracks==0 && isoPionTracks==0) || (NMuons==0 && NElectrons==2 && isoMuonTracks==0 && isoPionTracks==0))";
-      // photon skim cuts:  "Sum$(Photons_fullID)==1 && NMuons==0 && NElectrons==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0"
-      objCutMap_["photon"] = "@Photons.size()==1 && Sum$(Photons_nonPrompt)==0";  // Andrew recommendation, no skim cuts
+      // photon skim cuts:  "Sum$(Photons_fullID)==1 && Photons_hasPixelSeed==0 && NMuons==0 && NElectrons==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0"
+      objCutMap_["photon"] = "@Photons.size()==1";  // Andrew recommendation, no skim cuts
+      if (isMC_) objCutMap_["photon"] += " && !Photons_nonPrompt && madMinPhotonDeltaR>=0.4";  // Andrew recommendation, no skim cuts
       // objCutMap_["photonqcd"] = "Sum$(Photons_nonPrompt)!=0 && @Photons.at(0).Pt()>=200 && NMuons==0 && NElectrons==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";
-      objCutMap_["photonqcd"] = "Sum$(Photons_nonPrompt)!=0 && NMuons==0 && NElectrons==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";  // Troy mod+
+      objCutMap_["photonqcd"] = "@Photons.size()==1";
+      if (isMC_) objCutMap_["photonqcd"] += " && Photons_nonPrompt";
       objCutMap_["ttz"] = "NMuons==0 && NElectrons==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0 && (@GenMuons.size()==0 && @GenElectrons.size()==0 && @GenTaus.size()==0)";
       objCutMap_["slm"] = "NMuons==1 && NElectrons==0 && isoElectronTracks==0 && isoPionTracks==0";
       objCutMap_["sle"] = "NMuons==0 && NElectrons==1 && isoMuonTracks==0 && isoPionTracks==0";
@@ -1675,7 +1698,8 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
 					      Double_t MHT, Double_t HT,
 					      vector<TLorentzVector> ZCandidates,
 					      vector<TLorentzVector> Photons,
-					      vector<double> EBphoton) {
+					      vector<double> EBphoton,
+					      bool applyDRfitWt) {
   // For double ratio, apply weights for purity, Fdir, trigger eff, reco eff.
   double effWt = 1;
 
@@ -1730,11 +1754,13 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
     if(EBphoton.at(0) == 0 && fTrigEff_[1] != nullptr) {
       effWt *= fTrigEff_[1]->Eval(max(double(205), Photons.at(0).Pt()));  // hard-wired cutoff
     }
-    // effWt /= (min(MHT, 900.0) - 397.4)*( -0.0005284 *2/3) + 0.8457;  // FIXME:  hard-wired correction
-    // effWt /= min(MHT, 900.0)*( -0.0005284) + 1.056;  // FIXME:  hard-wired correction
-    // Function parameter 0 (b):  1.05573811023 +/- 0.0477482811381
-    // Function parameter 1 (a):  -0.000528398892501 +/- 0.000117012474678
-    // Average y0 = 0.8457.  x0 = (y0 -b) / a
+    if (applyDRfitWt) {
+      effWt /= (min(MHT, 900.0) - 397.4)*( -0.0005098 *2/3) + 0.8134;  // FIXME:  hard-wired correction
+      // effWt /= min(MHT, 900.0)*( -0.0005284) + 1.056;  // FIXME:  hard-wired correction
+      // Function parameter 0:  1.01601616809 +/- 0.0459169526921
+      // Function parameter 1:  -0.00050983094812 +/- 0.000112511842395
+      // Average y0 = 0.8134.  x0 = (y0 -p0) / p1
+    }
     if (hSFeff_ != nullptr) {
       Double_t mht = MHT >= hSFeff_->GetBinLowEdge(1) ? MHT : hSFeff_->GetBinLowEdge(1);
       int bin = hSFeff_->GetNbinsX();  while (mht < hSFeff_->GetBinLowEdge(bin)) bin--;

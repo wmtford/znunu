@@ -104,7 +104,8 @@ public:
     double weight(CCbinning* CCbins, Int_t NJets, Int_t BTags, Double_t MHT, Double_t HT,
 		  vector<TLorentzVector> ZCandidates,
 		  vector<TLorentzVector> Photons,
-		  vector<double> EBphoton);
+		  vector<double> EBphoton,
+		  bool applyDRfitWt);
   private:
     TFile *purityTrigEffFile_;
     TString theSample_;
@@ -143,12 +144,12 @@ private:
   std::string deltaPhi_;  // "nominal", "hdp", "ldp"
   bool applyMassCut_;
   bool applyPtCut_;
-  bool applyMinDeltaRCut_;
   bool useTreeCCbin_;
   bool useDeepCSV_;
   bool applyBTagSF_;
   bool applyPuWeight_;
   bool customPuWeight_;
+  bool applyDRfitWt_;
   TH1* puHist_;
   CCbinning* CCbins_;
   BTagCorrector* btagcorr_;
