@@ -595,7 +595,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 
     for (auto & hg : histograms) {
       if (hg->name.Contains(TString("hCut"))) {
-	cutHistFiller.fill((TH1D*) hg->hist, eventWt, passTrg);
+	cutHistFiller.fill((TH1D*) hg->hist, 1, passTrg);
 	continue;
       }
       if (!passTrg) break;
@@ -603,12 +603,15 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       hg->NminusOneFormula->GetNdata();
       double selWt = hg->NminusOneFormula->EvalInstance(0);
       if (selWt == 0) continue;
-      double eventWt0 = eventWt;
 
-      if (hg->name.Contains(TString("_DR"))) {
-	int CCbin = CCbins_->jbk(CCbins_->jbin(NJets), CCbins_->bbin(NJets, BTags), CCbins_->kinBin(HT, MHT));
-      	if (CCbin <= 0 || BTags > 0) continue;
-      	// For double ratio, apply weights for purity, Fdir, trigger eff, reco eff.
+      double eventWt0 = eventWt;
+      if (isMC_ || hg->name.Contains(TString("_DR"))) {
+	// For MC, or double ratio, apply weights for purity, Fdir, trigger eff, reco eff.
+	if (hg->name.Contains(TString("_DR"))) {
+	  if (BTags > 0) continue;
+	  int CCbin = CCbins_->jbk(CCbins_->jbin(NJets), CCbins_->bbin(NJets, BTags), CCbins_->kinBin(HT, MHT));
+	  if (CCbin <= 0) continue;
+	}
 	effWt_ = effPurCorr_.weight(CCbins_, NJets, BTags, MHT, HT, *ZCandidates, *Photons,
 				    *Electrons, *Muons, *Photons_isEB, applyDRfitWt_);
 	eventWt *= effWt_;
@@ -1665,7 +1668,8 @@ RA2bZinvAnalysis::efficiencyAndPurity::getHistos(const char* sample) {
     if (FdirHist_ == nullptr) cout << "***** Histogram h_bin46_NJets8910 not found *****" << endl;
     // FdirGraph_ = (TGraphErrors*) purityTrigEffFile_->Get("bin46_f");
     // if (FdirGraph_ == nullptr) cout << "***** Histogram bin46_f not found *****" << endl;
-  } else if (theSample_.Contains("dymm")) {
+  } else if (theSample_.Contains("dymm") || theSample_.Contains("ttmm") || 
+	     theSample_.Contains("ttzmm") || theSample_.Contains("VVmm")) {
     hTrigEff_.push_back((TH1F*) purityTrigEffFile_->Get("h_trig_m"));
     if (hTrigEff_.back() == nullptr) cout << "***** Histogram h_trig_m not found *****" << endl;
     // hSFeff_ = (TH1F*) purityTrigEffFile_->Get("h_SFm_MHT");
@@ -1674,7 +1678,8 @@ RA2bZinvAnalysis::efficiencyAndPurity::getHistos(const char* sample) {
     if (hSFeff_.back() == nullptr) cout << "***** Histogram for muon ID SFs not found *****" << endl;
     hSFeff_.push_back((TH2F*) muonIsoSFFile_->Get("TnP_MC_NUM_MiniIso02Cut_DEN_MediumID_PAR_pt_eta"));
     if (hSFeff_.back() == nullptr) cout << "***** Histogram for muon iso SFs not found *****" << endl;
-  } else if (theSample_.Contains("dyee")) {
+  } else if (theSample_.Contains("dyee") || theSample_.Contains("ttee") ||
+	     theSample_.Contains("ttzee") || theSample_.Contains("VVee")) {
     hTrigEff_.push_back((TH1F*) purityTrigEffFile_->Get("h_trig_e"));
     if (hTrigEff_.back() == nullptr) cout << "***** Histogram h_trig_e not found *****" << endl;
     // hSFeff_ = (TH1F*) purityTrigEffFile_->Get("h_SFe_MHT");  // Maybe this should be h_NJets

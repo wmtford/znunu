@@ -150,6 +150,87 @@ tree_GJetLDP_CleanVars/tree_EGamma_2018B1.root
 
 # Monte Carlo  ------------------------------------------
 
+zinv2016 10   # Z->vv MC
+tree_signal/tree_ZJetsToNuNu_HT-100to200_MC2016.root
+tree_signal/tree_ZJetsToNuNu_HT-200to400_MC2016.root
+tree_signal/tree_ZJetsToNuNu_HT-400to600_MC2016.root
+tree_signal/tree_ZJetsToNuNu_HT-600to800_MC2016.root
+tree_signal/tree_ZJetsToNuNu_HT-800to1200_MC2016.root
+tree_signal/tree_ZJetsToNuNu_HT-1200to2500_MC2016.root
+tree_signal/tree_ZJetsToNuNu_HT-2500toInf_MC2016.root
+##
+
+ttzvv2016    # Z->ttzvv MC
+tree_signal/tree_TTZToLLNuNu_MC2016.root
+##
+
+dymm2016 10   # DY->mumu MC
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-100to200_MC2016.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-200to400_MC2016.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-400to600_MC2016.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-600to800_MC2016.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200_MC2016.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500_MC2016.root
+tree_DYm_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf_MC2016.root
+##
+
+dyee2016 10   # DY->ee MC
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-100to200_MC2016.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-200to400_MC2016.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-400to600_MC2016.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-600to800_MC2016.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-800to1200_MC2016.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-1200to2500_MC2016.root
+tree_DYe_CleanVars/tree_DYJetsToLL_M-50_HT-2500toInf_MC2016.root
+##
+
+ttzmm2016    # ttz->mumu MC
+tree_DYm_CleanVars/tree_TTZToLLNuNu_MC2016.root
+##
+
+ttzee2016    # ttz->ee MC
+tree_DYe_CleanVars/tree_TTZToLLNuNu_MC2016.root
+##
+
+VVmm2016    # VV->mumu MC
+tree_DYm_CleanVars/tree_ZZTo2L2Q_MC2016.root
+tree_DYm_CleanVars/tree_WWTo1L1Nu2Q_MC2016.root
+##
+
+VVee2016    # VV->ee MC
+tree_DYe_CleanVars/tree_ZZTo2L2Q_MC2016.root
+tree_DYe_CleanVars/tree_WWTo1L1Nu2Q_MC2016.root
+##
+
+ttmm2016    # ttbar->mumu MC
+tree_DYm_CleanVars/tree_TTJets_DiLept_MC2016.root
+tree_DYm_CleanVars/tree_TTJets_SingleLeptFromT_MC2016.root
+tree_DYm_CleanVars/tree_TTJets_SingleLeptFromTbar_MC2016.root
+##
+
+ttee2016    # ttbar->ee MC
+tree_DYe_CleanVars/tree_TTJets_DiLept_MC2016.root
+tree_DYe_CleanVars/tree_TTJets_SingleLeptFromT_MC2016.root
+tree_DYe_CleanVars/tree_TTJets_SingleLeptFromTbar_MC2016.root
+##
+
+gjets2016 10   # gJets MC
+tree_GJet_CleanVars/tree_GJets_HT-100to200_MC2016.root
+tree_GJet_CleanVars/tree_GJets_HT-200to400_MC2016.root
+tree_GJet_CleanVars/tree_GJets_HT-400to600_MC2016.root
+tree_GJet_CleanVars/tree_GJets_HT-600toInf_MC2016.root
+##
+
+gjetsqcd2016 10   # qcd MC for fragmentation photons
+tree_GJet_CleanVars/tree_QCD_HT-200to300_MC2016.root              
+tree_GJet_CleanVars/tree_QCD_HT-300to500_MC2016.root              
+tree_GJet_CleanVars/tree_QCD_HT-500to700_MC2016.root              
+tree_GJet_CleanVars/tree_QCD_HT-700to1000_MC2016.root             
+tree_GJet_CleanVars/tree_QCD_HT-1000to1500_MC2016.root            
+tree_GJet_CleanVars/tree_QCD_HT-1500to2000_MC2016.root            
+tree_GJet_CleanVars/tree_QCD_HT-2000toInf_MC2016.root             
+##
+
 zinv2017 10   # Z->vv MC
 tree_signal/tree_ZJetsToNuNu_HT-100to200_MC2017.root
 tree_signal/tree_ZJetsToNuNu_HT-200to400_MC2017.root
