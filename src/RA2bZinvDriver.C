@@ -17,15 +17,15 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
   bool doHttzvv = false;
   bool doHzmm = false;
   bool doHzee = false;
-  bool doHphoton = false;
-  bool doHdymm = true;
-  bool doHdyee = true;
-  bool doHttzmm = true;
-  bool doHttzee = true;
-  bool doHVVmm = true;
-  bool doHVVee = true;
-  bool doHttmm = true;
-  bool doHttee = true;
+  bool doHphoton = true;
+  bool doHdymm = false;
+  bool doHdyee = false;
+  bool doHttzmm = false;
+  bool doHttzee = false;
+  bool doHVVmm = false;
+  bool doHVVee = false;
+  bool doHttmm = false;
+  bool doHttee = false;
   bool doHgjets = false;
   bool doHgjetsqcd = false;
   const std::string makeClassSample = "";  // Must be compatible with compiler directives
@@ -33,8 +33,8 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
   const std::string dumpSelEvIDsample("");
 
   // RA2bZinvAnalysis analyzer("", runBlock);  // Default configuration, V12
-  // RA2bZinvAnalysis analyzer("data2016.cfg", runBlock);
-  RA2bZinvAnalysis analyzer("data2017.cfg", runBlock);
+  RA2bZinvAnalysis analyzer("data2016.cfg", runBlock);
+  // RA2bZinvAnalysis analyzer("data2017.cfg", runBlock);
   // RA2bZinvAnalysis analyzer("data2018.cfg", runBlock);
   // RA2bZinvAnalysis analyzer("lowDphi.cfg", runBlock);
 
@@ -51,7 +51,7 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
 	theHist->Print();
 	theHist->Draw();
 	TString hName(theHist->GetName());
-	if (hName.Contains("hCC")) {
+	if (hName.Contains("hCC") && !hName.Contains("jb") && !hName.Contains("jk") && !hName.Contains("Jb") && !hName.Contains("spl")) {
 	  hCCzvv = (TH1F*) theHist;
 	}
       }
@@ -62,7 +62,7 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
 	theHist->Print();
 	theHist->Draw();
 	TString hName(theHist->GetName());
-	if (hName.Contains("hCC") && hCCzvv) {
+	if (hName.Contains("hCC") && !hName.Contains("jb") && !hName.Contains("jk") && !hName.Contains("Jb") && !hName.Contains("spl") && hCCzvv != nullptr) {
 	  TH1F* hCCzinvAll = (TH1F*) hCCzvv->Clone();  hCCzinvAll->SetName("hCCzinvAll");  hCCzinvAll->Sumw2();
 	  hCCzinvAll->Add(theHist);
 	  hCCzinvAll->SetName("hCCzinvAll");
@@ -94,11 +94,11 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
 	theHist->Print();
 	theHist->Draw();
 	TString hName(theHist->GetName());
-	if (hName.Contains("hCC") && !hName.Contains("jb") && !hName.Contains("Jb") && !hName.Contains("spl"))
+	if (hName.Contains("hCC") && !hName.Contains("jb") && !hName.Contains("jk") && !hName.Contains("Jb") && !hName.Contains("spl"))
 	  hCCzmm = (TH1F*) theHist;
-	if (hName.Contains("hCC") && hName.Contains("jb") && !hName.Contains("Jb") && !hName.Contains("spl"))
+	if (hName.Contains("hCC") && hName.Contains("jb") && !hName.Contains("jk") && !hName.Contains("Jb") && !hName.Contains("spl"))
 	  hCCjbzmm = (TH1F*) theHist;
-	if (hName.Contains("hCC") && !hName.Contains("jb") && hName.Contains("Jb") && !hName.Contains("spl"))
+	if (hName.Contains("hCC") && !hName.Contains("jb") && !hName.Contains("jk") && hName.Contains("Jb") && !hName.Contains("spl"))
 	  hCCJbzmm = (TH1F*) theHist;
       }
     }
@@ -113,19 +113,19 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
 	theHist->Print();
 	theHist->Draw();
 	TString hName(theHist->GetName());
-	if (hName.Contains("hCC") && !hName.Contains("jb") && !hName.Contains("Jb") && !hName.Contains("spl") && hCCzmm != nullptr) {
+	if (hName.Contains("hCC") && !hName.Contains("jb") && !hName.Contains("jk") && !hName.Contains("Jb") && !hName.Contains("spl") && hCCzmm != nullptr) {
 	  TH1F* hCC_zll = (TH1F*) hCCzmm->Clone();  hCC_zll->SetName("hCC_zll");  hCC_zll->Sumw2();
 	  hCC_zll->Add(theHist);
 	  hCC_zll->Print();
 	  hCC_zll->Draw();
 	}
-	if (hName.Contains("hCC") && hName.Contains("jb") && !hName.Contains("Jb") && !hName.Contains("spl") && hCCjbzmm != nullptr) {
+	if (hName.Contains("hCC") && hName.Contains("jb") && !hName.Contains("jk") && !hName.Contains("Jb") && !hName.Contains("spl") && hCCjbzmm != nullptr) {
 	  TH1F* hCCjb_zll = (TH1F*) hCCjbzmm->Clone();  hCCjb_zll->SetName("hCCjb_zll");  hCCjb_zll->Sumw2();
 	  hCCjb_zll->Add(theHist);
 	  hCCjb_zll->Print();
 	  hCCjb_zll->Draw();
 	}
-	if (hName.Contains("hCC") && !hName.Contains("jb") && hName.Contains("Jb") && !hName.Contains("spl") && hCCJbzmm != nullptr) {
+	if (hName.Contains("hCC") && !hName.Contains("jb") && !hName.Contains("jk") && hName.Contains("Jb") && !hName.Contains("spl") && hCCJbzmm != nullptr) {
 	  TH1F* hCCJb_zll = (TH1F*) hCCJbzmm->Clone();  hCCJb_zll->SetName("hCCJb_zll");  hCCJb_zll->Sumw2();
 	  hCCJb_zll->Add(theHist);
 	  hCCJb_zll->Print();

@@ -68,6 +68,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
     ("apply pileup weight", po::value<bool>(&applyPuWeight_))
     ("use custom pileup weight", po::value<bool>(&customPuWeight_))
     ("apply double-ratio fit weight", po::value<bool>(&applyDRfitWt_))
+    ("apply scale factors to MC", po::value<bool>(&applySFwtToMC_))
 
     ;
   po::variables_map vm;
@@ -228,6 +229,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   cout << "Apply pileup weight is " << applyPuWeight_ << endl;
   cout << "The custom pileup weight flag is " << customPuWeight_ << endl;
   cout << "The apply double-ratio fit weight flag is " << applyDRfitWt_ << endl;
+  cout << "The apply scale factors to MC flag is " << applySFwtToMC_ << endl;
 
   fillCutMaps();
   effPurCorr_.openFiles();
@@ -466,6 +468,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
   //
   // Define N - 1 (or N - multiple) cuts, book histograms.  Traverse the chain and fill.
   //
+  int currentYear = -1;
   Int_t fCurrent;  // current Tree number in a TChain
   TChain* chain = getChain(sample, &fCurrent);
   TObjArray* forNotify = new TObjArray;
@@ -482,7 +485,6 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
     btagcorr_ = nullptr;
   }
 
-  effPurCorr_.getHistos(sample);  // For purity, Fdir, trigger eff, reco eff
   cutHistos cutHistFiller(chain, forNotify);  // for cutFlow histograms
 
   // Book histograms
@@ -554,6 +556,14 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       chain->GetEntry(entry);  // Pull in tree variables for reinitialization
       setTriggerIndexList(sample);
       if (isMC_ && verbosity_ >= 1) cout << "MC weight for this file is " << Weight << " times correction " << MCwtCorr << endl;
+      int theYear = -1;
+      if (RunNum < Start2017) theYear = Year2016;
+      else if (RunNum < Start2018) theYear = Year2017;
+      else theYear = Year2018;
+      if (theYear != currentYear) {
+	currentYear = theYear;
+	effPurCorr_.getHistos(sample, currentYear);  // For purity, Fdir, trigger eff, reco eff
+      }
     }
     chain->GetEntry(entry);
 
@@ -605,8 +615,8 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       if (selWt == 0) continue;
 
       double eventWt0 = eventWt;
-      if (isMC_ || hg->name.Contains(TString("_DR"))) {
-	// For MC, or double ratio, apply weights for purity, Fdir, trigger eff, reco eff.
+      if ((applySFwtToMC_ && isMC_) || hg->name.Contains(TString("_DR"))) {
+	// For MC, or double ratio, apply weights for trigger eff, reco eff.
 	if (hg->name.Contains(TString("_DR"))) {
 	  if (BTags > 0) continue;
 	  int CCbin = CCbins_->jbk(CCbins_->jbin(NJets), CCbins_->bbin(NJets, BTags), CCbins_->kinBin(HT, MHT));
@@ -728,6 +738,13 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hgenHT.axisTitles.first = "HT [GeV]";  hgenHT.axisTitles.second = "Events / 50 GeV";
   hgenHT.dvalue = &HT;
   if (isMC_) histograms.push_back(&hgenHT);
+
+  histConfig hPrefire;
+  hPrefire.name = TString("hPrefire_") + sample;  hPrefire.title = "Probability to survive trigger prefire";
+  hPrefire.NbinsX = 120;  hPrefire.rangeX.first = 0;  hPrefire.rangeX.second = 1.2;
+  hPrefire.axisTitles.first = "NonPrefireProb";  hPrefire.axisTitles.second = "Events / 0.01";
+  hPrefire.dvalue = &NonPrefiringProb;
+  if (isMC_) histograms.push_back(&hPrefire);
 
   histConfig hHT;
   hHT.name = TString("hHT_") + sample;  hHT.title = "HT";
@@ -1631,21 +1648,31 @@ RA2bZinvAnalysis::cutHistos::fill(TH1D* hcf, Double_t wt, bool passTrg) {
 void 
 RA2bZinvAnalysis::efficiencyAndPurity::openFiles() {
   TString plotDir("../plots/histograms/");
-  TString effs = "effHists.root";
-  TString path_photon = "2017_PhotonsLoose.root";
-  TString path_elec = "ElectronScaleFactors_Run2017.root";
-  TString path_muID = "RunBCDEF_Muon2017_SF_ID.root";
-  TString path_muIso = "SF_Muon2017_NUM_MiniIso02Cut_DEN_MediumID_PAR_pt_eta.root";
-  purityTrigEffFile_ = new TFile((plotDir+effs).Data(), "read");
-  photonSFFile_ = new TFile((plotDir+path_photon).Data(), "read");
-  elecSFFile_ = new TFile((plotDir+path_elec).Data(), "read");
-  muonIDSFFile_ = new TFile((plotDir+path_muID).Data(), "read");
-  muonIsoSFFile_ = new TFile((plotDir+path_muIso).Data(), "read");
+
+  purityTrigEffFile_.push_back(new TFile((plotDir+"effHists.root").Data(), "read"));
+  purityTrigEffFile_.push_back(new TFile((plotDir+"effHists.root").Data(), "read"));
+  purityTrigEffFile_.push_back(new TFile((plotDir+"effHists.root").Data(), "read"));
+
+  photonSFFile_.push_back(new TFile((plotDir+"2017_PhotonsLoose.root").Data(), "read"));
+  photonSFFile_.push_back(new TFile((plotDir+"2017_PhotonsLoose.root").Data(), "read"));
+  photonSFFile_.push_back(new TFile((plotDir+"2017_PhotonsLoose.root").Data(), "read"));
+
+  elecSFFile_.push_back(new TFile((plotDir+"ElectronScaleFactors_Run2017.root").Data(), "read"));
+  elecSFFile_.push_back(new TFile((plotDir+"ElectronScaleFactors_Run2017.root").Data(), "read"));
+  elecSFFile_.push_back(new TFile((plotDir+"ElectronScaleFactors_Run2017.root").Data(), "read"));
+
+  muonIDSFFile_.push_back(new TFile((plotDir+"RunBCDEF_Muon2017_SF_ID.root").Data(), "read"));
+  muonIDSFFile_.push_back(new TFile((plotDir+"RunBCDEF_Muon2017_SF_ID.root").Data(), "read"));
+  muonIDSFFile_.push_back(new TFile((plotDir+"RunBCDEF_Muon2017_SF_ID.root").Data(), "read"));
+
+  muonIsoSFFile_.push_back(new TFile((plotDir+"SF_Muon2017_NUM_MiniIso02Cut_DEN_MediumID_PAR_pt_eta.root").Data(), "read"));
+  muonIsoSFFile_.push_back(new TFile((plotDir+"SF_Muon2017_NUM_MiniIso02Cut_DEN_MediumID_PAR_pt_eta.root").Data(), "read"));
+  muonIsoSFFile_.push_back(new TFile((plotDir+"SF_Muon2017_NUM_MiniIso02Cut_DEN_MediumID_PAR_pt_eta.root").Data(), "read"));
 
 }  // ======================================================================================
 
 void
-RA2bZinvAnalysis::efficiencyAndPurity::getHistos(const char* sample) {
+RA2bZinvAnalysis::efficiencyAndPurity::getHistos(const char* sample, int currentYear) {
   // For purity, Fdir, trigger eff, reco eff
   theSample_ = TString(sample);
   // hSFeff_ = nullptr;
@@ -1653,65 +1680,66 @@ RA2bZinvAnalysis::efficiencyAndPurity::getHistos(const char* sample) {
   FdirHist_ = nullptr;
   hPurity_.clear();
   hTrigEff_.clear();
+  if (currentYear == RA2bZinvAnalysis::Year2016) cout << "currentYear = " << currentYear << endl;
   if (theSample_.Contains("zmm") && !theSample_.Contains("tt")) {
-    hPurity_.push_back((TH1F*) purityTrigEffFile_->Get("h_pur_m"));
+    hPurity_.push_back((TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_pur_m"));
     if (hPurity_.back() == nullptr) cout << "***** Histogram h_pur_m not found *****" << endl;
   } else if (theSample_.Contains("zee") && !theSample_.Contains("tt")) {
-    hPurity_.push_back((TH1F*) purityTrigEffFile_->Get("h_pur_e"));
+    hPurity_.push_back((TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_pur_e"));
     if (hPurity_.back() == nullptr) cout << "***** Histogram h_pur_e not found *****" << endl;
   } else if (theSample_.Contains("photon")) {
-    hPurity_.push_back((TH1F*) purityTrigEffFile_->Get("h_pur_eb"));
+    hPurity_.push_back((TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_pur_eb"));
     if (hPurity_.back() == nullptr) cout << "***** Histogram h_pur_eb not found *****" << endl;
-    hPurity_.push_back((TH1F*) purityTrigEffFile_->Get("h_pur_ec"));
+    hPurity_.push_back((TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_pur_ec"));
     if (hPurity_.back() == nullptr) cout << "***** Histogram h_pur_ec not found *****" << endl;
-    FdirHist_ = (TH1D*) purityTrigEffFile_->Get("h_bin46_NJets8910");
+    FdirHist_ = (TH1D*) purityTrigEffFile_.at(currentYear)->Get("h_bin46_NJets8910");
     if (FdirHist_ == nullptr) cout << "***** Histogram h_bin46_NJets8910 not found *****" << endl;
-    // FdirGraph_ = (TGraphErrors*) purityTrigEffFile_->Get("bin46_f");
+    // FdirGraph_ = (TGraphErrors*) purityTrigEffFile_.at(currentYear)->Get("bin46_f");
     // if (FdirGraph_ == nullptr) cout << "***** Histogram bin46_f not found *****" << endl;
   } else if (theSample_.Contains("dymm") || theSample_.Contains("ttmm") || 
 	     theSample_.Contains("ttzmm") || theSample_.Contains("VVmm")) {
-    hTrigEff_.push_back((TH1F*) purityTrigEffFile_->Get("h_trig_m"));
+    hTrigEff_.push_back((TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_trig_m"));
     if (hTrigEff_.back() == nullptr) cout << "***** Histogram h_trig_m not found *****" << endl;
-    // hSFeff_ = (TH1F*) purityTrigEffFile_->Get("h_SFm_MHT");
+    // hSFeff_ = (TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_SFm_MHT");
     // if (hSFeff_ == nullptr) cout << "***** Histogram h_MHT not found *****" << endl;
-    hSFeff_.push_back((TH2F*) muonIDSFFile_->Get("NUM_MediumID_DEN_genTracks_pt_abseta"));
+    hSFeff_.push_back((TH2F*) muonIDSFFile_.at(currentYear)->Get("NUM_MediumID_DEN_genTracks_pt_abseta"));
     if (hSFeff_.back() == nullptr) cout << "***** Histogram for muon ID SFs not found *****" << endl;
-    hSFeff_.push_back((TH2F*) muonIsoSFFile_->Get("TnP_MC_NUM_MiniIso02Cut_DEN_MediumID_PAR_pt_eta"));
+    hSFeff_.push_back((TH2F*) muonIsoSFFile_.at(currentYear)->Get("TnP_MC_NUM_MiniIso02Cut_DEN_MediumID_PAR_pt_eta"));
     if (hSFeff_.back() == nullptr) cout << "***** Histogram for muon iso SFs not found *****" << endl;
   } else if (theSample_.Contains("dyee") || theSample_.Contains("ttee") ||
 	     theSample_.Contains("ttzee") || theSample_.Contains("VVee")) {
-    hTrigEff_.push_back((TH1F*) purityTrigEffFile_->Get("h_trig_e"));
+    hTrigEff_.push_back((TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_trig_e"));
     if (hTrigEff_.back() == nullptr) cout << "***** Histogram h_trig_e not found *****" << endl;
-    // hSFeff_ = (TH1F*) purityTrigEffFile_->Get("h_SFe_MHT");  // Maybe this should be h_NJets
+    // hSFeff_ = (TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_SFe_MHT");  // Maybe this should be h_NJets
     // if (hSFeff_ == nullptr) cout << "***** Histogram h_MHT not found *****" << endl;
-    hSFeff_.push_back((TH2F*) elecSFFile_->Get("Run2017_CutBasedVetoNoIso94XV2"));
+    hSFeff_.push_back((TH2F*) elecSFFile_.at(currentYear)->Get("Run2017_CutBasedVetoNoIso94XV2"));
     if (hSFeff_.back() == nullptr) cout << "***** Histogram for electron ID SFs not found *****" << endl;
-    hSFeff_.push_back((TH2F*) elecSFFile_->Get("Run2017_MVAVLooseTightIP2DMini"));
+    hSFeff_.push_back((TH2F*) elecSFFile_.at(currentYear)->Get("Run2017_MVAVLooseTightIP2DMini"));
     if (hSFeff_.back() == nullptr) cout << "***** Histogram for electron iso SFs not found *****" << endl;
   } else if (theSample_.Contains("gjets")) {
     // Troy-style trigger efficiency histograms:
-    hTrigEff_.push_back((TH1F*) purityTrigEffFile_->Get("h_trig_eb"));
+    hTrigEff_.push_back((TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_trig_eb"));
     if (hTrigEff_.back() == nullptr) cout << "***** Histogram h_trig_eb not found *****" << endl;
-    hTrigEff_.push_back((TH1F*) purityTrigEffFile_->Get("h_trig_ec"));
+    hTrigEff_.push_back((TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_trig_ec"));
     if (hTrigEff_.back() == nullptr) cout << "***** Histogram h_trig_ec not found *****" << endl;
     // Sam-style trigger efficiency functions:
-    fTrigEff_.push_back((TF1*) purityTrigEffFile_->Get("f_trig_eb"));
+    fTrigEff_.push_back((TF1*) purityTrigEffFile_.at(currentYear)->Get("f_trig_eb"));
     if (fTrigEff_.back() == nullptr) {
       cout << "***** Histogram f_trig_eb not found *****" << endl;
     } else {
       cout << "Asymptotic EB trigger efficiency = " << 1 + fTrigEff_[0]->GetParameter(0)
 	   << "+/-" << fTrigEff_[0]->GetParError(0) << endl;
     }
-    fTrigEff_.push_back((TF1*) purityTrigEffFile_->Get("f_trig_ec"));
+    fTrigEff_.push_back((TF1*) purityTrigEffFile_.at(currentYear)->Get("f_trig_ec"));
     if (fTrigEff_.back() == nullptr) {
       cout << "***** Histogram f_trig_ec not found *****" << endl;
     } else {
       cout << "Asymptotic EC trigger efficiency = " << 1 + fTrigEff_[1]->GetParameter(0)
 	   << "+/-" << fTrigEff_[1]->GetParError(0) << endl;
     }
-    // hSFeff_ = (TH1F*) purityTrigEffFile_->Get("h_SFg_MHT");  // Maybe this should be h_NJets
+    // hSFeff_ = (TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_SFg_MHT");  // Maybe this should be h_NJets
     // if (hSFeff_ == nullptr) cout << "***** Histogram h_MHT not found *****" << endl;
-    hSFeff_.push_back((TH2F*) photonSFFile_->Get("EGamma_SF2D"));
+    hSFeff_.push_back((TH2F*) photonSFFile_.at(currentYear)->Get("EGamma_SF2D"));
     if (hSFeff_.back() == nullptr) cout << "***** Histogram for photon SFs not found *****" << endl;
   }
 
@@ -1807,11 +1835,15 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
       effWt *= fTrigEff_[1]->Eval(max(double(205), Photons.at(0).Pt()));  // hard-wired cutoff
     }
     if (applyDRfitWt) {
-      effWt /= (min(MHT, 900.0) - 397.4)*( -0.0005098 *2/3) + 0.8134;  // FIXME:  hard-wired correction
-      // effWt /= min(MHT, 900.0)*( -0.0005284) + 1.056;  // FIXME:  hard-wired correction
+      effWt /= (min(MHT, 900.0) - 397.7)*( -0.00058276 *2/3) + 0.8401;
+      // Function parameter 0:  1.07188729834 +/- 0.// 047180710618
+      // Function parameter 1:  -0.000582762306737 +/- 0.000115148917583
+      // Average y0 = 0.8401.  x0 = (y0 -p0) / p1
+      // effWt /= (min(MHT, 900.0) - 397.4)*( -0.0005098 *2/3) + 0.8134;  // 16 Jan 2019
       // Function parameter 0:  1.01601616809 +/- 0.0459169526921
       // Function parameter 1:  -0.00050983094812 +/- 0.000112511842395
       // Average y0 = 0.8134.  x0 = (y0 -p0) / p1
+      // effWt /= min(MHT, 900.0)*( -0.0005284) + 1.056;  // FIXME:  hard-wired correction
     }
     // if (hSFeff_ != nullptr) {
     //   Double_t mht = MHT >= hSFeff_->GetBinLowEdge(1) ? MHT : hSFeff_->GetBinLowEdge(1);

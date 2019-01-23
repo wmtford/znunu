@@ -9,7 +9,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #define VERSION 16
-#define ISMC
+/* #define ISMC */
 #define ISSKIM
 
 #include "CCbinning.h"
@@ -51,6 +51,9 @@ public:
   void setTriggerIndexList(const char* sample);
   void checkTrigPrescales(const char* sample);
   void runMakeClass(const std::string& sample);
+
+  enum yearFirstRun {Start2016 = 271036, Start2017 = 294645, Start2018 = 315252};
+  enum runYear{Year2016 = 0, Year2017 = 1, Year2018 = 2};
 
   struct histConfig {
     // 1D or 2D histogram; select by value of NbinsY, = 0 for 1D.
@@ -100,7 +103,7 @@ public:
     efficiencyAndPurity() {};
     ~efficiencyAndPurity() {};
     void openFiles();
-    void getHistos(const char* sample);
+    void getHistos(const char* sample, int currentYear);
     double weight(CCbinning* CCbins, Int_t NJets, Int_t BTags, Double_t MHT, Double_t HT,
 		  vector<TLorentzVector> ZCandidates,
 		  vector<TLorentzVector> Photons,
@@ -109,11 +112,11 @@ public:
 		  vector<double> EBphoton,
 		  bool applyDRfitWt);
   private:
-    TFile *purityTrigEffFile_;
-    TFile *photonSFFile_;
-    TFile *elecSFFile_;
-    TFile *muonIDSFFile_;
-    TFile *muonIsoSFFile_;
+    std::vector<TFile*> purityTrigEffFile_;
+    std::vector<TFile*> photonSFFile_;
+    std::vector<TFile*> elecSFFile_;
+    std::vector<TFile*> muonIDSFFile_;
+    std::vector<TFile*> muonIsoSFFile_;
     TString theSample_;
     std::vector<TH1F*> hPurity_, hTrigEff_;
     std::vector<TF1*> fTrigEff_;
@@ -157,6 +160,7 @@ private:
   bool applyPuWeight_;
   bool customPuWeight_;
   bool applyDRfitWt_;
+  bool applySFwtToMC_;
   TH1* puHist_;
   CCbinning* CCbins_;
   BTagCorrector* btagcorr_;
