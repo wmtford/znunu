@@ -352,15 +352,19 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
   //  NZvv_pred = Ngobs * ZgR * gPur * ZgDR
   TH1F *hzvvgJNobs = (TH1F*)hCorrelTemplate->Clone("hzvvgJNobs");
   if (doSample == Signal) setCorrelationLabels(hzvvgJNobs, 4);  
+  hzvvgJNobs->SetTitle("gamma+jets yield");
   hzvvgJNobs->GetYaxis()->SetTitle("gamma+jets yield");
 
   TH1F *hgJstat = (TH1F*)hTemplate->Clone("hgJstat");
+  hgJstat->SetTitle("gamma+jets yield stat error");
   hgJstat->GetYaxis()->SetTitle("gamma+jets yield stat error");
 
   TH1F *hzvvTF = (TH1F*)hCorrelTemplate->Clone("hzvvTF");
+  hzvvTF->SetTitle("Zinv transfer factor");
   hzvvTF->GetYaxis()->SetTitle("Zinv transfer factor");
 
   TH1F *hgJZgR = (TH1F*)hTemplate->Clone("hgJZgR");
+  hgJZgR->SetTitle("gamma+jets Z/gamma ratio");
   hgJZgR->GetYaxis()->SetTitle("gamma+jets Z/gamma ratio");
 
   // TH1F *hzvvgJZgRerr = (TH1F*)hCorrelTemplate->Clone("hzvvgJZgRerr");
@@ -368,97 +372,123 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
   // hzvvgJZgRerr->GetYaxis()->SetTitle("gamma+jets Z/gamma ratio error");
 
   TH1F *hgJZgRerr = (TH1F*)hTemplate->Clone("hgJZgRerr");
+  hgJZgRerr->SetTitle("gamma+jets Z/gamma ratio error");
   hgJZgRerr->GetYaxis()->SetTitle("gamma+jets Z/gamma ratio error");
 
   TH1F *hgJEtrg = (TH1F*)hTemplate->Clone("hgJEtrg");
+  hgJEtrg->SetTitle("gamma+jets trigger efficiency");
   hgJEtrg->GetYaxis()->SetTitle("gamma+jets trigger efficiency");
 
   TH1F *hzvvgJEtrgErr = (TH1F*)hCorrelTemplate->Clone("hzvvgJEtrgErr");
   if (doSample == Signal) setCorrelationLabels(hzvvgJEtrgErr, 13);  
+  hzvvgJEtrgErr->SetTitle("gamma+jets trigger efficiency error");
   hzvvgJEtrgErr->GetYaxis()->SetTitle("gamma+jets trigger efficiency error");
 
   TH1F *hgJSF = (TH1F*)hTemplate->Clone("hgJSF");
+  hgJSF->SetTitle("gamma+jets data/MC scale factor");
   hgJSF->GetYaxis()->SetTitle("gamma+jets data/MC scale factor");
 
   TH1F *hgJSFerr = (TH1F*)hTemplate->Clone("hgJSFerr");
   // if (doSample == Signal) setCorrelationLabels(hgJSFerr, 15);  // Canceled by DR 
+  hgJSFerr->SetTitle("gamma+jets data/MC scale factor");
   hgJSFerr->GetYaxis()->SetTitle("gamma+jets data/MC scale factor");
 
   TH1F *hgJFdir = (TH1F*)hTemplate->Clone("hgJFdir");
+  hgJFdir->SetTitle("gamma+jets fragmentation factor");
   hgJFdir->GetYaxis()->SetTitle("gamma+jets fragmentation factor");
 
   TH1F *hgJFdirErrUp = (TH1F*)hTemplate->Clone("hgJFdirErrUp");
+  hgJFdirErrUp->SetTitle("gamma+jets fragmentation factor +error");
   hgJFdirErrUp->GetYaxis()->SetTitle("gamma+jets fragmentation factor +error");
 
   TH1F *hgJFdirErrLow = (TH1F*)hTemplate->Clone("hgJFdirErrLow");
+  hgJFdirErrLow->SetTitle("gamma+jets fragmentation factor -error");
   hgJFdirErrLow->GetYaxis()->SetTitle("gamma+jets fragmentation factor -error");
 
   TH1F *hgJPur = (TH1F*)hTemplate->Clone("hgJPur");
+  hgJPur->SetTitle("gamma+jets purity");
   hgJPur->GetYaxis()->SetTitle("gamma+jets purity");
 
   TH1F *hzvvgJPurErr = (TH1F*)hCorrelTemplate->Clone("hzvvgJPurErr");
   if (doSample == Signal) setCorrelationLabels(hzvvgJPurErr, 15);  
+  hzvvgJPurErr->SetTitle("gamma+jets purity error");
   hzvvgJPurErr->GetYaxis()->SetTitle("gamma+jets purity error");
 
   TH1F *hZgDR = (TH1F*)hTemplate->Clone("hZgDR");
+  hZgDR->SetTitle("gamma+jets double ratio");
   hZgDR->GetYaxis()->SetTitle("gamma+jets double ratio");
 
   TH1F *hZgDRerrUp = (TH1F*)hTemplate->Clone("hZgDRerrUp");
+  hZgDRerrUp->SetTitle("gamma+jets double ratio error");
   hZgDRerrUp->GetYaxis()->SetTitle("gamma+jets double ratio error");
 
   TH1F *hZgDRerrLow = (TH1F*)hTemplate->Clone("hZgDRerrLow");
+  hZgDRerrLow->SetTitle("gamma+jets double ratio error");
   hZgDRerrLow->GetYaxis()->SetTitle("gamma+jets double ratio error");
 
   TH1F *hzvvNbCorrelUp = (TH1F*)hCorrelTemplate->Clone("hzvvNbCorrelUp");
   if (doSample == Signal) setCorrelationLabels(hzvvNbCorrelUp, 4);
+  hzvvNbCorrelUp->SetTitle("Errors correlated in Nb");
   hzvvNbCorrelUp->GetYaxis()->SetTitle("Errors correlated in Nb");
 
   TH1F *hzvvNbCorrelLow = (TH1F*)hCorrelTemplate->Clone("hzvvNbCorrelLow");
   if (doSample == Signal) setCorrelationLabels(hzvvNbCorrelLow, 4);
+  hzvvNbCorrelLow->SetTitle("Errors correlated in Nb");
   hzvvNbCorrelLow->GetYaxis()->SetTitle("Errors correlated in Nb");
 
   TH1F *hzvvScaleErr = (TH1F*)hCorrelTemplate->Clone("hzvvScaleErr");
   if (doSample == Signal) setCorrelationLabels(hzvvScaleErr, 15);  
+  hzvvScaleErr->SetTitle("Zinv global scale error");
   hzvvScaleErr->GetYaxis()->SetTitle("Zinv global scale error");
 
   // Book histograms for Nb/N0 ratio values and error components
   //  Nb/N0 pred = DYvalues
   TH1F *hDYvalue = (TH1F*)hTemplate->Clone("hDYvalue");
+  hDYvalue->SetTitle("DY ratio to 0b value");
   hDYvalue->GetYaxis()->SetTitle("DY ratio to 0b value");
 
   TH1F *hzvvDYstat = (TH1F*)hCorrelTemplate->Clone("hzvvDYstat");
   // if (doSample == Signal) setCorrelationLabels(hzvvDYstat, 11, 3999);
   if (doSample == Signal) setCorrelationLabels(hzvvDYstat, 15, 3999, 100);
+  hzvvDYstat->SetTitle("DY ratio to 0b stat error");
   hzvvDYstat->GetYaxis()->SetTitle("DY ratio to 0b stat error");
 
   TH1F *hDYMCstat = (TH1F*)hTemplate->Clone("hDYMCstat");
+  hDYMCstat->SetTitle("DY ratio to 0b stat error");
   hDYMCstat->GetYaxis()->SetTitle("DY ratio to 0b stat error");
 
   TH1F *hDYsysNjUp = (TH1F*)hTemplate->Clone("hDYsysNjUp");
+  hDYsysNjUp->SetTitle("DY ratio to 0b syst+ error Nj extrapolation");
   hDYsysNjUp->GetYaxis()->SetTitle("DY ratio to 0b syst+ error Nj extrapolation");
 
   TH1F *hDYsysNjLow = (TH1F*)hTemplate->Clone("hDYsysNjLow");
+  hDYsysNjLow->SetTitle("DY ratio to 0b syst- error Nj extrapolation");
   hDYsysNjLow->GetYaxis()->SetTitle("DY ratio to 0b syst- error Nj extrapolation");
 
   TH1F *hzvvDYMCerrUp = (TH1F*)hCorrelTemplate->Clone("hzvvDYMCerrUp");
   if (doSample == Signal) setCorrelationLabels(hzvvDYMCerrUp, 15, 9999, 4100);  // Uncorrel in Njets, but only last bin != 0
+  hzvvDYMCerrUp->SetTitle("DY ratio to 0b syst+ error Nj extrapolation");
   hzvvDYMCerrUp->GetYaxis()->SetTitle("DY ratio to 0b syst+ error Nj extrapolation");
 
   TH1F *hzvvDYMCerrLow = (TH1F*)hCorrelTemplate->Clone("hzvvDYMCerrLow");
   if (doSample == Signal) setCorrelationLabels(hzvvDYMCerrLow, 15, 9999, 4100);  
+  hzvvDYMCerrLow->SetTitle("DY ratio to 0b syst- error Nj extrapolation");
   hzvvDYMCerrLow->GetYaxis()->SetTitle("DY ratio to 0b syst- error Nj extrapolation");
 
   TH1F *hzvvDYsysKin = (TH1F*)hCorrelTemplate->Clone("hzvvDYsysKin");
   if (doSample == Signal) setCorrelationLabels(hzvvDYsysKin, 4, 9999, 100);  
+  hzvvDYsysKin->SetTitle("DY ratio to 0b syst error kinematics dependence");
   hzvvDYsysKin->GetYaxis()->SetTitle("DY ratio to 0b syst error kinematics dependence");
 
   TH1F *hzvvDYsysPur = (TH1F*)hCorrelTemplate->Clone("hzvvDYsysPur");
   if (doSample == Signal) setCorrelationLabels(hzvvDYsysPur, 15, 2299);  
+  hzvvDYsysPur->SetTitle("DY ratio to 0b syst error purity");
   hzvvDYsysPur->GetYaxis()->SetTitle("DY ratio to 0b syst error purity");
 
   // For combined results
   Float_t statErr[MaxBins], sysUp[MaxBins], sysLow[MaxBins];
   TH1F *ZinvBGpred = (TH1F*)hTemplate->Clone("ZinvBGpred");
+  ZinvBGpred->SetTitle("Predicted Z#rightarrow#nu#bar{#nu} background");
   ZinvBGpred->GetYaxis()->SetTitle("Predicted Z#rightarrow#nu#bar{#nu} background");
   ZinvBGpred->SetLineColor(kBlue);
   ZinvBGpred->SetMarkerColor(kBlue);
@@ -467,19 +497,24 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
   // ZinvBGpred->SetMinimum(-1);
   TH1F *ZinvBGsysUp = (TH1F*)hTemplate->Clone("ZinvBGsysUp");
   ZinvBGsysUp->GetYaxis()->SetTitle("Upper syst. error of Z#rightarrow#nu#bar{#nu} background");
+  ZinvBGsysUp->SetTitle("Upper syst. error of Z#rightarrow#nu#bar{#nu} background");
   TH1F *ZinvBGsysLow = (TH1F*)hTemplate->Clone("ZinvBGsysLow");
+  ZinvBGsysLow->SetTitle("Lower syst. error of Z#rightarrow#nu#bar{#nu} background");
   ZinvBGsysLow->GetYaxis()->SetTitle("Lower syst. error of Z#rightarrow#nu#bar{#nu} background");
 
   // For combined results, for bins with zero control-sample events
   TH1F *ZinvBG0EVpred = (TH1F*)hTemplate->Clone("ZinvBG0EVpred");
+  ZinvBG0EVpred->SetTitle("Predicted Z#rightarrow#nu#bar{#nu} background, 0 events");
   ZinvBG0EVpred->GetYaxis()->SetTitle("Predicted Z#rightarrow#nu#bar{#nu} background, 0 events");
   ZinvBG0EVpred->SetLineColor(kBlue);
   ZinvBG0EVpred->SetMarkerColor(kBlue);
   ZinvBG0EVpred->SetMarkerStyle(8);
   ZinvBG0EVpred->SetMarkerSize(0.5);
   TH1F *ZinvBG0EVsysUp = (TH1F*)hTemplate->Clone("ZinvBG0EVsysUp");
+  ZinvBG0EVsysUp->SetTitle("Upper syst. error of Z#rightarrow#nu#bar{#nu} background, 0 events");
   ZinvBG0EVsysUp->GetYaxis()->SetTitle("Upper syst. error of Z#rightarrow#nu#bar{#nu} background, 0 events");
   TH1F *ZinvBG0EVsysLow = (TH1F*)hTemplate->Clone("ZinvBG0EVsysLow");
+  ZinvBG0EVsysLow->SetTitle("Lower syst. error of Z#rightarrow#nu#bar{#nu} background, 0 events");
   ZinvBG0EVsysLow->GetYaxis()->SetTitle("Lower syst. error of Z#rightarrow#nu#bar{#nu} background, 0 events");
 
   ofstream tableFile;  tableFile.open("table_for_AN.txt");
@@ -688,6 +723,7 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
       } else {
 	hZinvMC = (TH1F*) MCfile->Get(MChistoname);
 	hZinvMCbin = (TH1F*)hTemplate->Clone("hZinvMCbin");
+	hZinvMCbin->SetTitle("MC Z#rightarrow#nu#bar{#nu}");
 	hZinvMCbin->GetYaxis()->SetTitle("MC Z#rightarrow#nu#bar{#nu}");
 	for (Int_t bin=1; bin<=MaxBins; ++bin) {
 	  hZinvMCbin->SetBinContent(bin, hZinvMC->GetBinContent(bin));
@@ -882,7 +918,7 @@ Int_t getData_gJets(const char* fileName,
       n++; token[n] = strtok(0, ",");             // FdirSys  0100 = 4
       sscanf(token[n], "%f", &gFdirSys[ijet][ikin]);
       //******************** kludge *********************************************
-      gFdirSys[ijet][ikin] = 0.3;
+      // gFdirSys[ijet][ikin] = 0.3;
       //******************** kludge *********************************************
       n++; token[n] = strtok(0, "-");             // FdirErrUp  0100 = 4
       sscanf(token[n], "%f", &gFdirErrUp[ijet][ikin]);
