@@ -201,7 +201,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
     activeBranches_.push_back("NonPrefiringProbDn");
   }
 
-  // For now we have only 2016 correction files
+  // For now we have only 2016 pileup and BTag correction files
   if (runBlock_.empty() || runBlock_.find("2016")!=std::string::npos || runBlock_.find("2017")!=std::string::npos || runBlock_.find("2018")!=std::string::npos) {
     if (applyPuWeight_ && customPuWeight_) {
       TFile* pufile = TFile::Open("../../Analysis/corrections/PileupHistograms_0121_69p2mb_pm4p6.root", "READ");
@@ -556,12 +556,20 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       chain->GetEntry(entry);  // Pull in tree variables for reinitialization
       setTriggerIndexList(sample);
       if (isMC_ && verbosity_ >= 1) cout << "MC weight for this file is " << Weight << " times correction " << MCwtCorr << endl;
+      // Load the year-dependent correction factors.
       int theYear = -1;
-      if (RunNum < Start2017) theYear = Year2016;
-      else if (RunNum < Start2018) theYear = Year2017;
-      else theYear = Year2018;
+      if (isMC_) {
+	if (     !runBlock_.compare("2016")) theYear = Year2016;
+	else if (!runBlock_.compare("2017")) theYear = Year2017;
+	else if (!runBlock_.compare("2018")) theYear = Year2018;
+      } else {
+	if (RunNum < Start2017) theYear = Year2016;
+	else if (RunNum < Start2018) theYear = Year2017;
+	else theYear = Year2018;
+      }
       if (theYear != currentYear) {
 	currentYear = theYear;
+	cout << "currentYear = " << currentYear << endl;
 	effPurCorr_.getHistos(sample, currentYear);  // For purity, Fdir, trigger eff, reco eff
       }
     }
@@ -1680,7 +1688,6 @@ RA2bZinvAnalysis::efficiencyAndPurity::getHistos(const char* sample, int current
   FdirHist_ = nullptr;
   hPurity_.clear();
   hTrigEff_.clear();
-  if (currentYear == RA2bZinvAnalysis::Year2016) cout << "currentYear = " << currentYear << endl;
   if (theSample_.Contains("zmm") && !theSample_.Contains("tt")) {
     hPurity_.push_back((TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_pur_m"));
     if (hPurity_.back() == nullptr) cout << "***** Histogram h_pur_m not found *****" << endl;
@@ -1835,7 +1842,12 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
       effWt *= fTrigEff_[1]->Eval(max(double(205), Photons.at(0).Pt()));  // hard-wired cutoff
     }
     if (applyDRfitWt) {
-      effWt /= (min(MHT, 900.0) - 397.7)*( -0.00058276 *2/3) + 0.8401;
+      effWt /= (min(MHT, 900.0) - 400.2)*( -0.00039455 *2/3) + 0.8401;
+      // Graph_from_hMHT_DR_zmm
+      // Function parameter 0:  0.997861381979 +/- 0.0292274226244
+      // Function parameter 1:  -0.000394553221914 +/- 7.21321517572e-05
+      // Average y0 = 0.8401.  x0 = (y0 -p0) / p1
+      // effWt /= (min(MHT, 900.0) - 397.7)*( -0.00058276 *2/3) + 0.8401;
       // Function parameter 0:  1.07188729834 +/- 0.// 047180710618
       // Function parameter 1:  -0.000582762306737 +/- 0.000115148917583
       // Average y0 = 0.8401.  x0 = (y0 -p0) / p1
