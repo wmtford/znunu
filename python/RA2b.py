@@ -48,7 +48,8 @@ def cmsLumi(pad,  iPeriod=None,  iPosX=None, extraText=None, cmsText=None):
     lumi_13TeV_V8 = "4.0 fb^{-1}"
     lumi_13TeV_2016 = "35.9 fb^{-1}"
     lumi_13TeV_2017 = "41.5 fb^{-1}"
-    lumi_13TeV_2018 = "14.0 fb^{-1}"
+    lumi_13TeV_2018 = "59.4 fb^{-1}"
+    lumi_13TeV_Run2 = "136.8 fb^{-1}"
     lumi_8TeV  = "19.7 fb^{-1}" 
     lumi_7TeV  = "5.1 fb^{-1}"
     lumi_sqrtS = ""
@@ -112,6 +113,9 @@ def cmsLumi(pad,  iPeriod=None,  iPosX=None, extraText=None, cmsText=None):
         if( outOfFrame): lumiText += "}"
     elif ( iPeriod==8 ):
         lumiText += lumi_13TeV_2018
+        lumiText += " (13 TeV)"
+    elif ( iPeriod==9 ):
+        lumiText += lumi_13TeV_Run2
         lumiText += " (13 TeV)"
     elif ( iPeriod==12 ):
         lumiText += "8 TeV"
@@ -3927,7 +3931,9 @@ def getPlotAndRatio(numHists, denomHists=None, bottomPlots=None, doStack=None, T
                 continue
             if(i>=len(numHists)):
                 if(doStack==True):
-                    leg.AddEntry(denomHists[i-len(numHists)], legList[i],'f')  # wtf
+                #     leg.AddEntry(denomHists[i-len(numHists)], legList[i],'f')  # wtf
+                    inv = len(legList) - i
+                    leg.AddEntry(denomHists[inv-len(numHists)], legList[inv],'f')  # wtf
                 elif(drawErrorBand==True):
                     leg.AddEntry(errorBandHist, legList[i], 'fl')
                 elif(denomDrawStyle=='HIST' or denomDrawStyle=='hist'):
@@ -3944,6 +3950,7 @@ def getPlotAndRatio(numHists, denomHists=None, bottomPlots=None, doStack=None, T
     leg.SetFillColor(0) 
     leg.SetLineWidth(0)
     leg.SetHeader(legHeader)
+    # leg.SetTextSize(0.07)  # wtf
 
     pad_2.Draw()
     pad_2.SetLogy(doLogy)
