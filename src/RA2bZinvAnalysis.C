@@ -1685,7 +1685,7 @@ RA2bZinvAnalysis::efficiencyAndPurity::getHistos(const char* sample, int current
   theSample_ = TString(sample);
   // hSFeff_ = nullptr;
   hSFeff_.clear();
-  FdirHist_ = nullptr;
+  FdirGraph_ = nullptr;
   hPurity_.clear();
   hTrigEff_.clear();
   if (theSample_.Contains("zmm") && !theSample_.Contains("tt")) {
@@ -1699,10 +1699,10 @@ RA2bZinvAnalysis::efficiencyAndPurity::getHistos(const char* sample, int current
     if (hPurity_.back() == nullptr) cout << "***** Histogram h_pur_eb not found *****" << endl;
     hPurity_.push_back((TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_pur_ec"));
     if (hPurity_.back() == nullptr) cout << "***** Histogram h_pur_ec not found *****" << endl;
-    FdirHist_ = (TH1D*) purityTrigEffFile_.at(currentYear)->Get("h_bin46_NJets8910");
-    if (FdirHist_ == nullptr) cout << "***** Histogram h_bin46_NJets8910 not found *****" << endl;
-    // FdirGraph_ = (TGraphErrors*) purityTrigEffFile_.at(currentYear)->Get("bin46_f");
-    // if (FdirGraph_ == nullptr) cout << "***** Histogram bin46_f not found *****" << endl;
+    // FdirHist_ = (TH1D*) purityTrigEffFile_.at(currentYear)->Get("h_bin46_NJets8910");
+    // if (FdirHist_ == nullptr) cout << "***** Histogram h_bin46_NJets8910 not found *****" << endl;
+    FdirGraph_ = (TGraphErrors*) purityTrigEffFile_.at(currentYear)->Get("h_bin46_NJets8910");
+    if (FdirGraph_ == nullptr) cout << "***** Histogram h_bin46_NJets8910 not found *****" << endl;
   } else if (theSample_.Contains("dymm") || theSample_.Contains("ttmm") || 
 	     theSample_.Contains("ttzmm") || theSample_.Contains("VVmm")) {
     hTrigEff_.push_back((TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_trig_m"));
@@ -1778,8 +1778,8 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
       effWt *= hPurity_[1]->GetBinContent(bin);
     }
     int CCbinjk = CCbins->jk(CCbins->jbin(NJets), CCbins->kinBin(HT, MHT));
-    if (CCbinjk > 0 && FdirHist_ != nullptr && CCbinjk <= FdirHist_->GetNbinsX()) effWt *= FdirHist_->GetBinContent(CCbinjk);
-    // if (CCbinjk > 0 && FdirGraph_ != nullptr && CCbinjk < FdirGraph_->GetN()) effWt *= FdirGraph_->GetY()[CCbinjk-1];
+    // if (CCbinjk > 0 && FdirHist_ != nullptr && CCbinjk <= FdirHist_->GetNbinsX()) effWt *= FdirHist_->GetBinContent(CCbinjk);
+    if (CCbinjk > 0 && FdirGraph_ != nullptr && CCbinjk < FdirGraph_->GetN()) effWt *= FdirGraph_->GetY()[CCbinjk-1];
     // FIXME:  For LDP, fill extra bins with value 0.825
 
   } else if (theSample_.Contains("dymm") || theSample_.Contains("dyee") ||
@@ -1842,8 +1842,12 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
       effWt *= fTrigEff_[1]->Eval(max(double(205), Photons.at(0).Pt()));  // hard-wired cutoff
     }
     if (applyDRfitWt) {
-      effWt /= (min(MHT, 900.0) - 400.2)*( -0.00039455 *2/3) + 0.8401;
+      effWt /= (min(MHT, 900.0) - 399.6)*(  -0.00040321 *1/3) + 0.8389;  // New Fdir, 28 Jan, 2019
       // Graph_from_hMHT_DR_zmm
+      // Function parameter 0:  0.999926406018 +/- 0.0291554520092
+      // Function parameter 1:  -0.000403207439065 +/- 7.19133297508e-05
+      // Average y0 = 0.8389.  x0 = (y0 -p0) / p1
+      // effWt /= (min(MHT, 900.0) - 400.2)*( -0.00039455 *2/3) + 0.8401;  // gJets_signal.dat 28 Jan, 2019
       // Function parameter 0:  0.997861381979 +/- 0.0292274226244
       // Function parameter 1:  -0.000394553221914 +/- 7.21321517572e-05
       // Average y0 = 0.8401.  x0 = (y0 -p0) / p1

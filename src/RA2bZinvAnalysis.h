@@ -9,7 +9,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #define VERSION 16
-/* #define ISMC */
+#define ISMC
 #define ISSKIM
 
 #include "CCbinning.h"
@@ -122,8 +122,8 @@ public:
     std::vector<TF1*> fTrigEff_;
     /* TH1F* hSFeff_; */
     std::vector<TH2F*> hSFeff_;
-    TH1D* FdirHist_;
-    /* TGraphErrors* FdirGraph_; */
+    /* TH1D* FdirHist_; */
+    TGraphErrors* FdirGraph_;
   };
 
 private:
