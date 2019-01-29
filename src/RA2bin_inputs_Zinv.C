@@ -28,6 +28,9 @@ namespace Sample {
 }
 using namespace Sample;
 
+typedef std::vector<Float_t> V1F;
+typedef std::vector <std::vector<Float_t> > V2F;
+
 // void RA2bin_inputs_Zinv(Int_t doSample = Signal,
 void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
 			const TString gJetsFnRoot = TString("gJets"),
@@ -78,47 +81,47 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
   //
   // Prototypes for helper functions
   //
-  Int_t getData_gJets(const char* fileName,
-		      std::vector <std::vector<Float_t> >& Ngobs,
-		      std::vector <std::vector<Float_t> >& NgobsEB,
-		      std::vector <std::vector<Float_t> >& NgobsEE,
-		      std::vector <std::vector<Float_t> >& ZgR,
-		      std::vector <std::vector<Float_t> >& ZgRerr,
-		      std::vector <std::vector<Float_t> >& gEtrg,
-		      std::vector <std::vector<Float_t> >& gEtrgErr,
-		      std::vector <std::vector<Float_t> >& gEtrgSys,
-		      std::vector <std::vector<Float_t> >& gSF,
-		      std::vector <std::vector<Float_t> >& gSFerr,
-		      std::vector <std::vector<Float_t> >& gFdir,
-		      std::vector <std::vector<Float_t> >& gFdirErrUP,
-		      std::vector <std::vector<Float_t> >& gFdirErrLow,
-		      std::vector <std::vector<Float_t> >& gFdirSys,
-		      std::vector <std::vector<Float_t> >& gPur,
-		      std::vector <std::vector<Float_t> >& gPurErr,
-		      std::vector <std::vector<Float_t> >& ZgDR,
-		      std::vector <std::vector<Float_t> >& ZgDRerrUp,
-		      std::vector <std::vector<Float_t> >& ZgDRerrLow);
+  Int_t getData_gJets(std::vector<const char*> fileNames, std::vector<float> lumi,
+		      V2F& Ngobs,
+		      V2F& NgobsEB,
+		      V2F& NgobsEE,
+		      V2F& ZgR,
+		      V2F& ZgRerr,
+		      V2F& gEtrg,
+		      V2F& gEtrgErr,
+		      V2F& gEtrgSys,
+		      V2F& gSF,
+		      V2F& gSFerr,
+		      V2F& gFdir,
+		      V2F& gFdirErrUP,
+		      V2F& gFdirErrLow,
+		      V2F& gFdirSys,
+		      V2F& gPur,
+		      V2F& gPurErr,
+		      V2F& ZgDR,
+		      V2F& ZgDRerrUp,
+		      V2F& ZgDRerrLow);
   Int_t getData_DR(const char* fileName,
-		   std::vector <std::vector<Float_t> >& ZgDR,
-		   std::vector <std::vector<Float_t> >& ZgDRerrUp,
-		   std::vector <std::vector<Float_t> >& ZgDRerrLow,
+		   V2F& ZgDR,
+		   V2F& ZgDRerrUp,
+		   V2F& ZgDRerrLow,
 		   Float_t& DRscaleErr,
 		   Float_t& DY0bPurErr,
 		   Float_t& DYtrigEffErr,
 		   Float_t& LeptonSFerr,
 		   Float_t& btag_SFerr);
   Int_t getData_DR(const char* fileName,
-		   std::vector <std::vector<Float_t> >& ZgDR,
-		   std::vector <std::vector<Float_t> >& ZgDRerrUp,
-		   std::vector <std::vector<Float_t> >& ZgDRerrLow);
+		   V2F& ZgDR,
+		   V2F& ZgDRerrUp,
+		   V2F& ZgDRerrLow);
   Int_t getData_DY(const char* fileName,
-		   std::vector <std::vector <std::vector<Float_t> > >& Rb0,
-		   std::vector <std::vector <std::vector<Float_t> > >& Rb0stat,
-		   std::vector <std::vector <std::vector<Float_t> > >& Rb0MCstat,
-		   std::vector <std::vector <std::vector<Float_t> > >& Rb0sysUp,
-		   std::vector <std::vector <std::vector<Float_t> > >& Rb0sysLow,
-		   std::vector <std::vector <std::vector<Float_t> > >& Rb0sysKin,
-		   std::vector <std::vector <std::vector<Float_t> > >& Rb0sysPur);
+		   std::vector<V2F>& Rb0,
+		   std::vector<V2F>& Rb0stat,
+		   std::vector<V2F>& Rb0MCstat,
+		   std::vector<V2F>& Rb0sysUp,
+		   std::vector<V2F>& Rb0sysLow,
+		   std::vector<V2F>& Rb0sysKin,
+		   std::vector<V2F>& Rb0sysPur);
   void setCorrelationLabels(TH1* histo, const unsigned correlVar, const int minCorrelBin=9999,
 			    const int maxCorrelBin=0);
 
@@ -172,51 +175,59 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
   Int_t bin;  // Bin index for loops
 
   // N(b=0) from gamma+jets
-  std::vector <std::vector<Float_t> > Ngobs(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > NgobsEB(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > NgobsEE(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > ZgR(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > ZgRerr(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > gEtrg(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > gEtrgErr(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > gEtrgErrEff(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > gEtrgSys(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > gSF(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > gSFerr(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > gFdir(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > gFdirErrUp(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > gFdirErrUpEff(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > gFdirErrLow(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > gFdirErrLowEff(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > gFdirSys(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > gPur(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > gPurErr(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > gPurErrEff(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > ZgDR(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > ZgDRerrUp(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > ZgDRerrLow(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > ZgDR_from_gJets(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > ZgDRerrUp_from_gJets(MaxNjets, std::vector<Float_t>(MaxKin, 0));
-  std::vector <std::vector<Float_t> > ZgDRerrLow_from_gJets(MaxNjets, std::vector<Float_t>(MaxKin, 0));
+  V2F Ngobs(MaxNjets, V1F(MaxKin, 0));
+  V2F NgobsEB(MaxNjets, V1F(MaxKin, 0));
+  V2F NgobsEE(MaxNjets, V1F(MaxKin, 0));
+  V2F ZgR(MaxNjets, V1F(MaxKin, 0));
+  V2F ZgRerr(MaxNjets, V1F(MaxKin, 0));
+  V2F gEtrg(MaxNjets, V1F(MaxKin, 0));
+  V2F gEtrgErr(MaxNjets, V1F(MaxKin, 0));
+  V2F gEtrgErrEff(MaxNjets, V1F(MaxKin, 0));
+  V2F gEtrgSys(MaxNjets, V1F(MaxKin, 0));
+  V2F gSF(MaxNjets, V1F(MaxKin, 0));
+  V2F gSFerr(MaxNjets, V1F(MaxKin, 0));
+  V2F gFdir(MaxNjets, V1F(MaxKin, 0));
+  V2F gFdirErrUp(MaxNjets, V1F(MaxKin, 0));
+  V2F gFdirErrUpEff(MaxNjets, V1F(MaxKin, 0));
+  V2F gFdirErrLow(MaxNjets, V1F(MaxKin, 0));
+  V2F gFdirErrLowEff(MaxNjets, V1F(MaxKin, 0));
+  V2F gFdirSys(MaxNjets, V1F(MaxKin, 0));
+  V2F gPur(MaxNjets, V1F(MaxKin, 0));
+  V2F gPurErr(MaxNjets, V1F(MaxKin, 0));
+  V2F gPurErrEff(MaxNjets, V1F(MaxKin, 0));
+  V2F ZgDR(MaxNjets, V1F(MaxKin, 0));
+  V2F ZgDRerrUp(MaxNjets, V1F(MaxKin, 0));
+  V2F ZgDRerrLow(MaxNjets, V1F(MaxKin, 0));
+  V2F ZgDR_from_gJets(MaxNjets, V1F(MaxKin, 0));
+  V2F ZgDRerrUp_from_gJets(MaxNjets, V1F(MaxKin, 0));
+  V2F ZgDRerrLow_from_gJets(MaxNjets, V1F(MaxKin, 0));
   Float_t DRscaleErr=0, DY0bPurErr=0, DYtrigEffErr=0, LeptonSFerr=0, btagSFerr=0;
 
   // Ratio Nb/N0 from DY
-  std::vector < std::vector <std::vector<Float_t> > >
-    DYvalues(MaxNjets, std::vector< std::vector<Float_t> >(MaxNb, std::vector<Float_t>(MaxKinDY, 0)));
-  std::vector < std::vector <std::vector<Float_t> > >
-    DYstat(MaxNjets, std::vector< std::vector<Float_t> >(MaxNb, std::vector<Float_t>(MaxKinDY, 0)));
-  std::vector < std::vector <std::vector<Float_t> > >
-    DYMCstat(MaxNjets, std::vector< std::vector<Float_t> >(MaxNb, std::vector<Float_t>(MaxKinDY, 0)));
-  std::vector < std::vector <std::vector<Float_t> > >
-    DYsysNjUp(MaxNjets, std::vector< std::vector<Float_t> >(MaxNb, std::vector<Float_t>(MaxKinDY, 0)));
-  std::vector < std::vector <std::vector<Float_t> > >
-    DYsysNjLow(MaxNjets, std::vector< std::vector<Float_t> >(MaxNb, std::vector<Float_t>(MaxKinDY, 0)));
-  std::vector < std::vector <std::vector<Float_t> > >
-    DYsysKin(MaxNjets, std::vector< std::vector<Float_t> >(MaxNb, std::vector<Float_t>(MaxKinDY, 0)));
-  std::vector < std::vector <std::vector<Float_t> > >
-    DYsysPur(MaxNjets, std::vector< std::vector<Float_t> >(MaxNb, std::vector<Float_t>(MaxKinDY, 0)));
-  // Read gJets, DY data from files
-  if (0 != getData_gJets(dataFile_gJets, Ngobs, NgobsEB, NgobsEE, ZgR, ZgRerr, gEtrg, gEtrgErr, gEtrgSys, gSF,
+  std::vector < V2F >
+    DYvalues(MaxNjets, std::vector< V1F >(MaxNb, V1F(MaxKinDY, 0)));
+  std::vector < V2F >
+    DYstat(MaxNjets, std::vector< V1F >(MaxNb, V1F(MaxKinDY, 0)));
+  std::vector < V2F >
+    DYMCstat(MaxNjets, std::vector< V1F >(MaxNb, V1F(MaxKinDY, 0)));
+  std::vector < V2F >
+    DYsysNjUp(MaxNjets, std::vector< V1F >(MaxNb, V1F(MaxKinDY, 0)));
+  std::vector < V2F >
+    DYsysNjLow(MaxNjets, std::vector< V1F >(MaxNb, V1F(MaxKinDY, 0)));
+  std::vector < V2F >
+    DYsysKin(MaxNjets, std::vector< V1F >(MaxNb, V1F(MaxKinDY, 0)));
+  std::vector < V2F >
+    DYsysPur(MaxNjets, std::vector< V1F >(MaxNb, V1F(MaxKinDY, 0)));
+  // Read gJets, DR, DY data from files
+
+  // if (0 != getData_gJets(dataFile_gJets,
+  // FIXME:  hard-wire filenames for now
+  std::vector<const char*> vfn_gJets = {"../datFiles/gJets_2016_signal.dat",
+					"../datFiles/gJets_2017_signal.dat",
+					"../datFiles/gJets_2018_signal.dat"};
+  V1F vlumi = {35.9, 41.5, 59.4};
+  if (0 != getData_gJets(vfn_gJets, vlumi,
+			 Ngobs, NgobsEB, NgobsEE, ZgR, ZgRerr, gEtrg, gEtrgErr, gEtrgSys, gSF,
 			 gSFerr, gFdir, gFdirErrUp, gFdirErrLow, gFdirSys, gPur, gPurErr, ZgDR_from_gJets,
 			 ZgDRerrUp_from_gJets, ZgDRerrLow_from_gJets)) {
     cout << "Failed to get data." << endl;
@@ -810,26 +821,26 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
 
 }  // ---------------------------------------------------------------
 
-Int_t getData_gJets(const char* fileName,
-		    std::vector <std::vector<Float_t> >& Ngobs,
-		    std::vector <std::vector<Float_t> >& NgobsEB,
-		    std::vector <std::vector<Float_t> >& NgobsEE,
-		    std::vector <std::vector<Float_t> >& ZgR,
-		    std::vector <std::vector<Float_t> >& ZgRerr,
-		    std::vector <std::vector<Float_t> >& gEtrg,
-		    std::vector <std::vector<Float_t> >& gEtrgErr,
-		    std::vector <std::vector<Float_t> >& gEtrgSys,
-		    std::vector <std::vector<Float_t> >& gSF,
-		    std::vector <std::vector<Float_t> >& gSFerr,
-		    std::vector <std::vector<Float_t> >& gFdir,
-		    std::vector <std::vector<Float_t> >& gFdirErrUp,
-		    std::vector <std::vector<Float_t> >& gFdirErrLow,
-		    std::vector <std::vector<Float_t> >& gFdirSys,
-		    std::vector <std::vector<Float_t> >& gPur,
-		    std::vector <std::vector<Float_t> >& gPurErr,
-		    std::vector <std::vector<Float_t> >& ZgDR,
-		    std::vector <std::vector<Float_t> >& ZgDRerrUp,
-		    std::vector <std::vector<Float_t> >& ZgDRerrLow) {
+Int_t getData_gJets(std::vector<const char*> fileNames, std::vector<float> lumi,
+		    V2F& Ngobs,
+		    V2F& NgobsEB,
+		    V2F& NgobsEE,
+		    V2F& ZgR,
+		    V2F& ZgRerr,
+		    V2F& gEtrg,
+		    V2F& gEtrgErr,
+		    V2F& gEtrgSys,
+		    V2F& gSF,
+		    V2F& gSFerr,
+		    V2F& gFdir,
+		    V2F& gFdirErrUp,
+		    V2F& gFdirErrLow,
+		    V2F& gFdirSys,
+		    V2F& gPur,
+		    V2F& gPurErr,
+		    V2F& ZgDR,
+		    V2F& ZgDRerrUp,
+		    V2F& ZgDRerrLow) {
   //
   // Read data from the file, parse, and set data arrays.
   //
@@ -843,109 +854,182 @@ Int_t getData_gJets(const char* fileName,
   ZgDRerrUp, Low are uncorrelated among the 46 bins.     0100 = 4  this one
   As of 10 Jul 2016 we combine these last two in ZgDRerrUp, Low.
    */
+
+  void comb(Int_t mode, V1F lumi, V1F v, V1F e, Float_t& val, Float_t& err);
+
   Int_t Nrow = Ngobs.size();
   Int_t Ncol = Ngobs[0].size();
-  ifstream dataStream;
-  cout << fileName << endl;
-  dataStream.open(fileName); // open the data file
-  if (!dataStream.good()) {
-  cout << "Open failed for file " << fileName << endl;
-    return 1; // exit if file not found
-  }
-  char buf[512];  // line buffer
-  do {
-    dataStream.getline(buf, 512);  // Discard (pre-)header lines
-    // cout << buf << endl;
-    if (dataStream.eof()) {
-      cout << "EOF found prematurely while searching for gJets header line" << endl;
-      return 1;
+
+  // Vectors to hold values from separate input files
+  int Nfiles = fileNames.size();
+  std::vector<V2F> Ngobst(Nrow, V2F(Ncol, V1F(Nfiles, 0)));
+  std::vector<V2F> NgobsEBt(Nrow, V2F(Ncol, V1F(Nfiles, 0)));
+  std::vector<V2F> NgobsEEt(Nrow, V2F(Ncol, V1F(Nfiles, 0)));
+  std::vector<V2F> ZgRt(Nrow, V2F(Ncol, V1F(Nfiles, 0)));
+  std::vector<V2F> ZgRerrt(Nrow, V2F(Ncol, V1F(Nfiles, 0)));
+  std::vector<V2F> gEtrgt(Nrow, V2F(Ncol, V1F(Nfiles, 0)));
+  std::vector<V2F> gEtrgErrt(Nrow, V2F(Ncol, V1F(Nfiles, 0)));
+  std::vector<V2F> gEtrgSyst(Nrow, V2F(Ncol, V1F(Nfiles, 0)));
+  std::vector<V2F> gSFt(Nrow, V2F(Ncol, V1F(Nfiles, 0)));
+  std::vector<V2F> gSFerrt(Nrow, V2F(Ncol, V1F(Nfiles, 0)));
+  std::vector<V2F> gFdirt(Nrow, V2F(Ncol, V1F(Nfiles, 0)));
+  std::vector<V2F> gFdirErrUpt(Nrow, V2F(Ncol, V1F(Nfiles, 0)));
+  std::vector<V2F> gFdirErrLowt(Nrow, V2F(Ncol, V1F(Nfiles, 0)));
+  std::vector<V2F> gFdirSyst(Nrow, V2F(Ncol, V1F(Nfiles, 0)));
+  std::vector<V2F> gPurt(Nrow, V2F(Ncol, V1F(Nfiles, 0)));
+  std::vector<V2F> gPurErrt(Nrow, V2F(Ncol, V1F(Nfiles, 0)));
+  std::vector<V2F> ZgDRt(Nrow, V2F(Ncol, V1F(Nfiles, 0)));
+  std::vector<V2F> ZgDRerrUpt(Nrow, V2F(Ncol, V1F(Nfiles, 0)));
+  std::vector<V2F> ZgDRerrLowt(Nrow, V2F(Ncol, V1F(Nfiles, 0)));
+
+  for (int ifn = 0; ifn < Nfiles; ++ifn) {
+    cout << fileNames.at(ifn) << endl;
+    ifstream dataStream;
+    dataStream.open(fileNames.at(ifn)); // open the data file
+    if (!dataStream.good()) {
+      cout << "Open failed for file " << fileNames.at(ifn) << endl;
+      return 1; // exit if file not found
+    }
+    char buf[512];  // line buffer
+    do {
+      dataStream.getline(buf, 512);  // Discard (pre-)header lines
+      // cout << buf << endl;
+      if (dataStream.eof()) {
+	cout << "EOF found prematurely while searching for gJets header line" << endl;
+	return 1;
+      }
+    }
+    while (strncmp(buf, " binIndex", 9) != 0);
+    // while (strncmp(buf, "no ", 3) != 0);
+    // while (strncmp(buf, "no  Nobs", 8) != 0);
+    for (Int_t ijet=0; ijet<Nrow; ++ijet) {
+      for (Int_t ikin=0; ikin<Ncol; ++ikin) {
+	if (ijet > 2 && (ikin == 0 || ikin == 3)) continue;  // Skip high-Njet, low-HT bins
+	if (Ncol > 10 && ijet > 2 && ikin == 6) continue;  // Skip high-Njet, low-HT bins
+	// cout << ijet << " " << ikin << endl;
+	// Read next line of the stream and extract its data
+	dataStream.getline(buf, 512);
+	// cout << buf << endl;
+	if (dataStream.eof()) {
+	  cout << "EOF found prematurely while searching for jJets data" << endl;
+	  return 1;
+	}
+	const char* token[100] = {}; // initialize to 0
+	Int_t n = 0;
+	// parse the line
+	token[n] = strtok(buf, ":"); // first token
+	if (token[n] == 0) {
+	  cout << n << endl;
+	  cout << "gj Empty line encountered" << endl;
+	  return 1;
+	}
+	n++; token[n] = strtok(0, "|");  // for file with MC columns
+	n++; token[n] = strtok(0, "|");  // for file with MC EB, EE columns
+	n++; token[n] = strtok(0, "|");  // for file with MC EB, EE columns
+	n++; token[n] = strtok(0, "|");             // Nobs
+	sscanf(token[n], "%f", &Ngobst[ijet][ikin][ifn]);
+	n++; token[n] = strtok(0, "|");            // NgobsEB
+	sscanf(token[n], "%f", &NgobsEBt[ijet][ikin][ifn]);
+	n++; token[n] = strtok(0, "|");
+	n++; token[n] = strtok(0, "|");            // NgobsEE
+	sscanf(token[n], "%f", &NgobsEEt[ijet][ikin][ifn]);
+	n++; token[n] = strtok(0, "|");
+	n++; token[n] = strtok(0, "(");             // Etrg
+	sscanf(token[n], "%f", &gEtrgt[ijet][ikin][ifn]);
+	n++; token[n] = strtok(0, ",");             // EtrgSys  0100 = 4
+	sscanf(token[n], "%f", &gEtrgSyst[ijet][ikin][ifn]);
+	n++; token[n] = strtok(0, ")");             // EtrgErr  1101 = 13
+	sscanf(token[n], "%f", &gEtrgErrt[ijet][ikin][ifn]);
+	n++; token[n] = strtok(0, "|");
+	n++; token[n] = strtok(0, "(");             // SF
+	sscanf(token[n], "%f", &gSFt[ijet][ikin][ifn]);
+	n++; token[n] = strtok(0, ")");             // SFerr  1111 = 15
+	sscanf(token[n], "%f", &gSFerrt[ijet][ikin][ifn]);
+	n++; token[n] = strtok(0, "|");
+	n++; token[n] = strtok(0, "(");             // RZg
+	sscanf(token[n], "%f", &ZgRt[ijet][ikin][ifn]);
+	n++; token[n] = strtok(0, ")");             // RZgErr  0100 = 4
+	sscanf(token[n], "%f", &ZgRerrt[ijet][ikin][ifn]);
+	n++; token[n] = strtok(0, "|");
+	n++; token[n] = strtok(0, "(");             // Fdir
+	sscanf(token[n], "%f", &gFdirt[ijet][ikin][ifn]);
+	n++; token[n] = strtok(0, ",");             // FdirSys  0100 = 4
+	sscanf(token[n], "%f", &gFdirSyst[ijet][ikin][ifn]);
+	//******************** kludge *********************************************
+	// gFdirSyst[ijet][ikin][ifn] = 0.3;
+	//******************** kludge *********************************************
+	n++; token[n] = strtok(0, "-");             // FdirErrUp  0100 = 4
+	sscanf(token[n], "%f", &gFdirErrUpt[ijet][ikin][ifn]);
+	n++; token[n] = strtok(0, ")");             // FdirErrLow  0100 = 4
+	sscanf(token[n], "%f", &gFdirErrLowt[ijet][ikin][ifn]);
+	n++; token[n] = strtok(0, "|");
+	n++; token[n] = strtok(0, "(");             // Purity
+	sscanf(token[n], "%f", &gPurt[ijet][ikin][ifn]);
+	n++; token[n] = strtok(0, ")");             // PurityErr  1111 = 15
+	sscanf(token[n], "%f", &gPurErrt[ijet][ikin][ifn]);
+	n++; token[n] = strtok(0, " ");
+	n++; token[n] = strtok(0, "(");             // ZgDR
+	sscanf(token[n], "%f", &ZgDRt[ijet][ikin][ifn]);
+	n++; token[n] = strtok(0, "-");             // ZgDRErrUp  0000 = 0 (not used)
+	sscanf(token[n], "%f", &ZgDRerrUpt[ijet][ikin][ifn]);
+	n++; token[n] = strtok(0, ")");             // ZgDRErrLow  0000 = 0 (not used)
+	sscanf(token[n], "%f", &ZgDRerrLowt[ijet][ikin][ifn]);
+      }
     }
   }
-  while (strncmp(buf, " binIndex", 9) != 0);
-  // while (strncmp(buf, "no ", 3) != 0);
-  // while (strncmp(buf, "no  Nobs", 8) != 0);
+  // Combine results from the separate files
+  Float_t dummy;
   for (Int_t ijet=0; ijet<Nrow; ++ijet) {
     for (Int_t ikin=0; ikin<Ncol; ++ikin) {
       if (ijet > 2 && (ikin == 0 || ikin == 3)) continue;  // Skip high-Njet, low-HT bins
       if (Ncol > 10 && ijet > 2 && ikin == 6) continue;  // Skip high-Njet, low-HT bins
-      // cout << ijet << " " << ikin << endl;
-      // Read next line of the stream and extract its data
-      dataStream.getline(buf, 512);
-      // cout << buf << endl;
-      if (dataStream.eof()) {
-	cout << "EOF found prematurely while searching for jJets data" << endl;
-	return 1;
-      }
-      const char* token[100] = {}; // initialize to 0
-      Int_t n = 0;
-      // parse the line
-      token[n] = strtok(buf, ":"); // first token
-      if (token[n] == 0) {
-	cout << n << endl;
-	cout << "gj Empty line encountered" << endl;
-	return 1;
-      }
-      n++; token[n] = strtok(0, "|");  // for file with MC columns
-      n++; token[n] = strtok(0, "|");  // for file with MC EB, EE columns
-      n++; token[n] = strtok(0, "|");  // for file with MC EB, EE columns
-      n++; token[n] = strtok(0, "|");             // Nobs
-      sscanf(token[n], "%f", &Ngobs[ijet][ikin]);
-      n++; token[n] = strtok(0, "|");            // NgobsEB
-      sscanf(token[n], "%f", &NgobsEB[ijet][ikin]);
-      n++; token[n] = strtok(0, "|");
-      n++; token[n] = strtok(0, "|");            // NgobsEE
-      sscanf(token[n], "%f", &NgobsEE[ijet][ikin]);
-      n++; token[n] = strtok(0, "|");
-      n++; token[n] = strtok(0, "(");             // Etrg
-      sscanf(token[n], "%f", &gEtrg[ijet][ikin]);
-      n++; token[n] = strtok(0, ",");             // EtrgSys  0100 = 4
-      sscanf(token[n], "%f", &gEtrgSys[ijet][ikin]);
-      n++; token[n] = strtok(0, ")");             // EtrgErr  1101 = 13
-      sscanf(token[n], "%f", &gEtrgErr[ijet][ikin]);
-      n++; token[n] = strtok(0, "|");
-      n++; token[n] = strtok(0, "(");             // SF
-      sscanf(token[n], "%f", &gSF[ijet][ikin]);
-      n++; token[n] = strtok(0, ")");             // SFerr  1111 = 15
-      sscanf(token[n], "%f", &gSFerr[ijet][ikin]);
-      n++; token[n] = strtok(0, "|");
-      n++; token[n] = strtok(0, "(");             // RZg
-      sscanf(token[n], "%f", &ZgR[ijet][ikin]);
-      n++; token[n] = strtok(0, ")");             // RZgErr  0100 = 4
-      sscanf(token[n], "%f", &ZgRerr[ijet][ikin]);
-      n++; token[n] = strtok(0, "|");
-      n++; token[n] = strtok(0, "(");             // Fdir
-      sscanf(token[n], "%f", &gFdir[ijet][ikin]);
-      n++; token[n] = strtok(0, ",");             // FdirSys  0100 = 4
-      sscanf(token[n], "%f", &gFdirSys[ijet][ikin]);
-      //******************** kludge *********************************************
-      // gFdirSys[ijet][ikin] = 0.3;
-      //******************** kludge *********************************************
-      n++; token[n] = strtok(0, "-");             // FdirErrUp  0100 = 4
-      sscanf(token[n], "%f", &gFdirErrUp[ijet][ikin]);
-      n++; token[n] = strtok(0, ")");             // FdirErrLow  0100 = 4
-      sscanf(token[n], "%f", &gFdirErrLow[ijet][ikin]);
-      n++; token[n] = strtok(0, "|");
-      n++; token[n] = strtok(0, "(");             // Purity
-      sscanf(token[n], "%f", &gPur[ijet][ikin]);
-      n++; token[n] = strtok(0, ")");             // PurityErr  1111 = 15
-      sscanf(token[n], "%f", &gPurErr[ijet][ikin]);
-      n++; token[n] = strtok(0, " ");
-      n++; token[n] = strtok(0, "(");             // ZgDR
-      sscanf(token[n], "%f", &ZgDR[ijet][ikin]);
-      n++; token[n] = strtok(0, "-");             // ZgDRErrUp  0000 = 0 (not used)
-      sscanf(token[n], "%f", &ZgDRerrUp[ijet][ikin]);
-      n++; token[n] = strtok(0, ")");             // ZgDRErrLow  0000 = 0 (not used)
-      sscanf(token[n], "%f", &ZgDRerrLow[ijet][ikin]);
+      Ngobs[ijet][ikin] = Ngobst[ijet][ikin][0] + Ngobst[ijet][ikin][1] + Ngobst[ijet][ikin][2];
+      NgobsEB[ijet][ikin] = NgobsEBt[ijet][ikin][0] + NgobsEBt[ijet][ikin][1] + NgobsEBt[ijet][ikin][2];
+      NgobsEE[ijet][ikin] = NgobsEEt[ijet][ikin][0] + NgobsEEt[ijet][ikin][1] + NgobsEEt[ijet][ikin][2];
+      comb(2, lumi, ZgRt[ijet][ikin], ZgRerrt[ijet][ikin], ZgR[ijet][ikin], ZgRerr[ijet][ikin]);
+      comb(0, lumi, gEtrgt[ijet][ikin], gEtrgErrt[ijet][ikin], gEtrg[ijet][ikin], gEtrgErr[ijet][ikin]);
+      comb(1, lumi, gEtrgt[ijet][ikin], gEtrgSyst[ijet][ikin], dummy, gEtrgSys[ijet][ikin]);
+      comb(1, lumi, gSFt[ijet][ikin], gSFerrt[ijet][ikin], gSF[ijet][ikin], gSFerr[ijet][ikin]);
+      comb(1, lumi, gFdirt[ijet][ikin], gFdirErrUpt[ijet][ikin], gFdir[ijet][ikin], gFdirErrUp[ijet][ikin]);
+      comb(1, lumi, gFdirt[ijet][ikin], gFdirErrLowt[ijet][ikin], dummy, gFdirErrLow[ijet][ikin]);
+      comb(1, lumi, gFdirt[ijet][ikin], gFdirSyst[ijet][ikin], dummy, gFdirSys[ijet][ikin]);
+      comb(1, lumi, gPurt[ijet][ikin], gPurErrt[ijet][ikin], gPur[ijet][ikin], gPurErr[ijet][ikin]);
+      comb(0, lumi, ZgDRt[ijet][ikin], ZgDRerrUpt[ijet][ikin], ZgDR[ijet][ikin], ZgDRerrUp[ijet][ikin]);
+      comb(0, lumi, ZgDRt[ijet][ikin], ZgDRerrLowt[ijet][ikin], dummy, ZgDRerrLow[ijet][ikin]);
     }
   }
+
   return 0;
+
 }  // ---------------------------------------------------------------
 
+void comb(Int_t mode, V1F lumi, V1F v, V1F e, Float_t& val, Float_t& err) {
+  // Combine values and errors from three sources, weighted by lumi
+  // Errors are relative.
+  // mode = 0: inputs uncorrelated
+  // mode = 1: inputs correlated
+  // mode = 2: inputs 1 & 2 correlated, indep of input 0.
+  Float_t wt0 = lumi[0] / (lumi[0] + lumi[1] + lumi[2]);
+  Float_t wt1 = lumi[1] / (lumi[0] + lumi[1] + lumi[2]);
+  Float_t wt2 = lumi[2] / (lumi[0] + lumi[1] + lumi[2]);
+  val = wt0*v[0] + wt1*v[1] + wt2*v[2];
+  if (mode == 0) {
+    err = Sqrt(Power(wt0*v[0]*e[0], 2) + Power(wt2*v[2]*e[2], 2) + Power(wt2*v[2]*e[2], 2)) / val;
+  } else if (mode == 1) {
+    err = (wt0*v[0]*e[0] + wt2*v[2]*e[2] + wt2*v[2]*e[2]) / val;
+  } else if (mode == 2) {
+    Float_t wt1p = lumi[1] / (lumi[1] + lumi[2]);
+    Float_t wt2p = lumi[2] / (lumi[1] + lumi[2]);
+    Float_t e12 = wt1p*v[1]*e[1] + wt2p*v[2]*e[2];
+    err = Sqrt(Power(wt0*v[0]*e[0], 2) + Power((wt1+wt2)*e12, 2)) / val;
+  }
+
+}  // ---------------------------------------------------------------
 
 Int_t getData_DR(const char* fileName,
-		 std::vector <std::vector<Float_t> >& ZgDR,
-		 std::vector <std::vector<Float_t> >& ZgDRerrUp,
-		 std::vector <std::vector<Float_t> >& ZgDRerrLow,
+		 std::vector <V1F >& ZgDR,
+		 std::vector <V1F >& ZgDRerrUp,
+		 std::vector <V1F >& ZgDRerrLow,
 		 Float_t& DRscaleErr,
 		 Float_t& DY0bPurErr,
 		 Float_t& DYtrigEffErr,
@@ -1019,13 +1103,13 @@ Int_t getData_DR(const char* fileName,
 }  // ---------------------------------------------------------------
 
 Int_t getData_DY(const char* fileName,
-		 std::vector <std::vector <std::vector<Float_t> > >& Rb0,
-		 std::vector <std::vector <std::vector<Float_t> > >& Rb0stat,
-		 std::vector <std::vector <std::vector<Float_t> > >& Rb0MCstat,
-		 std::vector <std::vector <std::vector<Float_t> > >& Rb0sysUp,
-		 std::vector <std::vector <std::vector<Float_t> > >& Rb0sysLow,
-		 std::vector <std::vector <std::vector<Float_t> > >& Rb0sysKin,
-		 std::vector <std::vector <std::vector<Float_t> > >& Rb0sysPur) {
+		 std::vector <V2F >& Rb0,
+		 std::vector <V2F >& Rb0stat,
+		 std::vector <V2F >& Rb0MCstat,
+		 std::vector <V2F >& Rb0sysUp,
+		 std::vector <V2F >& Rb0sysLow,
+		 std::vector <V2F >& Rb0sysKin,
+		 std::vector <V2F >& Rb0sysPur) {
   //
   // Read data from the file, parse, and set data arrays.
   //
