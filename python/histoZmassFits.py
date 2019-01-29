@@ -5,44 +5,41 @@ Plot and fit Z mass histograms
 import ROOT
 import RA2b
 
-def purityFits():
+def purityFits(dataFileName, MCFileName):
   singleOutFile = True
   doMumu = True
   doEe = True
   removeDYkfactor = False
+  period = 5  # 2016, default
+  lumimm = 35.9
+  lumiee = lumimm
   MCscaleM = 1
   MCscaleE = 1
   print '\n'
   print "removeDYkfactor = "+str(removeDYkfactor)
   
-  # period = 5  # 2016
-  # lumimm = 35.9
-  # lumiee = lumimm
-  # DataFileM = ROOT.TFile('../outputs/histsDY_2016v15_DR0b.root')
-  # # DataFileM = ROOT.TFile('../src/histsZll.root')
-  # # DataFileM = ROOT.TFile('../outputs/histsDY_2016v12.root')
-  # DataFileE = DataFileM
-  # MCfile = ROOT.TFile('../outputs/histsDYMC_2016v12_DR0b.root')
-  # # MCfile = ROOT.TFile('../outputs/histsDYMC_2016v12.root')
-  # # MCfile = ROOT.TFile('../outputs/histsDYMC_2016v12_puWt.root')
-  
-  period = 6  # 2017
-  lumimm = 41.5
-  lumiee = lumimm
-  DataFileM = ROOT.TFile('../outputs/histsDY_2017v16.root')
+  DataFileM = ROOT.TFile(dataFileName)
   DataFileE = DataFileM
-  MCfile = ROOT.TFile('../outputs/histsDYMC_2017v16.root')
-  # MCscaleM = lumimm/35.9
-  # MCscaleE = lumiee/35.9
+  MCfile = ROOT.TFile(MCFileName)
+
+  if ("2016" in dataFileName):
+    period = 5  # 2016
+    lumimm = 35.9
+    lumiee = lumimm
   
-  # period = 8  # 2018
-  # lumimm = 14.0
-  # lumiee = 13.5
-  # DataFileM = ROOT.TFile('../outputs/histsDY_2018v15_skimCuts.root')
-  # DataFileE = DataFileM
-  # MCfile = ROOT.TFile('../outputs/histsDYMC_2016v12_skimCuts.root')
-  # MCscaleM = lumimm/35.9
-  # MCscaleE = lumiee/35.9
+  elif("2017" in dataFileName):
+    period = 6  # 2017
+    lumimm = 41.5
+    lumiee = lumimm
+    # MCscaleM = lumimm/35.9
+    # MCscaleE = lumiee/35.9
+  
+  elif("2018" in dataFileName):
+    period = 8  # 2018
+    lumimm = 59.5
+    lumiee = 59.2
+    MCscaleM = lumimm/41.5
+    MCscaleE = lumiee/41.5
   
   reactions = ["tt", "ttz", "VV", "dy"]
   
@@ -140,7 +137,7 @@ def purityFits():
 def main():
   ROOT.gROOT.Reset()
   ROOT.gROOT.SetBatch(1)
-  purities = purityFits()
+  purities = purityFits('../outputs/histsDY_Run2v16.root', '../outputs/histsDYMC_Run2v16.root')
   
 if __name__ == "__main__":
   main()

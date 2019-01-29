@@ -25,13 +25,7 @@ else:
 #################################################
 
 haveHistograms = True
-runBlock = "2017"
-if (runBlock is "2016"):
-    iPeriod = 5
-elif (runBlock is "2017"):
-    iPeriod = 6
-elif (runBlock is "2018"):
-    iPeriod = 8
+runYear = "Run2"
 
 DYkfactor = 1.23
 
@@ -71,24 +65,27 @@ for sample in doSample:
 
     else:
         # Histograms from RA2bZinvAnalysis
-        if (runBlock is "2016"):
-            dataZllFile = ROOT.TFile('../outputs/histsDY_2016v15_DR0b.root')
-            dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_2016v15_DR0b.root')
-            # dataZllFile = ROOT.TFile('../outputs/histsDY_2016v12.root')
-            # dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_2016v12.root')
-            mcZllFile = ROOT.TFile('../outputs/histsDYMC_2016v12_DR0b.root')
-            mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2016v12_DR0b.root')
-            mcLumiRatio_mm = 1
-            mcLumiRatio_ee = 1
-            mcLumiRatio_photon = 1
-        elif (runBlock is "2017"):
+        mcLumiRatio_mm = 1
+        mcLumiRatio_ee = 1
+        mcLumiRatio_photon = 1
+        if (runYear is "2016"):
+            iPeriod = 5
+            dataZllFile = ROOT.TFile('../outputs/histsDY_2016v16.root')
+            dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_2016v16.root')
+            mcZllFile = ROOT.TFile('../outputs/histsDYMC_2016v16.root')
+            mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2016v16.root')
+        elif (runYear is "2017"):
+            iPeriod = 6
             dataZllFile = ROOT.TFile('../outputs/histsDY_2017v16.root')
             dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_2017v16.root')
             mcZllFile = ROOT.TFile('../outputs/histsDYMC_2017v16.root')
             mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2017v16.root')
-            mcLumiRatio_mm = 1
-            mcLumiRatio_ee = 1
-            mcLumiRatio_photon = 1
+        elif (runYear is "Run2"):
+            iPeriod = 9
+            dataZllFile = ROOT.TFile('../outputs/histsDY_Run2v16.root')
+            dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_Run2v16.root')
+            mcZllFile = ROOT.TFile('../outputs/histsDYMC_Run2v16.root')
+            mcPhotonFile = ROOT.TFile('../outputs/histsGjets_Run2v16_DRwt.root')
         histoNJets['pho_da'] = dataPhotonFile.Get("hNJets_DR_photon")
         histoNJets['pho_cg'] = histoNJets['pho_da'].Clone()
         for i in range(1, histoNJets['pho_cg'].GetNbinsX()+1):

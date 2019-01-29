@@ -38,10 +38,18 @@ trig_ec = [(0.953, 0.004),
 
 # Get trigger efficiencies from Sam's file for Run2, 2017
 trigEffFile = ROOT.TFile("../plots/histograms/triggersRa2bRun2_v1.root", "READ")
-f_trig_eb = trigEffFile.Get("tf1_SinglePhotonBarrelLoose_hists_Run2017_JetHT")
-f_trig_eb.SetName("f_trig_eb")
-f_trig_ec = trigEffFile.Get("tf1_SinglePhotonEndcapLoose_hists_Run2017_JetHT")
-f_trig_ec.SetName("f_trig_ec")
+f_trig_eb_2016 = trigEffFile.Get("tf1_SinglePhotonBarrelLoose_hists_Run2016_JetHT")
+f_trig_eb_2016.SetName("f_trig_eb_2016")
+f_trig_ec_2016 = trigEffFile.Get("tf1_SinglePhotonEndcapLoose_hists_Run2016_JetHT")
+f_trig_ec_2016.SetName("f_trig_ec_2016")
+f_trig_eb_2017 = trigEffFile.Get("tf1_SinglePhotonBarrelLoose_hists_Run2017_JetHT")
+f_trig_eb_2017.SetName("f_trig_eb_2017")
+f_trig_ec_2017 = trigEffFile.Get("tf1_SinglePhotonEndcapLoose_hists_Run2017_JetHT")
+f_trig_ec_2017.SetName("f_trig_ec_2017")
+f_trig_eb_2018 = trigEffFile.Get("tf1_SinglePhotonBarrelLoose_hists_Run2018_JetHT")
+f_trig_eb_2018.SetName("f_trig_eb_2018")
+f_trig_ec_2018 = trigEffFile.Get("tf1_SinglePhotonEndcapLoose_hists_Run2018_JetHT")
+f_trig_ec_2018.SetName("f_trig_ec_2018")
 
 SFfile = ROOT.TFile("../plots/histograms/SFcorrections.Photons.root", "READ")
 h_SF_g = SFfile.Get("h_MHT")
@@ -57,40 +65,71 @@ h_Fdir.SetName("h_bin46_NJets8910")
 ## binning in MHT: [<225, 225-250, 250-300, 300-350, 350-500, 500+]
 # pur_title = "MHT"
 # pur_bins = array('d', [0, 225, 250, 300, 350, 500, 1000])
-# pur_eb = [(0.9580, 0.0267),
-#           (0.9623, 0.0028),
-#           (0.9729, 0.0098),
-#           (0.9690, 0.0196),
-#           (0.9622, 0.0456),
-#           (0.9780, 0.0264),]
+pur_eb = [(0.9580, 0.0267),
+          (0.9623, 0.0028),
+          (0.9729, 0.0098),
+          (0.9690, 0.0196),
+          (0.9622, 0.0456),
+          (0.9780, 0.0264),]
 
-# pur_ec = [(0.8879, 0.0108),
-#           (0.8570, 0.0114),
-#           (0.8969, 0.0174),
-#           (0.9037, 0.0175),
-#           (0.9342, 0.0299),
-#           (0.9637, 0.0169),]
-## photon purity (Andrew provides these Jan 15, 2019 email)
-## for 2017
-# x: [275, 325, 475, 800]
-# EB['avg'] [0.9220364075090001, 0.9165495814580001, 0.935175461539, 0.9610830087516667]
-# EB['avgErr'] [0.012587804680000092, 0.02129023792400009, 0.016343402514999994, 0.013802011657333302]
-# EE['avg'] [0.8503618908233334, 0.859453235025, 0.8668725049456666, 0.8334821231056667]
-# EE['avgErr'] [0.026438397048666684, 0.03769281117199996, 0.028872674388333408, 0.0368792779756667]
+pur_ec = [(0.8879, 0.0108),
+          (0.8570, 0.0114),
+          (0.8969, 0.0174),
+          (0.9037, 0.0175),
+          (0.9342, 0.0299),
+          (0.9637, 0.0169),]
+
+# Run 2, Andrew's Jan. 27, 2019 email:
 pur_title = "MHT"
 pur_bins = array('d', [0, 300, 350, 600, 2500])  # First bin measured from 250, last bin to 1000
-pur_eb = [(0.9220, 0.0126),
-          (0.9165, 0.0213),
-          (0.9352, 0.0163),
-          (0.9611, 0.0138)]
+# # 2016:
+# EB['avg'] [0.9479783904003333, 0.9612409354666666, 0.9657104593263334, 0.9819289765320001]
+# EB['avgErr'] [0.031016399071333245, 0.01721366277833347, 0.015233616496666658, 0.008033783562999885]
+# EE['avg'] [0.898884215471, 0.9232578112983333, 0.9296478600020001, 0.9149493319753333]
+# EE['avgErr'] [0.04399141754999991, 0.04426306202466668, 0.02750138579299999, 0.047701439598333395]
+pur_eb_2016 = [(0.9480, 0.0310),
+               (0.9612, 0.0172),
+               (0.9657, 0.0152),
+               (0.9819, 0.0080)]
 
-pur_ec = [(0.8504, 0.0264),
-          (0.8594, 0.0377),
-          (0.8669, 0.0289),
-          (0.8335, 0.0369)]
+pur_ec_2016 = [(0.8989, 0.0440),
+               (0.9233, 0.0443),
+               (0.9296, 0.0275),
+               (0.9149, 0.0477)]
+
+# # 2017:
+# EB['avg'] [0.9405091609876667, 0.9394312251323332, 0.9529458327956667, 0.9742914092513333]
+# EB['avgErr'] [0.009999098545333318, 0.014585434074333214, 0.011037659601666694, 0.005863896771333255]
+# EE['avg'] [0.9599167930893332, 0.9644865701173333, 0.9468864281673334, 0.8846943180493333]
+# EE['avgErr'] [0.013086806293333253, 0.014466961288666758, 0.02317752860333333, 0.0495032579343333]
+pur_eb_2017 = [(0.9405, 0.0010),
+               (0.9394, 0.0146),
+               (0.9529, 0.0110),
+               (0.9743, 0.0059)]
+
+pur_ec_2017 = [(0.9600, 0.0131),
+               (0.9645, 0.0445),
+               (0.9469, 0.0232),
+               (0.8847, 0.0495)]
+
+# # 2018:
+# EB['avg'] [0.934561081295, 0.935941864678, 0.9528332801676668, 0.9698275681449999]
+# EB['avgErr'] [0.010881257075999962, 0.015425372193999976, 0.010485711729666725, 0.0064986703679998925]
+# EE['avg'] [0.955755605372, 0.9603043977869999, 0.948359821654, 0.8919489522903333]
+# EE['avgErr'] [0.013496460590999959, 0.016012506070000043, 0.016055838115, 0.032147232375666634]
+pur_eb_2018 = [(0.9346, 0.0109),
+               (0.9359, 0.0154),
+               (0.9528, 0.0105),
+               (0.9698, 0.0065)]
+
+pur_ec_2018 = [(0.9558, 0.0135),
+               (0.9603, 0.0160),
+               (0.9484, 0.0161),
+               (0.8919, 0.0321)]
+
 
 ###################################################
-# h_SF_g1 = effFile.Get("h_SF_g1")
+# H_SF_g1 = effFile.Get("h_SF_g1")
 # h_SF_g1.SetBinContent(1,SF[0])
 # h_SF_g1.SetBinError(1,SF[1])
 # h_SF_g1.Write(h_SF_g1.GetName(),2)
@@ -106,8 +145,12 @@ effFile = ROOT.TFile("../plots/histograms/effHists.root","UPDATE")
 
 ########## update the efficiency file #############
 
-f_trig_eb.Write(f_trig_eb.GetName(),2)
-f_trig_ec.Write(f_trig_ec.GetName(),2)
+f_trig_eb_2016.Write(f_trig_eb_2016.GetName(),2)
+f_trig_ec_2016.Write(f_trig_ec_2016.GetName(),2)
+f_trig_eb_2017.Write(f_trig_eb_2017.GetName(),2)
+f_trig_ec_2017.Write(f_trig_ec_2017.GetName(),2)
+f_trig_eb_2018.Write(f_trig_eb_2018.GetName(),2)
+f_trig_ec_2018.Write(f_trig_ec_2018.GetName(),2)
 
 h_SF_g.Write(h_SF_g.GetName(), 2)
 h_Fdir.Write(h_Fdir.GetName(), 2)
@@ -155,6 +198,72 @@ for i in range(len(pur_ec)):
     h_pur_ec.SetBinContent(i+1,pur_ec[i][0])
     h_pur_ec.SetBinError(i+1,pur_ec[i][1])
 h_pur_ec.Write(h_pur_ec.GetName(),2)
+
+h_pur_eb_2016 = effFile.Get("h_pur_eb_2016")
+if (not h_pur_eb_2016):
+    h_pur_eb_2016 = ROOT.TH1F("h_pur_eb_2016", "gJets purities, EB", len(pur_bins)-1, pur_bins)
+else:
+    h_pur_eb_2016.SetBins(len(pur_bins)-1, pur_bins)
+h_pur_eb_2016.GetXaxis().SetTitle(pur_title)
+for i in range(len(pur_eb_2016)):
+    h_pur_eb_2016.SetBinContent(i+1,pur_eb_2016[i][0])
+    h_pur_eb_2016.SetBinError(i+1,pur_eb_2016[i][1])
+h_pur_eb_2016.Write(h_pur_eb_2016.GetName(),2)
+
+h_pur_ec_2016 = effFile.Get("h_pur_ec_2016")
+if (not h_pur_ec_2016):
+    h_pur_ec_2016 = ROOT.TH1F("h_pur_ec_2016", "gJets purities, EC", len(pur_bins)-1, pur_bins)
+else:
+    h_pur_ec_2016.SetBins(len(pur_bins)-1, pur_bins)
+h_pur_ec_2016.GetXaxis().SetTitle(pur_title)
+for i in range(len(pur_ec_2016)):
+    h_pur_ec_2016.SetBinContent(i+1,pur_ec_2016[i][0])
+    h_pur_ec_2016.SetBinError(i+1,pur_ec_2016[i][1])
+h_pur_ec_2016.Write(h_pur_ec_2016.GetName(),2)
+
+h_pur_eb_2017 = effFile.Get("h_pur_eb_2017")
+if (not h_pur_eb_2017):
+    h_pur_eb_2017 = ROOT.TH1F("h_pur_eb_2017", "gJets purities, EB", len(pur_bins)-1, pur_bins)
+else:
+    h_pur_eb_2017.SetBins(len(pur_bins)-1, pur_bins)
+h_pur_eb_2017.GetXaxis().SetTitle(pur_title)
+for i in range(len(pur_eb_2017)):
+    h_pur_eb_2017.SetBinContent(i+1,pur_eb_2017[i][0])
+    h_pur_eb_2017.SetBinError(i+1,pur_eb_2017[i][1])
+h_pur_eb_2017.Write(h_pur_eb_2017.GetName(),2)
+
+h_pur_ec_2017 = effFile.Get("h_pur_ec_2017")
+if (not h_pur_ec_2017):
+    h_pur_ec_2017 = ROOT.TH1F("h_pur_ec_2017", "gJets purities, EC", len(pur_bins)-1, pur_bins)
+else:
+    h_pur_ec_2017.SetBins(len(pur_bins)-1, pur_bins)
+h_pur_ec_2017.GetXaxis().SetTitle(pur_title)
+for i in range(len(pur_ec_2017)):
+    h_pur_ec_2017.SetBinContent(i+1,pur_ec_2017[i][0])
+    h_pur_ec_2017.SetBinError(i+1,pur_ec_2017[i][1])
+h_pur_ec_2017.Write(h_pur_ec_2017.GetName(),2)
+
+h_pur_eb_2018 = effFile.Get("h_pur_eb_2018")
+if (not h_pur_eb_2018):
+    h_pur_eb_2018 = ROOT.TH1F("h_pur_eb_2018", "gJets purities, EB", len(pur_bins)-1, pur_bins)
+else:
+    h_pur_eb_2018.SetBins(len(pur_bins)-1, pur_bins)
+h_pur_eb_2018.GetXaxis().SetTitle(pur_title)
+for i in range(len(pur_eb_2018)):
+    h_pur_eb_2018.SetBinContent(i+1,pur_eb_2018[i][0])
+    h_pur_eb_2018.SetBinError(i+1,pur_eb_2018[i][1])
+h_pur_eb_2018.Write(h_pur_eb_2018.GetName(),2)
+
+h_pur_ec_2018 = effFile.Get("h_pur_ec_2018")
+if (not h_pur_ec_2018):
+    h_pur_ec_2018 = ROOT.TH1F("h_pur_ec_2018", "gJets purities, EC", len(pur_bins)-1, pur_bins)
+else:
+    h_pur_ec_2018.SetBins(len(pur_bins)-1, pur_bins)
+h_pur_ec_2018.GetXaxis().SetTitle(pur_title)
+for i in range(len(pur_ec_2018)):
+    h_pur_ec_2018.SetBinContent(i+1,pur_ec_2018[i][0])
+    h_pur_ec_2018.SetBinError(i+1,pur_ec_2018[i][1])
+h_pur_ec_2018.Write(h_pur_ec_2018.GetName(),2)
 
 
 effFile.Close()

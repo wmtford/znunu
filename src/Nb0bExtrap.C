@@ -18,6 +18,8 @@ using std::endl;
 using TMath::Sqrt; using TMath::Power;
 
 void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "nominal") {
+  ofstream outFile("DY_signal.dat");
+  // ofstream outFile;
 
   CCbinning CCbins(era, deltaPhi);
   int kinSize = CCbins.kinSize();
@@ -29,9 +31,9 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
   // std::vector<int> extrapFromRange = {5, 6};
   float relErrXsec_ttz = 0.3;
 
-  TFile ZllData("../outputs/histsDY_2017v16.root");  if (!ZllData.IsOpen()) return;
-  TFile photonData("../outputs/histsPhoton_2017v16.root");  if (!photonData.IsOpen()) return;
-  TFile ZllXMC("../outputs/histsDYMC_2017v16.root");  if (!ZllXMC.IsOpen()) return;
+  TFile ZllData("../outputs/histsDY_Run2v16.root");  if (!ZllData.IsOpen()) return;
+  TFile photonData("../outputs/histsPhoton_Run2v16.root");  if (!photonData.IsOpen()) return;
+  TFile ZllXMC("../outputs/histsDYMC_Run2v16.root");  if (!ZllXMC.IsOpen()) return;
   
   // Get the Z->ll and photon data and MC histograms
   TH1F* hCC_zmm = (TH1F*) ZllData.Get("hCC_zmm");
@@ -259,19 +261,18 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
   // kin systematics derived from analysis of the closure plot
   std::vector<float> systKin = {0, 0.07, 0.10, 0.20};
 
-  // Create and write the output dat file
-  ofstream outFile("DY_signal.dat");
+  // Write the output dat file
   // std::string outFileName("DY_");
   // if (deltaPhi == "nominal") outFileName += "signal";
   // else outFileName += deltaPhi;
   // outFileName += ".dat";
-  // ofstream outFile(outFileName.c_str());
+  // if (!outFile.is_open()) outFile.open(outFileName);
 
   // File* outFile = fopen(outFileName.c_str(), "w");
   // fprintf(outFile, "%s\n",
   char linebuf[2048];
   sprintf(linebuf, "%s\n",
-  	  " j b k|| Nmumu |  Nee  | Nb/0b | stat  |MC stat| ttz SF| syst+ | syst- | sysKin| sysPur"
+  	  " j b k| | Nmumu |  Nee  | Nb/0b | stat  |MC stat| ttz SF| syst+ | syst- | sysKin| sysPur"
   	  );
   outFile << linebuf;
   for (int j = 0; j < NbinsNJet; ++j) {
@@ -292,8 +293,8 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
 				     hCCjb_MCttzFrac->GetBinContent(CCbins.jb(j-1, 0))
 				     );
 	}
-  	// fprintf(outFile, " %1d %1d %1d||%7d|%7d|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f\n", j, b, k,
-  	sprintf(linebuf, " %1d %1d %1d||%7d|%7d|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f\n", j, b, k,
+  	// fprintf(outFile, " %1d %1d %1d| |%7d|%7d|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f\n", j, b, k,
+  	sprintf(linebuf, " %1d %1d %1d| |%7d|%7d|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f\n", j, b, k,
 		(int) hCC_zmm->GetBinContent(binCC),
 		(int) hCC_zee->GetBinContent(binCC),
 		Fextrap.at(binCC - 1),

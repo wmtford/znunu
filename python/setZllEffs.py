@@ -57,7 +57,7 @@ if (doPurityFits):
 
         fits = [fit_2j,fit_3to4j,fit_5jplus,fit_5jplus,fit_5jplus]
     else:
-        fitjb = histoZmassFits.purityFits()  # use Z mass histograms from RA2bZinvAnalysis
+        fitjb = histoZmassFits.purityFits('../outputs/histsDY_Run2v16.root', '../outputs/histsDYMC_2017v16.root')  # use Z mass histograms from RA2bZinvAnalysis
         fits = [fitjb[0], fitjb[1], fitjb[2], fitjb[2], fitjb[2]]
 
 ########## get the scale factors files and extract histograms ################
@@ -105,9 +105,9 @@ if (doPurityFits):
 
     zDict = {0: '\multirow{3}{*}{\zmm}',
              1: '\multirow{3}{*}{\zee}',}
-    njDict = {0: '& $\\njets=2$        ',
-              1: '& $3\leq\\njets\leq4$',
-              2: '& $\\njets\geq5$     ',}
+    njDict = {0: '& $2\leq\\njets\leq3$        ',
+              1: '& $4\leq\\njets\leq5$',
+              2: '& $\\njets\geq6$     ',}
     for lep in range(2):
         print '\hline'
         print zDict[lep],
