@@ -9,7 +9,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #define VERSION 16
-#define ISMC
+/* #define ISMC */
 #define ISSKIM
 
 #include "CCbinning.h"
@@ -25,7 +25,7 @@
 #include <TChainElement.h>
 #include "../../Analysis/btag/BTagCorrector.h"
 
-// members needed by nested class cutHistos
+// members needed by nested classes
 static TString HTcut_;
 static TString MHTcut_;
 static TString NJetscut_;
@@ -35,6 +35,7 @@ static TString commonCuts_;
 static TString ptCut_;
 static TString massCut_;
 static TString photonDeltaRcut_;
+static TH2F *hPrefiring_photon_, *hPrefiring_jet_;
 
 class RA2bZinvAnalysis {
 
@@ -117,9 +118,11 @@ public:
     std::vector<TFile*> elecSFFile_;
     std::vector<TFile*> muonIDSFFile_;
     std::vector<TFile*> muonIsoSFFile_;
+    TFile* prefiringWeightFile_;
     TString theSample_;
     std::vector<TH1F*> hPurity_, hTrigEff_;
     std::vector<TF1*> fTrigEff_;
+
     /* TH1F* hSFeff_; */
     std::vector<TH2F*> hSFeff_;
     /* TH1D* FdirHist_; */
@@ -231,7 +234,27 @@ private:
   void fillCutFlow(TH1D* hcf, Double_t wt);
   Int_t setBTags();
   efficiencyAndPurity effPurCorr_;
-
+  double prefiring_weight_photon(unsigned p){
+    double w = 1;
+    if (hPrefiring_photon_ != nullptr)
+      w = (1 - hPrefiring_photon_->GetBinContent(hPrefiring_photon_->GetXaxis()->FindBin(Photons->at(p).Eta()),
+						 hPrefiring_photon_->GetYaxis()->FindBin(Photons->at(p).Pt())));
+    return w;
+  };
+  double prefiring_weight_electron(unsigned p){
+    double w = 1;
+    if (hPrefiring_photon_ != nullptr)
+      w = (1 - hPrefiring_photon_->GetBinContent(hPrefiring_photon_->GetXaxis()->FindBin(Electrons->at(p).Eta()),
+						 hPrefiring_photon_->GetYaxis()->FindBin(Electrons->at(p).Pt())));
+    return w;
+  };
+  double prefiring_weight_jet(unsigned j){
+    double w = 1;
+    if (hPrefiring_jet_ != nullptr)
+      w = (1 - hPrefiring_jet_->GetBinContent(hPrefiring_jet_->GetXaxis()->FindBin(Jets->at(j).Eta()),
+					      hPrefiring_jet_->GetYaxis()->FindBin(Jets->at(j).Pt()))) ;
+    return w;
+  };
   void cleanVars() {
 #ifndef ISSKIM
     NJets = NJetsclean;

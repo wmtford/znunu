@@ -468,6 +468,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
   //
   // Define N - 1 (or N - multiple) cuts, book histograms.  Traverse the chain and fill.
   //
+  TString sampleKey = sampleKeyMap_.count(sample) > 0 ? sampleKeyMap_.at(sample) : TString("none");
   int currentYear = -1;
   Int_t fCurrent;  // current Tree number in a TChain
   TChain* chain = getChain(sample, &fCurrent);
@@ -598,10 +599,24 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 	  PUweight = puWeight;  // Take puWeight directly from the tree
 	MCwt *= PUweight;
       }
-      if (runBlock_.find("2016")!=std::string::npos || runBlock_.find("2017")!=std::string::npos) NoPrefireWt = NonPrefiringProb;
+      if (currentYear == Year2016 || currentYear == Year2017) {
+	if (sampleKey.Contains("ee")) {
+	  for (unsigned j = 0; j < Jets->size(); ++j) {
+	    NoPrefireWt *= prefiring_weight_jet(j);
+	  }
+	  double eeNoPFwt = 1;
+	  for (unsigned e = 0; e < Electrons->size(); ++e) {
+	    double w = prefiring_weight_electron(e);
+	    if (w < eeNoPFwt) eeNoPFwt = w;
+	  }
+	  NoPrefireWt *= eeNoPFwt;
+	} else {
+	NoPrefireWt = NonPrefiringProb;
+	}
+      }  // 2016 or 2017
       MCwt *= NoPrefireWt;
       eventWt *= MCwt;
-    }
+    }  // isMC_
 
     // Trigger requirements
     bool passTrg = true;
@@ -1657,6 +1672,8 @@ void
 RA2bZinvAnalysis::efficiencyAndPurity::openFiles() {
   TString plotDir("../plots/histograms/");
 
+  prefiringWeightFile_ = new TFile((plotDir+"L1PrefiringMaps_new.root").Data(), "read");
+
   purityTrigEffFile_.push_back(new TFile((plotDir+"effHists.root").Data(), "read"));
   purityTrigEffFile_.push_back(new TFile((plotDir+"effHists.root").Data(), "read"));
   purityTrigEffFile_.push_back(new TFile((plotDir+"effHists.root").Data(), "read"));
@@ -1681,6 +1698,18 @@ RA2bZinvAnalysis::efficiencyAndPurity::openFiles() {
 
 void
 RA2bZinvAnalysis::efficiencyAndPurity::getHistos(const char* sample, int currentYear) {
+  // For L1 prefiring weight
+  if (currentYear == Year2016) {
+    hPrefiring_photon_ = (TH2F*) prefiringWeightFile_->Get("L1prefiring_photonptvseta_2016BtoH");
+    if (hPrefiring_photon_ == nullptr) cout << "***** Histogram L1prefiring_photonptvseta_2016BtoH not found *****" << endl;
+    hPrefiring_jet_ = (TH2F*) prefiringWeightFile_->Get("L1prefiring_jetptvseta_2016BtoH");
+    if (hPrefiring_jet_ == nullptr) cout << "***** Histogram L1prefiring_jetptvseta_2016BtoH not found *****" << endl;
+  } else if (currentYear == Year2017) {
+    hPrefiring_photon_ = (TH2F*) prefiringWeightFile_->Get("L1prefiring_photonptvseta_2017BtoF");
+    if (hPrefiring_photon_ == nullptr) cout << "***** Histogram L1prefiring_photonptvseta_2017BtoF not found *****" << endl;
+    hPrefiring_jet_ = (TH2F*) prefiringWeightFile_->Get("L1prefiring_jetptvseta_2017BtoF");
+    if (hPrefiring_jet_ == nullptr) cout << "***** Histogram L1prefiring_jetptvseta_2017BtoF not found *****" << endl;
+  }
   // For purity, Fdir, trigger eff, reco eff
   theSample_ = TString(sample);
   // hSFeff_ = nullptr;
