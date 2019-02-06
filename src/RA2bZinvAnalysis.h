@@ -53,8 +53,9 @@ public:
   void checkTrigPrescales(const char* sample);
   void runMakeClass(const std::string& sample);
 
-  enum yearFirstRun {Start2016 = 271036, Start2017 = 294645, Start2018 = 315252};
-  enum runYear{Year2016 = 0, Year2017 = 1, Year2018 = 2};
+  enum yearFirstRun {Start2016 = 271036, Start2017 = 294645, Start2018 = 315252, StartHEM = 319077, Start2018C = 319313};
+  // First HEM run 319077
+  enum runYear{Year2016 = 0, Year2017 = 1, Year2018 = 2, Year2018preHEM = 3, Year2018HEM = 4};
 
   struct histConfig {
     // 1D or 2D histogram; select by value of NbinsY, = 0 for 1D.
@@ -85,7 +86,7 @@ public:
     cutHistos(TChain* chain, TObjArray* forNotify);
     ~cutHistos() {};
     void setAxisLabels(TH1D* hcf);
-    void fill(TH1D* hcf, Double_t wt, bool passTrg);
+    void fill(TH1D* hcf, Double_t wt, bool passTrg, bool passHEM);
   private:
     TObjArray* forNotify_;
     TTreeFormula* HTcutf_;
@@ -162,6 +163,7 @@ private:
   bool applyBTagSF_;
   bool applyPuWeight_;
   bool customPuWeight_;
+  bool applyHEMjetVeto_;
   bool applyDRfitWt_;
   bool applySFwtToMC_;
   TH1* puHist_;
@@ -254,6 +256,20 @@ private:
       w = (1 - hPrefiring_jet_->GetBinContent(hPrefiring_jet_->GetXaxis()->FindBin(Jets->at(j).Eta()),
 					      hPrefiring_jet_->GetYaxis()->FindBin(Jets->at(j).Pt()))) ;
     return w;
+  };
+  bool passHEMobjVeto(TLorentzVector& obj, double ptThresh = 0) {
+    if (RunNum < StartHEM) return true;
+    if (-3.0 <= obj.Eta() && obj.Eta() <= -1.4 && 
+	-1.57 <= obj.Phi() && obj.Phi() <= -0.87 &&
+	obj.Pt() > ptThresh)
+      return false;
+    else return true;
+  };
+  bool passHEMjetVeto(double ptThresh = 30) {
+    if (RunNum < StartHEM) return true;
+    for (auto & jet : *Jets)
+      if (!passHEMobjVeto(jet, ptThresh)) return false;
+    return true;
   };
   void cleanVars() {
 #ifndef ISSKIM

@@ -67,6 +67,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
     ("apply b-tag SF", po::value<bool>(&applyBTagSF_))
     ("apply pileup weight", po::value<bool>(&applyPuWeight_))
     ("use custom pileup weight", po::value<bool>(&customPuWeight_))
+    ("apply HEM jet veto", po::value<bool>(&applyHEMjetVeto_))
     ("apply double-ratio fit weight", po::value<bool>(&applyDRfitWt_))
     ("apply scale factors to MC", po::value<bool>(&applySFwtToMC_))
 
@@ -228,6 +229,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   cout << "Apply b-tag scale factors is " << applyBTagSF_ << endl;
   cout << "Apply pileup weight is " << applyPuWeight_ << endl;
   cout << "The custom pileup weight flag is " << customPuWeight_ << endl;
+  cout << "Apply HEM jet veto is " << applyHEMjetVeto_ << endl;
   cout << "The apply double-ratio fit weight flag is " << applyDRfitWt_ << endl;
   cout << "The apply scale factors to MC flag is " << applySFwtToMC_ << endl;
 
@@ -437,6 +439,10 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
   MHTcut_ = MHTCutMap_.at(deltaPhi_);
   objcut_ = objCutMap_.at(sampleKey);
   minDphicut_ = minDphiCutMap_.at(deltaPhi_);
+  // HEMgeomcut_ = "(-3.0 < Electrons[0].Eta() && Electrons[0].Eta() < -1.4 && -1.57 < Electrons[0].Phi() && Electrons[0].Phi() < -0.87)
+  //             || (-3.0 < Electrons[1].Eta() && Electrons[1].Eta() < -1.4 && -1.57 < Electrons[1].Phi() && Electrons[1].Phi() < -0.87)";
+
+
 
   // For test of same-flavor isoLeptonTracks veto
   isoSFlepTksVeto_ = "1";
@@ -529,8 +535,9 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
   double MCwtCorr = 1.;
   Long64_t Nentries = chain->GetEntries();
   if (verbosity_ >= 1) cout << "Nentries in tree = " << Nentries << endl;
-  int count = 0;
-  int countInFile = 0;
+  int count = 0;  int countInFile = 0;  int countInSel = 0;
+  bool inHEM = false;
+  bool in2018C = false;
   for (Long64_t entry = 0; entry < Nentries; ++entry) {
     count++;
     if (verbosity_ >= 1 && count % 100000 == 0) cout << "Entry number " << count << endl;
@@ -575,6 +582,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       }
     }
     chain->GetEntry(entry);
+    countInFile++;
 
     cleanVars();  // If unskimmed input, copy <var>clean to <var>
     Int_t BTagsOrig = setBTags();
@@ -619,23 +627,37 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
     }  // isMC_
 
     // Trigger requirements
-    bool passTrg = true;
+    bool passTrg = true, passHEM = true;
     if (!isMC_) {
       passTrg = false;
       for (auto trgIndex : triggerIndexList_)
 	if (TriggerPass->at(trgIndex)) passTrg = true;
     }
+    if (applyHEMjetVeto_ && !passHEMjetVeto()) passHEM = false;
 
     for (auto & hg : histograms) {
       if (hg->name.Contains(TString("hCut"))) {
-	cutHistFiller.fill((TH1D*) hg->hist, 1, passTrg);
+	cutHistFiller.fill((TH1D*) hg->hist, 1, passTrg, passHEM);
 	continue;
       }
       if (!passTrg) break;
+      if (!passHEM) break;
+      // bool keep = false; for (auto & theE : *Electrons) {if (!passHEMobjVeto(theE)) keep = true;}  if (!keep) break;  //  !!!!!!!!!!
 
       hg->NminusOneFormula->GetNdata();
       double selWt = hg->NminusOneFormula->EvalInstance(0);
       if (selWt == 0) continue;
+
+      if (hg->name.Contains("hCC_")) {
+	countInSel++;
+	if (!inHEM && RunNum >= StartHEM) {
+	  inHEM = true;
+	  cout << "HEM starts at count = " << countInSel << endl;
+	} else if (!in2018C && RunNum >= Start2018C) {
+	  in2018C = true;
+	  cout << "2018C starts at count = " << countInSel << endl;
+	}
+      }
 
       double eventWt0 = eventWt;
       if ((applySFwtToMC_ && isMC_) || hg->name.Contains(TString("_DR"))) {
@@ -663,6 +685,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 
     }  // loop over histograms
   }  // loop over entries
+  cout << "At end, count = " << countInSel << endl;
 
   delete forNotify;
   delete chain->GetCurrentFile();
@@ -1605,13 +1628,14 @@ RA2bZinvAnalysis::cutHistos::setAxisLabels(TH1D* hcf) {
     hcf->GetXaxis()->SetBinLabel(8, "8 m(Z)");
     hcf->GetXaxis()->SetBinLabel(9, "9 gamma dR");
     hcf->GetXaxis()->SetBinLabel(10, "10 Trigger");
-    hcf->GetXaxis()->SetBinLabel(11, "11 Filters");
+    hcf->GetXaxis()->SetBinLabel(11, "11 HEM");
+    hcf->GetXaxis()->SetBinLabel(12, "12 Filters");
     hcf->GetXaxis()->LabelsOption("vu");
   }
 }  // ======================================================================================
 
 void
-RA2bZinvAnalysis::cutHistos::fill(TH1D* hcf, Double_t wt, bool passTrg) {
+RA2bZinvAnalysis::cutHistos::fill(TH1D* hcf, Double_t wt, bool passTrg, bool passHEM) {
   HTcutf_->GetNdata();
   MHTcutf_->GetNdata();
   NJetscutf_->GetNdata();
@@ -1642,8 +1666,11 @@ RA2bZinvAnalysis::cutHistos::fill(TH1D* hcf, Double_t wt, bool passTrg) {
 		    hcf->Fill(8.5, wt);
 		    if (passTrg) {
 		      hcf->Fill(9.5, wt);
-		      if (commoncutf_->EvalInstance(0)) {
+		      if (passHEM) {
 			hcf->Fill(10.5, wt);
+			if (commoncutf_->EvalInstance(0)) {
+			  hcf->Fill(11.5, wt);
+			}
 		      }
 		    }
 		  }
@@ -1664,7 +1691,8 @@ RA2bZinvAnalysis::cutHistos::fill(TH1D* hcf, Double_t wt, bool passTrg) {
     if (masscutf_->EvalInstance(0)) hcf->Fill(7.5, wt);
     if (photonDeltaRcutf_->EvalInstance(0)) hcf->Fill(8.5, wt);
     if (passTrg) hcf->Fill(9.5, wt);
-    if (commoncutf_->EvalInstance(0)) hcf->Fill(10.5, wt);
+    if (passHEM) hcf->Fill(10.5, wt);
+    if (commoncutf_->EvalInstance(0)) hcf->Fill(11.5, wt);
   }
 }  // ======================================================================================
 
