@@ -18,24 +18,26 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
   bool doHzmm = false;
   bool doHzee = false;
   bool doHphoton = false;
-  bool doHdymm = true;
-  bool doHdyee = true;
+  bool doHdymm = false;
+  bool doHdyee = false;
   bool doHttzmm = false;
   bool doHttzee = false;
   bool doHVVmm = false;
   bool doHVVee = false;
   bool doHttmm = false;
   bool doHttee = false;
-  bool doHgjets = false;
-  bool doHgjetsqcd = false;
+  bool doHgjets = true;
+  bool doHgjetsqcd = true;
   const std::string makeClassSample = "";  // Must be compatible with compiler directives
   bool doListTrigPrescales = false;
   const std::string dumpSelEvIDsample("");
 
   // RA2bZinvAnalysis analyzer("", runBlock);  // Default configuration, V12
+  std::string cfgName("data");  cfgName += runBlock;  cfgName = regex_replace(cfgName, regex("HEM"), "");  cfgName += ".cfg";
+  RA2bZinvAnalysis analyzer(cfgName, runBlock);
   // RA2bZinvAnalysis analyzer("data2016.cfg", runBlock);
   // RA2bZinvAnalysis analyzer("data2017.cfg", runBlock);
-  RA2bZinvAnalysis analyzer("data2018.cfg", runBlock);
+  // RA2bZinvAnalysis analyzer("data2018.cfg", runBlock);
   // RA2bZinvAnalysis analyzer("dataRun2.cfg", runBlock);
   // RA2bZinvAnalysis analyzer("lowDphi.cfg", runBlock);
 

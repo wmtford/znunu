@@ -9,7 +9,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #define VERSION 16
-/* #define ISMC */
+#define ISMC
 #define ISSKIM
 
 #include "CCbinning.h"
@@ -20,6 +20,7 @@
 #include <TH1D.h>
 #include <TH2F.h>
 #include <TGraphErrors.h>
+#include <TEfficiency.h>
 #include <TLorentzVector.h>
 #include <TTreeFormula.h>
 #include <TChainElement.h>
@@ -115,6 +116,7 @@ public:
 		  bool applyDRfitWt);
   private:
     std::vector<TFile*> purityTrigEffFile_;
+    std::vector<TFile*> photonTrigEffFile_;
     std::vector<TFile*> photonSFFile_;
     std::vector<TFile*> elecSFFile_;
     std::vector<TFile*> muonIDSFFile_;
@@ -123,6 +125,7 @@ public:
     TString theSample_;
     std::vector<TH1F*> hPurity_, hTrigEff_;
     std::vector<TF1*> fTrigEff_;
+    std::vector<TEfficiency*> eTrigEff_;
 
     /* TH1F* hSFeff_; */
     std::vector<TH2F*> hSFeff_;
@@ -258,7 +261,8 @@ private:
     return w;
   };
   bool passHEMobjVeto(TLorentzVector& obj, double ptThresh = 0) {
-    if (RunNum < StartHEM) return true;
+    if (!isMC_ && RunNum < StartHEM) return true;
+    if (isMC_ && runBlock_.find("HEM") == std::string::npos) return true;
     if (-3.0 <= obj.Eta() && obj.Eta() <= -1.4 && 
 	-1.57 <= obj.Phi() && obj.Phi() <= -0.87 &&
 	obj.Pt() > ptThresh)
@@ -266,7 +270,8 @@ private:
     else return true;
   };
   bool passHEMjetVeto(double ptThresh = 30) {
-    if (RunNum < StartHEM) return true;
+    if (!isMC_ && RunNum < StartHEM) return true;
+    if (isMC_ && runBlock_.find("HEM") == std::string::npos) return true;
     for (auto & jet : *Jets)
       if (!passHEMobjVeto(jet, ptThresh)) return false;
     return true;
