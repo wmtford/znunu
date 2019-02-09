@@ -33,7 +33,8 @@ typedef std::vector <std::vector<Float_t> > V2F;
 
 // void RA2bin_inputs_Zinv(Int_t doSample = Signal,
 void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
-			const TString gJetsFnRoot = TString("gJets"),
+			std::vector< std::pair<TString, float> > gJetsFnRoot = {std::make_pair("gJets_2016", 35.9),
+			    std::make_pair("gJets_2017", 41.5), std::make_pair("gJets_2018", 59.4)},
 			const TString DRfnRoot = TString("DR"),
 			const TString DYfnRoot = TString("DY"),
 			const TString MCfileName = TString("ZinvMCttzMC174bin.root"),
@@ -81,7 +82,7 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
   //
   // Prototypes for helper functions
   //
-  Int_t getData_gJets(std::vector<const char*> fileNames, std::vector<float> lumi,
+  Int_t getData_gJets(std::vector<TString> fileNames, std::vector<float> lumi,
 		      V2F& Ngobs,
 		      V2F& NgobsEB,
 		      V2F& NgobsEE,
@@ -126,7 +127,8 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
 			    const int maxCorrelBin=0);
 
   Float_t ignoreBin = -999.;
-  TString dataFile_gJets;
+  std::vector<TString> dataFile_gJets;
+  V1F vlumi;
   TString dataFile_DR;
   TString dataFile_DY;
   TString output_rootFile;
@@ -141,13 +143,19 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
     histoXlabelSize = 0.015;
     canvasBottomMargin = 0.15;
     if (doSample == LDP) {
-      dataFile_gJets = gJetsFnRoot+TString("_ldp.dat");
+      for (auto fnroot : gJetsFnRoot) {
+	dataFile_gJets.push_back(fnroot.first+"_ldp.dat");
+	vlumi.push_back(fnroot.second);
+      }
       dataFile_DR = DRfnRoot+TString("_ldp.dat");
       dataFile_DY = DYfnRoot+TString( "_ldp.dat");
       output_rootFile = "ZinvHistos_ldp.root";
       output_plotFile = "ZinvBGpred_ldp.png";
     } else if (doSample == HDP) {
-      dataFile_gJets = gJetsFnRoot+TString("_hdp.dat");
+      for (auto fnroot : gJetsFnRoot) {
+	dataFile_gJets.push_back(fnroot.first+"_hdp.dat");
+	vlumi.push_back(fnroot.second);
+      }
       dataFile_DR = DRfnRoot+TString("_hdp.dat");
       dataFile_DY = DYfnRoot+TString("_hdp.dat");
       output_rootFile = "ZinvHistos_hdp.root";
@@ -159,7 +167,10 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
     MaxKin = 10;
     histoXlabelSize = 0.04;
     canvasBottomMargin = 0.35;
-    dataFile_gJets = gJetsFnRoot+TString("_signal.dat");
+    for (auto fnroot : gJetsFnRoot) {
+      dataFile_gJets.push_back(fnroot.first+"_signal.dat");
+      vlumi.push_back(fnroot.second);
+    }
     dataFile_DR = DRfnRoot+TString("_signal.dat");
     dataFile_DY = DYfnRoot+TString("_signal.dat");
     output_rootFile = "ZinvHistos.root";
@@ -219,14 +230,7 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
   std::vector < V2F >
     DYsysPur(MaxNjets, std::vector< V1F >(MaxNb, V1F(MaxKinDY, 0)));
   // Read gJets, DR, DY data from files
-
-  // if (0 != getData_gJets(dataFile_gJets,
-  // FIXME:  hard-wire filenames for now
-  std::vector<const char*> vfn_gJets = {"../datFiles/gJets_2016_signal.dat",
-					"../datFiles/gJets_2017_signal.dat",
-					"../datFiles/gJets_2018_signal.dat"};
-  V1F vlumi = {35.9, 41.5, 59.4};
-  if (0 != getData_gJets(vfn_gJets, vlumi,
+  if (0 != getData_gJets(dataFile_gJets, vlumi,
 			 Ngobs, NgobsEB, NgobsEE, ZgR, ZgRerr, gEtrg, gEtrgErr, gEtrgSys, gSF,
 			 gSFerr, gFdir, gFdirErrUp, gFdirErrLow, gFdirSys, gPur, gPurErr, ZgDR_from_gJets,
 			 ZgDRerrUp_from_gJets, ZgDRerrLow_from_gJets)) {
@@ -659,8 +663,9 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
 				       + Power(DYsysPur[ijet][ib][ikinDY], 2));
 	if (bin == 1) predFile << endl;
 	predFile << bin << "  " << ZinvValue << " +/- " << statErr[bin-1] << " + " << sysUp[bin-1]
-	     << " - " << sysLow[bin-1] << "  TF*Ngobs = "
-	     << hzvvTF->GetBinContent(bin) * hzvvgJNobs->GetBinContent(bin) << endl;
+		 << " - " << sysLow[bin-1]
+		 << "  TF = " << hzvvTF->GetBinContent(bin)
+		 << ", Ngobs = " <<   hzvvgJNobs->GetBinContent(bin) << endl;
 	if (Ngobs[ijet][ikin] > 0) {
 	  ZinvBGpred->SetBinContent(bin, ZinvValue);
 	  ZinvBGsysUp->SetBinContent(bin, sysUp[bin-1]);
@@ -821,7 +826,7 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
 
 }  // ---------------------------------------------------------------
 
-Int_t getData_gJets(std::vector<const char*> fileNames, std::vector<float> lumi,
+Int_t getData_gJets(std::vector<TString> fileNames, std::vector<float> lumi,
 		    V2F& Ngobs,
 		    V2F& NgobsEB,
 		    V2F& NgobsEE,
@@ -883,9 +888,9 @@ Int_t getData_gJets(std::vector<const char*> fileNames, std::vector<float> lumi,
   std::vector<V2F> ZgDRerrLowt(Nrow, V2F(Ncol, V1F(Nfiles, 0)));
 
   for (int ifn = 0; ifn < Nfiles; ++ifn) {
-    cout << fileNames.at(ifn) << endl;
+    cout << "gJets data filename = " << fileNames.at(ifn) << ", lumi = " << lumi.at(ifn) << endl;
     ifstream dataStream;
-    dataStream.open(fileNames.at(ifn)); // open the data file
+    dataStream.open((fileNames.at(ifn)).Data()); // open the data file
     if (!dataStream.good()) {
       cout << "Open failed for file " << fileNames.at(ifn) << endl;
       return 1; // exit if file not found
@@ -977,25 +982,48 @@ Int_t getData_gJets(std::vector<const char*> fileNames, std::vector<float> lumi,
       }
     }
   }
-  // Combine results from the separate files
+
   Float_t dummy;
   for (Int_t ijet=0; ijet<Nrow; ++ijet) {
     for (Int_t ikin=0; ikin<Ncol; ++ikin) {
       if (ijet > 2 && (ikin == 0 || ikin == 3)) continue;  // Skip high-Njet, low-HT bins
       if (Ncol > 10 && ijet > 2 && ikin == 6) continue;  // Skip high-Njet, low-HT bins
-      Ngobs[ijet][ikin] = Ngobst[ijet][ikin][0] + Ngobst[ijet][ikin][1] + Ngobst[ijet][ikin][2];
-      NgobsEB[ijet][ikin] = NgobsEBt[ijet][ikin][0] + NgobsEBt[ijet][ikin][1] + NgobsEBt[ijet][ikin][2];
-      NgobsEE[ijet][ikin] = NgobsEEt[ijet][ikin][0] + NgobsEEt[ijet][ikin][1] + NgobsEEt[ijet][ikin][2];
-      comb(2, lumi, ZgRt[ijet][ikin], ZgRerrt[ijet][ikin], ZgR[ijet][ikin], ZgRerr[ijet][ikin]);
-      comb(0, lumi, gEtrgt[ijet][ikin], gEtrgErrt[ijet][ikin], gEtrg[ijet][ikin], gEtrgErr[ijet][ikin]);
-      comb(1, lumi, gEtrgt[ijet][ikin], gEtrgSyst[ijet][ikin], dummy, gEtrgSys[ijet][ikin]);
-      comb(1, lumi, gSFt[ijet][ikin], gSFerrt[ijet][ikin], gSF[ijet][ikin], gSFerr[ijet][ikin]);
-      comb(1, lumi, gFdirt[ijet][ikin], gFdirErrUpt[ijet][ikin], gFdir[ijet][ikin], gFdirErrUp[ijet][ikin]);
-      comb(1, lumi, gFdirt[ijet][ikin], gFdirErrLowt[ijet][ikin], dummy, gFdirErrLow[ijet][ikin]);
-      comb(1, lumi, gFdirt[ijet][ikin], gFdirSyst[ijet][ikin], dummy, gFdirSys[ijet][ikin]);
-      comb(1, lumi, gPurt[ijet][ikin], gPurErrt[ijet][ikin], gPur[ijet][ikin], gPurErr[ijet][ikin]);
-      comb(0, lumi, ZgDRt[ijet][ikin], ZgDRerrUpt[ijet][ikin], ZgDR[ijet][ikin], ZgDRerrUp[ijet][ikin]);
-      comb(0, lumi, ZgDRt[ijet][ikin], ZgDRerrLowt[ijet][ikin], dummy, ZgDRerrLow[ijet][ikin]);
+      if (Nfiles == 1) {
+	Ngobs[ijet][ikin] = Ngobst[ijet][ikin][0];
+	NgobsEB[ijet][ikin] = NgobsEBt[ijet][ikin][0];
+	NgobsEE[ijet][ikin] = NgobsEEt[ijet][ikin][0];
+	ZgR[ijet][ikin] = ZgRt[ijet][ikin][0];
+	ZgRerr[ijet][ikin] = ZgRerrt[ijet][ikin][0];
+	gEtrg[ijet][ikin] = gEtrgt[ijet][ikin][0];
+	gEtrgErr[ijet][ikin] = gEtrgErrt[ijet][ikin][0];
+	gEtrgSys[ijet][ikin] = gEtrgSyst[ijet][ikin][0];
+	gSF[ijet][ikin] = gSFt[ijet][ikin][0];
+	gSFerr[ijet][ikin] = gSFerrt[ijet][ikin][0];
+	gFdir[ijet][ikin] = gFdirt[ijet][ikin][0];
+	gFdirErrUp[ijet][ikin] = gFdirErrUpt[ijet][ikin][0];
+	gFdirErrLow[ijet][ikin] = gFdirErrLowt[ijet][ikin][0];
+	gFdirSys[ijet][ikin] = gFdirSyst[ijet][ikin][0];
+	gPur[ijet][ikin] = gPurt[ijet][ikin][0];
+	gPurErr[ijet][ikin] = gPurErrt[ijet][ikin][0];
+	ZgDR[ijet][ikin] = ZgDRt[ijet][ikin][0];
+	ZgDRerrUp[ijet][ikin] = ZgDRerrUpt[ijet][ikin][0];
+	ZgDRerrLow[ijet][ikin] = ZgDRerrLowt[ijet][ikin][0];
+      } else {
+	// Combine results from the separate files
+	Ngobs[ijet][ikin] = Ngobst[ijet][ikin][0] + Ngobst[ijet][ikin][1] + Ngobst[ijet][ikin][2];
+	NgobsEB[ijet][ikin] = NgobsEBt[ijet][ikin][0] + NgobsEBt[ijet][ikin][1] + NgobsEBt[ijet][ikin][2];
+	NgobsEE[ijet][ikin] = NgobsEEt[ijet][ikin][0] + NgobsEEt[ijet][ikin][1] + NgobsEEt[ijet][ikin][2];
+	comb(2, lumi, ZgRt[ijet][ikin], ZgRerrt[ijet][ikin], ZgR[ijet][ikin], ZgRerr[ijet][ikin]);
+	comb(0, lumi, gEtrgt[ijet][ikin], gEtrgErrt[ijet][ikin], gEtrg[ijet][ikin], gEtrgErr[ijet][ikin]);
+	comb(1, lumi, gEtrgt[ijet][ikin], gEtrgSyst[ijet][ikin], dummy, gEtrgSys[ijet][ikin]);
+	comb(1, lumi, gSFt[ijet][ikin], gSFerrt[ijet][ikin], gSF[ijet][ikin], gSFerr[ijet][ikin]);
+	comb(1, lumi, gFdirt[ijet][ikin], gFdirErrUpt[ijet][ikin], gFdir[ijet][ikin], gFdirErrUp[ijet][ikin]);
+	comb(1, lumi, gFdirt[ijet][ikin], gFdirErrLowt[ijet][ikin], dummy, gFdirErrLow[ijet][ikin]);
+	comb(1, lumi, gFdirt[ijet][ikin], gFdirSyst[ijet][ikin], dummy, gFdirSys[ijet][ikin]);
+	comb(1, lumi, gPurt[ijet][ikin], gPurErrt[ijet][ikin], gPur[ijet][ikin], gPurErr[ijet][ikin]);
+	comb(0, lumi, ZgDRt[ijet][ikin], ZgDRerrUpt[ijet][ikin], ZgDR[ijet][ikin], ZgDRerrUp[ijet][ikin]);
+	comb(0, lumi, ZgDRt[ijet][ikin], ZgDRerrLowt[ijet][ikin], dummy, ZgDRerrLow[ijet][ikin]);
+      }
     }
   }
 
