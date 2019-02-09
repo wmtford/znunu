@@ -559,14 +559,15 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 	TString path = thisFile->GetName();
 	if (verbosity_ >= 1) cout << "Current file in chain: " << path << endl;
 	// Set MCwtCorr for this file
-	// if (path.Contains("V16") && path.Contains("MC2017") && path.Contains("DYJetsToLL")) {
-	//   if      (path.Contains("HT-200to400")) MCwtCorr = 1.09646;
-	//   else if (path.Contains("HT-400to600")) MCwtCorr = 1.13147;
-	//   else if (path.Contains("HT-600to800")) MCwtCorr = 1.17537;
-	//   else if (path.Contains("HT-800to1200")) MCwtCorr = 1.18242;
-	//   else if (path.Contains("HT-1200to2500")) MCwtCorr = 1.17144;
-	//   else if (path.Contains("HT-2500toInf")) MCwtCorr = 1.12722;
-	// }
+	if (path.Contains("V16") && path.Contains("MC2017") && path.Contains("DYJetsToLL")) {
+	  if      (path.Contains("HT-100to200")) MCwtCorr = 0.968;
+	  else if (path.Contains("HT-200to400")) MCwtCorr = 1.018;
+	  else if (path.Contains("HT-400to600")) MCwtCorr = 1.062;
+	  else if (path.Contains("HT-600to800")) MCwtCorr = 1.083;
+	  else if (path.Contains("HT-800to1200")) MCwtCorr = 1.098;
+	  else if (path.Contains("HT-1200to2500")) MCwtCorr = 1.117;
+	  else if (path.Contains("HT-2500toInf")) MCwtCorr = 1.145;
+	}
       }
       chain->GetEntry(entry);  // Pull in tree variables for reinitialization
       setTriggerIndexList(sample);
@@ -602,7 +603,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
     // Compute event weight factors
     Double_t eventWt = 1, MCwt = 1, PUweight = 1, NoPrefireWt = 1, ZPtWt = 1;
     if (isMC_) {
-      MCwt = 1000*intLumi_*Weight*MCwtCorr;  // if (MCwt < 0) MCwt *= -1;
+      MCwt = 1000*intLumi_*Weight*MCwtCorr;
       if (applyPuWeight_) {
 	if (customPuWeight_ && puHist_ != nullptr) {
 	  // This PU weight recipe from Kevin Pedro, https://twiki.cern.ch/twiki/bin/viewauth/CMS/RA2b13TeVProduction
@@ -628,19 +629,16 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 	}
       }  // 2016 or 2017
       MCwt *= NoPrefireWt;
-      if (currentYear == Year2017 || currentYear == Year2018) {
+      if ((TString(sample).Contains("dy") || TString(sample).Contains("zinv"))
+	  && (currentYear == Year2017 || currentYear == Year2018)) {
 	// Apply Z Pt weight
 	double ptZ = -1.0;
 	for (int iGen = 0, nGen =  GenParticles_PdgId->size(); iGen < nGen; ++iGen) {
-	  // cout << "  PdgID, Status = " << GenParticles_PdgId->at(iGen) << ", " << GenParticles_Status->at(iGen) << endl;
-	  // if (GenParticles_PdgId->at(iGen)==23 && GenParticles_Status->at(iGen) == 62) {
-	  // if (GenParticles_PdgId->at(iGen)==23 && GenParticles_Status->at(iGen) == 22) {
-	  if (GenParticles_PdgId->at(iGen)==23) {
+	  if (GenParticles_PdgId->at(iGen)==23 && GenParticles_Status->at(iGen) == 62) {
 	    ptZ = GenParticles->at(iGen).Pt();
+	    break;
 	  }
-	  break;
 	}
-	// cout << "  ptZ = " << ptZ << endl;
 	ZPtWt = 1.0;
 	if (ptZ > 0.0) {
 	  int iptbin;
@@ -649,8 +647,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 	  }
 	  ZPtWt *= ptWgts[iptbin-1];
 	}
-	// cout << "    ZPtWt = " << ZPtWt << endl;
-      }  // 2017 or 2018
+      }  // DY or Zinv in 2017 or 2018
       MCwt *= ZPtWt;
       eventWt *= MCwt;
     }  // isMC_
@@ -678,7 +675,6 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       if (selWt == 0) continue;
 
       if (hg->name.Contains("hCC_")) {
-	cout << "    ZPtWt = " << ZPtWt << endl;
 	countInSel++;
 	if (eventWt < 0) countNegWt++;
 	if (!inHEM && RunNum >= StartHEM) {
@@ -1954,7 +1950,12 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
       effWt *= eTrigEff_[1]->GetEfficiency(htot->FindBin(Photons.at(0).Pt()));
     }
     if (applyDRfitWt) {
-      effWt /= (min(MHT, 900.0) - 399.6)*(  -0.00040321 *1/3) + 0.8389;  // New Fdir, 28 Jan, 2019
+      effWt /= (min(HT, 900.0) - 489.9)*(0.00024699) + 1.0858;  // Z Pt weighted
+      // Graph_from_hHT_DR_zmm  Z Pt weighted
+      // Function parameter 0:  0.964825557643 +/- 0.0401018207416
+      // Function parameter 1:  0.000246994762406 +/- 7.73416116005e-05
+      // Average y0 = 1.0858.  x0 = (y0 -p0) / p1
+      // effWt /= (min(MHT, 900.0) - 399.6)*(  -0.00040321 *1/3) + 0.8389;  // New Fdir, 28 Jan, 2019
       // Graph_from_hMHT_DR_zmm
       // Function parameter 0:  0.999926406018 +/- 0.0291554520092
       // Function parameter 1:  -0.000403207439065 +/- 7.19133297508e-05
