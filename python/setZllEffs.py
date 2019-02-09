@@ -18,7 +18,7 @@ import histoZmassFits
 ROOT.gROOT.Reset()
 ROOT.gROOT.SetBatch(1)
 
-doPurityFits = False
+doPurityFits = True
 doRA2bFits = False
 
 ########## trigger effs from manuel ##############
@@ -34,9 +34,9 @@ doRA2bFits = False
 # trig_e_bins = array('d', [300, 1000, 2300])
 ########## trigger effs from AN-18-271
 trig_title = "Pt(Z)"
-trig_m = [(0.986,0.009)]  # Alt. measurement [(0.981,0.006)]
+trig_m = [(0.980,0.007)]  # Alt. measurement [(0.992,0.003)]
 trig_m_bins = array('d', [250, 2300])
-trig_e = [(0.998,0.002)]  # Alt. measurement [(0.996,0.003)]
+trig_e = [(0.988,0.005)]  # Alt. measurement [(0.995,0.003)]
 trig_e_bins = array('d', [250, 2300])
 
 if (doPurityFits):
@@ -61,12 +61,13 @@ if (doPurityFits):
         fits = [fitjb[0], fitjb[1], fitjb[2], fitjb[2], fitjb[2]]
 
 ########## get the scale factors files and extract histograms ################
-SFfile_m = ROOT.TFile("../plots/histograms/SFcorrections.Muons.root", "READ")
-h_SF_m = SFfile_m.Get("h_MHT")
-h_SF_m.SetName("h_SFm_MHT")
-SFfile_e = ROOT.TFile("../plots/histograms/SFcorrections.Electrons.root", "READ")
-h_SF_e = SFfile_e.Get("h_MHT")
-h_SF_e.SetName("h_SFe_MHT")
+# These are now taken directly from the (in princple year-dependent) files from Frank and Emily
+# SFfile_m = ROOT.TFile("../plots/histograms/SFcorrections.Muons.root", "READ")
+# h_SF_m = SFfile_m.Get("h_MHT")
+# h_SF_m.SetName("h_SFm_MHT")
+# SFfile_e = ROOT.TFile("../plots/histograms/SFcorrections.Electrons.root", "READ")
+# h_SF_e = SFfile_e.Get("h_MHT")
+# h_SF_e.SetName("h_SFe_MHT")
 
 ########## get the efficiency file ################
 effFile = ROOT.TFile("../plots/histograms/effHists.root","UPDATE")
@@ -117,7 +118,7 @@ if (doPurityFits):
                 print " & $"+str(round(fits[nj][nb][lep][0],3))+'\pm'+str(round(fits[nj][nb][lep][1],3))+"$",
             print " \\\\ "
 
-######### set the trig effs from manuel ############
+######### set the trig effs ############
 h_trig_m = effFile.Get("h_trig_m")
 if (not h_trig_m):
     h_trig_m = ROOT.TH1F("h_trig_m", "Zmm trigger effs vs HT", len(trig_m_bins)-1, trig_m_bins)
@@ -143,8 +144,8 @@ h_trig_m.Write(h_trig_m.GetName(),2)
 h_trig_e.Write(h_trig_e.GetName(),2)
 
 ######### set the scale factors from Frank's SF files ############
-h_SF_m.Write(h_SF_m.GetName(), 2)
-h_SF_e.Write(h_SF_e.GetName(), 2)
+# h_SF_m.Write(h_SF_m.GetName(), 2)
+# h_SF_e.Write(h_SF_e.GetName(), 2)
 
 
 effFile.Close()

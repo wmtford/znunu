@@ -9,10 +9,10 @@ ROOT.gROOT.Reset()
 ROOT.gROOT.SetBatch(1)
 
 singleOutFile = True
-doDatavMC = False
+doDatavMC = True
 doDatavData = False
-doMCvMC = True
-runYear = "Run2"
+doMCvMC = False
+runYear = "2017"
 doMumu = True
 doEe = True
 doLl = True
@@ -130,34 +130,34 @@ elif (doMCvMC):
   varNames = [['hHT', 'hMHT', 'hNJets', 'hBTags', 'hZmass', 'hZpt', 'hMuonEta', 'hVertices', 'hCC', 'hCCjk', 'hCCjb'],
               ['hHT', 'hMHT', 'hNJets', 'hBTags', 'hZmass', 'hZpt', 'hElectronEta', 'hVertices', 'hCC', 'hCCjk', 'hCCjb'],
               ['hCC', 'hCCjk', 'hCCjb'],
-              ['hHT', 'hMHT', 'hNJets', 'hBTags', 'hPhotonPt', 'hPhotonEta', 'hVertices', 'hCC']]
+              ['hHT', 'hMHT', 'hNJets', 'hBTags', 'hPhotonPt', 'hPhotonEta', 'hVertices', 'hCC', 'hCCjk']]
   iPeriod = 6
 
   # NfileZll = ROOT.TFile('../outputs/histsZjets_2017v16.root')
   # NfilePhoton = ROOT.TFile('../outputs/histsZjets_2017v16.root')
   # sampleSuffixN = ['zinv', 'zinv', 'zinv', 'zinv']
   # legendsN = ['Z#nu#nu 2017 MC', 'Z#nu#nu 2017 MC', 'Z#nu#nu 2017 MC','Z#nu#nu 2017 MC']
-  DfileZll = ROOT.TFile('../outputs/histsDYMC_2018v16.root')
+  NfileZll = ROOT.TFile('../outputs/histsDYMC_2017v16.root')
   NfilePhoton = ROOT.TFile('../outputs/histsGjets_2017v16.root')
   sampleSuffixN = ["dymm", "dyee", 'dyll', "gjets"]
   legendsN = ['DY#mu#mu 2017 MC', 'DYee 2017 MC', 'DYll 2017 MC', '#gamma+jets incl. 2017']
 
-  NfileZll = ROOT.TFile('../outputs/histsDYMC_2017v16.root')
-  DfilePhoton = ROOT.TFile('../outputs/histsGjets_2017v16.root')
+  DfileZll = ROOT.TFile('../outputs/histsDYMC_2016v16.root')
+  DfilePhoton = ROOT.TFile('../outputs/histsGjets_2016v16.root')
   sampleSuffixD = [["dymm"], ["dyee"], ['dyll'], ["gjets"]]
-  legendsD = [['DY#mu#mu 2018 MC'], ['DYee 2018 MC'], ['DYll 2018 MC'], ['#gamma+jets incl. 2018']] 
+  # legendsD = [['DY#mu#mu 2018 MC'], ['DYee 2018 MC'], ['DYll 2018 MC'], ['#gamma+jets incl. 2018']] 
   # ratioMin = [6, 6, 6, 0]
   # ratioMax = [13, 13, 13, 1.1]
   # sampleSuffixD = sampleSuffixN
-  # legendsD = ['        2016', '        2016', '        2016', '        2016'] 
+  legendsD = [['        2016'], ['        2016'], ['        2016'], ['        2016']]
 
-  # fScaleM = 41.5/35.9
-  fScaleM = 41.5/59.4
+  fScaleM = 41.5/35.9
+  # fScaleM = 41.5/59.4
   fScaleE = fScaleM
   fScaleL = fScaleM
   fScaleP = fScaleM
-  ratioMin = [0.8, 0.8, 0.8, 0]
-  ratioMax = [1.2, 1.2, 1.2, 2]
+  # ratioMin = [0.8, 0.8, 0.8, 0]
+  # ratioMax = [1.2, 1.2, 1.2, 2]
 
 # =============================================================================
 

@@ -41,6 +41,13 @@ def purityFits(dataFileName, MCFileName):
     MCscaleM = lumimm/41.5
     MCscaleE = lumiee/41.5
   
+  elif("Run2" in dataFileName):
+    period = 9  # Run2
+    lumimm = 35.9 + 41.5 + 59.5
+    lumiee = 35.9 + 41.5 + 59.2
+    MCscaleM = lumimm/136.8
+    MCscaleE = lumiee/136.8
+  
   reactions = ["tt", "ttz", "VV", "dy"]
   
   canvas = ROOT.TCanvas()

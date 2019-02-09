@@ -102,13 +102,13 @@ pur_ec_2016 = [(0.8989, 0.0440),
 # EB['avgErr'] [0.009999098545333318, 0.014585434074333214, 0.011037659601666694, 0.005863896771333255]
 # EE['avg'] [0.9599167930893332, 0.9644865701173333, 0.9468864281673334, 0.8846943180493333]
 # EE['avgErr'] [0.013086806293333253, 0.014466961288666758, 0.02317752860333333, 0.0495032579343333]
-pur_eb_2017 = [(0.9405, 0.0010),
+pur_eb_2017 = [(0.9405, 0.0100),
                (0.9394, 0.0146),
                (0.9529, 0.0110),
                (0.9743, 0.0059)]
 
-pur_ec_2017 = [(0.9600, 0.0131),
-               (0.9645, 0.0445),
+pur_ec_2017 = [(0.9599, 0.0131),
+               (0.9645, 0.0145),
                (0.9469, 0.0232),
                (0.8847, 0.0495)]
 
@@ -145,14 +145,14 @@ effFile = ROOT.TFile("../plots/histograms/effHists.root","UPDATE")
 
 ########## update the efficiency file #############
 
-f_trig_eb_2016.Write(f_trig_eb_2016.GetName(),2)
-f_trig_ec_2016.Write(f_trig_ec_2016.GetName(),2)
-f_trig_eb_2017.Write(f_trig_eb_2017.GetName(),2)
-f_trig_ec_2017.Write(f_trig_ec_2017.GetName(),2)
-f_trig_eb_2018.Write(f_trig_eb_2018.GetName(),2)
-f_trig_ec_2018.Write(f_trig_ec_2018.GetName(),2)
+# f_trig_eb_2016.Write(f_trig_eb_2016.GetName(),2)
+# f_trig_ec_2016.Write(f_trig_ec_2016.GetName(),2)
+# f_trig_eb_2017.Write(f_trig_eb_2017.GetName(),2)
+# f_trig_ec_2017.Write(f_trig_ec_2017.GetName(),2)
+# f_trig_eb_2018.Write(f_trig_eb_2018.GetName(),2)
+# f_trig_ec_2018.Write(f_trig_ec_2018.GetName(),2)
 
-h_SF_g.Write(h_SF_g.GetName(), 2)
+# h_SF_g.Write(h_SF_g.GetName(), 2)
 h_Fdir.Write(h_Fdir.GetName(), 2)
 
 h_trig_eb = effFile.Get("h_trig_eb")
@@ -164,7 +164,7 @@ h_trig_eb.GetXaxis().SetTitle(trig_title)
 for i in range(len(trig_eb)):
     h_trig_eb.SetBinContent(i+1,trig_eb[i][0])
     h_trig_eb.SetBinError(i+1,trig_eb[i][1])
-h_trig_eb.Write(h_trig_eb.GetName(),2)
+# h_trig_eb.Write(h_trig_eb.GetName(),2)
 
 h_trig_ec = effFile.Get("h_trig_ec")
 if (not h_trig_ec):
@@ -175,7 +175,7 @@ h_trig_ec.GetXaxis().SetTitle(trig_title)
 for i in range(len(trig_ec)):
     h_trig_ec.SetBinContent(i+1,trig_ec[i][0])
     h_trig_ec.SetBinError(i+1,trig_ec[i][1])
-h_trig_ec.Write(h_trig_ec.GetName(),2)
+# h_trig_ec.Write(h_trig_ec.GetName(),2)
 
 h_pur_eb = effFile.Get("h_pur_eb")
 if (not h_pur_eb):
