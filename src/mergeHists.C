@@ -6,13 +6,18 @@ void mergeHists() {
 
   bool addLinear12 = false;
   std::vector<Double_t> scale;
+  TString matchHname(""), newHname("");
 
-  std::vector<const char*> mmFiles = {
-    "../outputs/histsGjets_2017v16_DRwt.root",
-    "../outputs/histsGjets_2018v16_DRwt.root",
-    "../outputs/histsGjets_2016v16_DRwt.root"
-  };
-  addLinear12 = true;
+  std::vector<const char*> mmFiles = {"../outputs/histsZjets_2016v16.root"};
+  matchHname = "hCCzinvAll";
+  newHname += "plot_zinv_nj5_nb4_kin10_1";
+
+  // std::vector<const char*> mmFiles = {
+  //   "../outputs/histsGjets_2017v16_DRwt2.root",
+  //   "../outputs/histsGjets_2018v16_DRwt2.root",
+  //   "../outputs/histsGjets_2016v16_DRwt2.root"
+  // };
+  // addLinear12 = true;
 
   // std::vector<const char*> mmFiles = {
   //   "../outputs/histsDYMC_2016v16.root",
@@ -70,6 +75,8 @@ void mergeHists() {
 	// if (!cl->InheritsFrom("TH1")) continue;
 	if (!(cl->InheritsFrom("TH1F") || cl->InheritsFrom("TH1D"))) continue;
 	TH1 *h = (TH1*)key->ReadObj();
+	if (!matchHname.IsNull() && !matchHname.EqualTo(h->GetName())) continue;
+	h->SetNameTitle(newHname, newHname);
 	if (fdx == 0) {
 	  histos.push_back((TH1*) h->Clone());
 	  histos.back()->Scale(wt);
