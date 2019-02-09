@@ -55,7 +55,8 @@ public:
   Int_t binsJb() {return toCCbinJb_.size();};
   Size_t binsj() {return jbThresholds_.size();};
   Size_t binsJ() {return JbThresholds_.size();};
-  Size_t binsb(int j) {return jbThresholds_[j].size();};
+  Size_t binsb(int j) {return jbThresholds_[j].size()-1;};
+  Size_t binsB(int J) {return JbThresholds_[J].size()-1;};
   int jbin(int nJets) {
     if (nJets < jbThresholds_[0][0]) return -1;
     int bin = jbThresholds_.size()-1;

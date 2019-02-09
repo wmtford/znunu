@@ -8,6 +8,7 @@
 #include "TROOT.h"
 #include "TH1F.h"
 #include "TFile.h"
+#include "TEnv.h"
 
 #include <fstream>
 #include <iostream>
@@ -18,8 +19,9 @@ using std::endl;
 using TMath::Sqrt; using TMath::Power;
 
 void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "nominal") {
-  ofstream outFile("DY_signal.dat");
-  // ofstream outFile;
+  ofstream datFile("DY_signal.dat");
+  // ofstream datFile;
+  ofstream latexFile("DY_signal.tex");
 
   CCbinning CCbins(era, deltaPhi);
   int kinSize = CCbins.kinSize();
@@ -31,9 +33,9 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
   // std::vector<int> extrapFromRange = {5, 6};
   float relErrXsec_ttz = 0.3;
 
-  TFile ZllData("../outputs/histsDY_Run2v16.root");  if (!ZllData.IsOpen()) return;
-  TFile photonData("../outputs/histsPhoton_Run2v16.root");  if (!photonData.IsOpen()) return;
-  TFile ZllXMC("../outputs/histsDYMC_Run2v16.root");  if (!ZllXMC.IsOpen()) return;
+  TFile ZllData("../outputs/histsDY_2017v16.root");  if (!ZllData.IsOpen()) return;
+  TFile photonData("../outputs/histsPhoton_2017v16.root");  if (!photonData.IsOpen()) return;
+  TFile ZllXMC("../outputs/histsDYMC_2017v16.root");  if (!ZllXMC.IsOpen()) return;
   
   // Get the Z->ll and photon data and MC histograms
   TH1F* hCC_zmm = (TH1F*) ZllData.Get("hCC_zmm");
@@ -209,7 +211,7 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
 
   // Calculate Nb/0b F factors
   // Take the Nphoton average of F over NJet sub-bins at each kin bin.
-  std::vector<float> Fextrap, fb0;
+  std::vector<float> Fextrap, Fextrapjb, fb0;
   for (int j = 0; j < NbinsNJet; ++j) {
     for (int b = 0; b < CCbins.binsb(j); ++b) {
       for (int k = 0; k < kinSize; ++k) {
@@ -228,7 +230,7 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
 	      fbb = Nemuxp / fb0.at(J);
 	      int binCCJ0k = CCbins.Jbk(J, 0, k);  if (binCCJ0k <= 0) continue;
 	      float NphoJ = hCCspl_photon->GetBinContent(binCCJ0k);
-	      // cout << "j, J, b, k, fbb, NphoJ = " << j << ", " << J << ", " << b << ", " << k << ", " << fbb << ", " << NphoJ << endl;
+	      cout << "j, J, b, k, fbb, NphoJ = " << j << ", " << J << ", " << b << ", " << k << ", " << fbb << ", " << NphoJ << endl;
 	      Npho += NphoJ;
 	      NphoF += NphoJ*fbb;
 	    }
@@ -236,15 +238,16 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
 	  if (b == 0) {
 	    Fextrap.push_back(1);
 	  } else {
-	    float f = NphoF/Npho;
-	    if (f == 0) {
+	    float f = 0;
+	    if (NphoF != 0 && Npho != 0)
+	      f = NphoF/Npho;
+	    else {
 	      // Fall back to unsplit yields
 	      int binCCj0 = CCbins.jb(j, 0);
 	      f = hCCjb_zmm->GetBinContent(binCCjb) * h_pur_m->GetBinContent(binCCjb)
 		+ hCCjb_zee->GetBinContent(binCCjb) * h_pur_e->GetBinContent(binCCjb);
 	      f /= hCCjb_zmm->GetBinContent(binCCj0) * h_pur_m->GetBinContent(binCCj0)
 	      	+ hCCjb_zee->GetBinContent(binCCj0) * h_pur_e->GetBinContent(binCCj0);
-	      f /= Npho;
 	    }
 	    Fextrap.push_back(f);
 	  }
@@ -258,25 +261,52 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
     }
   }
 
+  // Get the k-integrated nubmers for AN
+  float yj0 = 1;
+  for (int j = 0; j < NbinsNJet; ++j) {
+    for (int b = 0; b < CCbins.binsb(j); ++b) {
+      bool validkbin = false;
+      for (int k = 0; k < kinSize; ++k) {
+	if (CCbins.jbk(j, b, k) < 0) continue;
+	validkbin = true;
+	int binCCjb = CCbins.jb(j, b);  if (binCCjb <= 0) continue;
+	if (j < extrapByMCthreshold) {
+	  float yjb = hCCjb_zmm->GetBinContent(binCCjb) * h_pur_m->GetBinContent(binCCjb)
+	    +         hCCjb_zee->GetBinContent(binCCjb) * h_pur_e->GetBinContent(binCCjb);
+	  if (b == 0) {
+	    yj0 = yjb;
+	    Fextrapjb.push_back(1);
+	  } else {
+	    Fextrapjb.push_back(yjb/yj0);
+	  }
+	} else {
+	  Fextrapjb.push_back(Fextrapjb.at(CCbins.jb(j-1, b) - 1) * Jextrap.at(CCbins.jbk(j, b, k) - 1).first);
+	}
+	if (validkbin) break;
+      }
+    }
+  }
+
   // kin systematics derived from analysis of the closure plot
   std::vector<float> systKin = {0, 0.07, 0.10, 0.20};
 
   // Write the output dat file
-  // std::string outFileName("DY_");
-  // if (deltaPhi == "nominal") outFileName += "signal";
-  // else outFileName += deltaPhi;
-  // outFileName += ".dat";
-  // if (!outFile.is_open()) outFile.open(outFileName);
+  // std::string datFileName("DY_");
+  // if (deltaPhi == "nominal") datFileName += "signal";
+  // else datFileName += deltaPhi;
+  // datFileName += ".dat";
+  // if (!datFile.is_open()) datFile.open(datFileName);
 
-  // File* outFile = fopen(outFileName.c_str(), "w");
-  // fprintf(outFile, "%s\n",
+  // File* datFile = fopen(datFileName.c_str(), "w");
+  // fprintf(datFile, "%s\n",
   char linebuf[2048];
   sprintf(linebuf, "%s\n",
   	  " j b k| | Nmumu |  Nee  | Nb/0b | stat  |MC stat| ttz SF| syst+ | syst- | sysKin| sysPur"
   	  );
-  outFile << linebuf;
+  datFile << linebuf;
   for (int j = 0; j < NbinsNJet; ++j) {
     for (int b = 0; b < CCbins.binsb(j); ++b) {
+      bool usedkbin = false;
       for (int k = 0; k < kinSize; ++k) {
 	int binCC = CCbins.jbk(j, b, k);  if (binCC <= 0) continue;
 	int binCCjb = CCbins.jb(j, b);  if (binCCjb <= 0) continue;
@@ -293,7 +323,7 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
 				     hCCjb_MCttzFrac->GetBinContent(CCbins.jb(j-1, 0))
 				     );
 	}
-  	// fprintf(outFile, " %1d %1d %1d| |%7d|%7d|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f\n", j, b, k,
+  	// fprintf(datFile, " %1d %1d %1d| |%7d|%7d|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f\n", j, b, k,
   	sprintf(linebuf, " %1d %1d %1d| |%7d|%7d|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f\n", j, b, k,
 		(int) hCC_zmm->GetBinContent(binCC),
 		(int) hCC_zee->GetBinContent(binCC),
@@ -306,11 +336,32 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
 		systKin.at(b),
 		DYpurSys.at(binCCjb - 1)
 		);
-	outFile << linebuf;
+	datFile << linebuf;
+	if (!usedkbin) {
+	  // sprintf(linebuf, "%d & %d & %d & %6.3f & %3.0f & %3.0f & $\\pm%2.0f^{+%2.0f}_{-%2.0f}$ & %2.0f & %2.0f \\\\\n",
+	  sprintf(linebuf, "%d & %d & %d & %6.3f & %3.0f & %3.0f & $\\pm%2.0f\\pm%2.0f$ & %2.0f & %2.0f \\\\\n",
+		  binCCjb,
+		  (int) hCCjb_zmm->GetBinContent(binCCjb),
+		  (int) hCCjb_zee->GetBinContent(binCCjb),
+		  Fextrapjb.at(binCCjb - 1),
+		  100*DYstat.at(binCCjb - 1),
+		  100*DYpurSys.at(binCCjb - 1),
+		  100*JextrapErr,
+		  // j >= extrapByMCthreshold ? 100*systJ.at(b) : 0,
+		  j >= extrapByMCthreshold ? 100*systJ.at(b) : 0,
+		  100*ttzErr,
+		  100*systKin.at(b)
+		  );
+	  latexFile << linebuf;
+	  usedkbin = true;
+	}
       }
     }
   }
-  outFile.close();
-  // fclose(outFile);
+  datFile.close();
+  latexFile.close();
+  // fclose(datFile);
+
+  gApplication->Terminate(0);
 
 }
