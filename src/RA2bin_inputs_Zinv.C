@@ -234,15 +234,15 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
 			 Ngobs, NgobsEB, NgobsEE, ZgR, ZgRerr, gEtrg, gEtrgErr, gEtrgSys, gSF,
 			 gSFerr, gFdir, gFdirErrUp, gFdirErrLow, gFdirSys, gPur, gPurErr, ZgDR_from_gJets,
 			 ZgDRerrUp_from_gJets, ZgDRerrLow_from_gJets)) {
-    cout << "Failed to get data." << endl;
+    cout << "Failed to get gJets data." << endl;
     return;
   }
   if (0 != getData_DR(dataFile_DR, ZgDR, ZgDRerrUp, ZgDRerrLow, DRscaleErr, DY0bPurErr, DYtrigEffErr, LeptonSFerr, btagSFerr)) {
-    cout << "Failed to get data." << endl;
+    cout << "Failed to get DR data." << endl;
     return;
   }
   if (0 != getData_DY(dataFile_DY, DYvalues, DYstat, DYMCstat, DYsysNjUp, DYsysNjLow, DYsysKin, DYsysPur)) {
-    cout << "Failed to get data." << endl;
+    cout << "Failed to get DY data." << endl;
     return;
   }
 
@@ -381,6 +381,9 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
   TH1F *hgJZgR = (TH1F*)hTemplate->Clone("hgJZgR");
   hgJZgR->SetTitle("gamma+jets Z/gamma ratio");
   hgJZgR->GetYaxis()->SetTitle("gamma+jets Z/gamma ratio");
+
+  TH1F *hgJZgR0b = new TH1F("hgJZgR0b", "gamma+jets Z/gamma ratio, Nb = 0", 46, 0.5, 46.5);
+  hgJZgR0b->GetYaxis()->SetTitle("gamma+jets Z/gamma ratio");
 
   // TH1F *hzvvgJZgRerr = (TH1F*)hCorrelTemplate->Clone("hzvvgJZgRerr");
   // if (doSample == Signal) setCorrelationLabels(hzvvgJZgRerr, 4);  
@@ -568,6 +571,9 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
 	gFdirErrLowEff[ijet][ikin] = fabs( gFdirErrLow[ijet][ikin] - gFdirErrLowAv / gFdirAv );  // Frac. -error on gFdir/<gFdir>
 	gPurErrEff[ijet][ikin] = fabs( gPurErr[ijet][ikin] - gPurErrAv / gPurAv );  // Frac. error on gPur/<gPur>
 	if (ib == 0) {
+	  binzb++;
+	  hgJZgR0b->SetBinContent(binzb, ZgR[ijet][ikin]);
+	  hgJZgR0b->SetBinError(binzb, ZgRerr[ijet][ikin]);
           cout << "iJet " << ijet << " Var (err nominal, eff): "
                << " gEtrg (" << gEtrgErr[ijet][ikin] << ", " << gEtrgErrEff[ijet][ikin] << ") "
 	       << " gFdir (" << gFdirErrUp[ijet][ikin] << ", " << gFdirErrUpEff[ijet][ikin] << ") "
@@ -678,7 +684,6 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
 
 	if (MaxKin <= 10 && ib == 0) {
           //  Write out LaTex for AN table
-	  binzb++;
 	  Float_t ZgRcorr = ZgR[ijet][ikin] / gEtrg[ijet][ikin] / gSF[ijet][ikin];
 	  Float_t ZgRsys = ZgRcorr * Sqrt(Power(gEtrgErr[ijet][ikin], 2) + Power(gSFerr[ijet][ikin], 2));
 	  if (ikin == 0 || (ijet > 2 && ikin == 1)) tableFile << "\\hline" << endl;
@@ -1010,9 +1015,14 @@ Int_t getData_gJets(std::vector<TString> fileNames, std::vector<float> lumi,
 	ZgDRerrLow[ijet][ikin] = ZgDRerrLowt[ijet][ikin][0];
       } else {
 	// Combine results from the separate files
-	Ngobs[ijet][ikin] = Ngobst[ijet][ikin][0] + Ngobst[ijet][ikin][1] + Ngobst[ijet][ikin][2];
-	NgobsEB[ijet][ikin] = NgobsEBt[ijet][ikin][0] + NgobsEBt[ijet][ikin][1] + NgobsEBt[ijet][ikin][2];
-	NgobsEE[ijet][ikin] = NgobsEEt[ijet][ikin][0] + NgobsEEt[ijet][ikin][1] + NgobsEEt[ijet][ikin][2];
+	Ngobs[ijet][ikin] = 0;
+	NgobsEB[ijet][ikin] = 0;
+	NgobsEE[ijet][ikin] = 0;
+	for (size_t i = 0; i < Ngobst[ijet][ikin].size(); ++i) {
+	  Ngobs[ijet][ikin] += Ngobst[ijet][ikin][i];
+	  NgobsEB[ijet][ikin] += NgobsEBt[ijet][ikin][i];
+	  NgobsEE[ijet][ikin] += NgobsEEt[ijet][ikin][i];
+	}
 	comb(2, lumi, ZgRt[ijet][ikin], ZgRerrt[ijet][ikin], ZgR[ijet][ikin], ZgRerr[ijet][ikin]);
 	comb(0, lumi, gEtrgt[ijet][ikin], gEtrgErrt[ijet][ikin], gEtrg[ijet][ikin], gEtrgErr[ijet][ikin]);
 	comb(1, lumi, gEtrgt[ijet][ikin], gEtrgSyst[ijet][ikin], dummy, gEtrgSys[ijet][ikin]);
@@ -1036,20 +1046,29 @@ void comb(Int_t mode, V1F lumi, V1F v, V1F e, Float_t& val, Float_t& err) {
   // Errors are relative.
   // mode = 0: inputs uncorrelated
   // mode = 1: inputs correlated
-  // mode = 2: inputs 1 & 2 correlated, indep of input 0.
-  Float_t wt0 = lumi[0] / (lumi[0] + lumi[1] + lumi[2]);
-  Float_t wt1 = lumi[1] / (lumi[0] + lumi[1] + lumi[2]);
-  Float_t wt2 = lumi[2] / (lumi[0] + lumi[1] + lumi[2]);
-  val = wt0*v[0] + wt1*v[1] + wt2*v[2];
+  // mode = 2: inputs 1+ correlated, indep of input 0.
+  std::vector<Float_t> wt;
+  Float_t sumlumi = 0;
+  for (auto ilumi : lumi) sumlumi += ilumi;
+  for (auto ilumi : lumi) wt.push_back(ilumi/sumlumi);
+  val = 0;
+  for (size_t i = 0; i < wt.size(); ++i) val += wt[i]*v[i];
   if (mode == 0) {
-    err = Sqrt(Power(wt0*v[0]*e[0], 2) + Power(wt2*v[2]*e[2], 2) + Power(wt2*v[2]*e[2], 2)) / val;
+    err = 0;
+    for (size_t i = 0; i < wt.size(); ++i) err += Power(wt[i]*v[i]*e[i], 2);
+    err = Sqrt(err) / val;
   } else if (mode == 1) {
-    err = (wt0*v[0]*e[0] + wt2*v[2]*e[2] + wt2*v[2]*e[2]) / val;
+    err = 0;
+    for (size_t i = 0; i < wt.size(); ++i) err += wt[i]*v[i]*e[i];
+    err /= val;
   } else if (mode == 2) {
-    Float_t wt1p = lumi[1] / (lumi[1] + lumi[2]);
-    Float_t wt2p = lumi[2] / (lumi[1] + lumi[2]);
-    Float_t e12 = wt1p*v[1]*e[1] + wt2p*v[2]*e[2];
-    err = Sqrt(Power(wt0*v[0]*e[0], 2) + Power((wt1+wt2)*e12, 2)) / val;
+    std::vector<Float_t> wtc;  // vector of weights for correlated components
+    wtc.push_back(0);  // first value is uncorrelated
+    Float_t sumlumic = 0, ex0 = 0;
+    for (size_t i = 1; i < lumi.size(); ++i) sumlumic += lumi.at(i);
+    for (size_t i = 1; i < lumi.size(); ++i) wtc.push_back(lumi.at(i)/sumlumic);
+    for (size_t i = 1; i < wtc.size(); ++i) ex0 += wtc[i]*v[i]*e[i];
+    err = Sqrt(Power(wt[0]*v[0]*e[0], 2) + Power(ex0, 2)) / val;
   }
 
 }  // ---------------------------------------------------------------
