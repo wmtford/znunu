@@ -68,6 +68,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
     ("apply pileup weight", po::value<bool>(&applyPuWeight_))
     ("use custom pileup weight", po::value<bool>(&customPuWeight_))
     ("apply HEM jet veto", po::value<bool>(&applyHEMjetVeto_))
+    ("apply Z Pt weight", po::value<bool>(&applyZptWt_))
     ("apply double-ratio fit weight", po::value<bool>(&applyDRfitWt_))
     ("apply scale factors to MC", po::value<bool>(&applySFwtToMC_))
 
@@ -231,10 +232,11 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   cout << "Use DeepCSV is " << useDeepCSV_ << endl;
   cout << "Apply b-tag scale factors is " << applyBTagSF_ << endl;
   cout << "Apply pileup weight is " << applyPuWeight_ << endl;
-  cout << "The custom pileup weight flag is " << customPuWeight_ << endl;
-  cout << "Apply HEM jet veto is " << applyHEMjetVeto_ << endl;
-  cout << "The apply double-ratio fit weight flag is " << applyDRfitWt_ << endl;
-  cout << "The apply scale factors to MC flag is " << applySFwtToMC_ << endl;
+  cout << "Use custom if pileup weight is " << customPuWeight_ << endl;
+  cout << "Apply HEM jet veto for 2018HEM is " << applyHEMjetVeto_ << endl;
+  cout << "Apply Z Pt weight for 2017 Z MC is " << applyZptWt_ << endl;
+  cout << "Apply double-ratio fit weight is " << applyDRfitWt_ << endl;
+  cout << "Apply scale factors to MC for non-DR histograms is " << applySFwtToMC_ << endl;
 
   fillCutMaps();
   effPurCorr_.openFiles();
@@ -543,8 +545,6 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
   Long64_t Nentries = chain->GetEntries();
   if (verbosity_ >= 1) cout << "Nentries in tree = " << Nentries << endl;
   int count = 0, countInFile = 0, countInSel = 0, countNegWt = 0;
-  bool inHEM = false;
-  bool in2018C = false;
   for (Long64_t entry = 0; entry < Nentries; ++entry) {
     count++;
     if (verbosity_ >= 1 && count % 100000 == 0) cout << "Entry number " << count << endl;
@@ -559,7 +559,8 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 	TString path = thisFile->GetName();
 	if (verbosity_ >= 1) cout << "Current file in chain: " << path << endl;
 	// Set MCwtCorr for this file
-	if (path.Contains("V16") && path.Contains("MC2017") && path.Contains("DYJetsToLL")) {
+	if (applyZptWt_ && path.Contains("V16") && path.Contains("MC2017") &&
+	    (path.Contains("DYJetsToLL") || path.Contains("ZJetsToNuNu"))) {
 	  if      (path.Contains("HT-100to200")) MCwtCorr = 0.968;
 	  else if (path.Contains("HT-200to400")) MCwtCorr = 1.018;
 	  else if (path.Contains("HT-400to600")) MCwtCorr = 1.062;
@@ -603,8 +604,9 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
     // Compute event weight factors
     Double_t eventWt = 1, MCwt = 1, PUweight = 1, NoPrefireWt = 1, ZPtWt = 1;
     if (isMC_) {
-      MCwt = 1000*intLumi_*Weight*MCwtCorr;
+      MCwt = 1000*intLumi_*Weight*MCwtCorr;  // MCwtCorr for 2017 MC
       if (applyPuWeight_) {
+	// Pileup weight for 2016
 	if (customPuWeight_ && puHist_ != nullptr) {
 	  // This PU weight recipe from Kevin Pedro, https://twiki.cern.ch/twiki/bin/viewauth/CMS/RA2b13TeVProduction
 	  PUweight = puHist_->GetBinContent(puHist_->GetXaxis()->FindBin(min(TrueNumInteractions, puHist_->GetBinLowEdge(puHist_->GetNbinsX()+1))));
@@ -612,8 +614,9 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 	  PUweight = puWeight;  // Take puWeight directly from the tree
 	MCwt *= PUweight;
       }
+
       if (currentYear == Year2016 || currentYear == Year2017) {
-	// Apply L1 prefire weight
+	// Apply L1 prefire weight for 2016 and 2017
 	if (sampleKey.Contains("ee")) {
 	  for (unsigned j = 0; j < Jets->size(); ++j) {
 	    NoPrefireWt *= prefiring_weight_jet(j);
@@ -627,11 +630,12 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 	} else {
 	NoPrefireWt = NonPrefiringProb;
 	}
+	MCwt *= NoPrefireWt;
       }  // 2016 or 2017
-      MCwt *= NoPrefireWt;
-      if ((TString(sample).Contains("dy") || TString(sample).Contains("zinv"))
+
+      if (applyZptWt_ && (TString(sample).Contains("dy") || TString(sample).Contains("zinv"))
 	  && (currentYear == Year2017 || currentYear == Year2018)) {
-	// Apply Z Pt weight
+	// Apply Z Pt weight for 2017 MC
 	double ptZ = -1.0;
 	for (int iGen = 0, nGen =  GenParticles_PdgId->size(); iGen < nGen; ++iGen) {
 	  if (GenParticles_PdgId->at(iGen)==23 && GenParticles_Status->at(iGen) == 62) {
@@ -647,18 +651,21 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 	  }
 	  ZPtWt *= ptWgts[iptbin-1];
 	}
+	MCwt *= ZPtWt;
       }  // DY or Zinv in 2017 or 2018
-      MCwt *= ZPtWt;
+
       eventWt *= MCwt;
     }  // isMC_
 
     // Trigger requirements
-    bool passTrg = true, passHEM = true;
+    bool passTrg = true;
     if (!isMC_) {
       passTrg = false;
       for (auto trgIndex : triggerIndexList_)
 	if (TriggerPass->at(trgIndex)) passTrg = true;
     }
+    // HEM veto for 2018HEM
+    bool passHEM = true;
     if (applyHEMjetVeto_ && !passHEMjetVeto()) passHEM = false;
 
     for (auto & hg : histograms) {
@@ -677,13 +684,6 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       if (hg->name.Contains("hCC_")) {
 	countInSel++;
 	if (eventWt < 0) countNegWt++;
-	if (!inHEM && RunNum >= StartHEM) {
-	  inHEM = true;
-	  cout << "HEM starts at count = " << countInSel << endl;
-	} else if (!in2018C && RunNum >= Start2018C) {
-	  in2018C = true;
-	  cout << "2018C starts at count = " << countInSel << endl;
-	}
       }
 
       double eventWt0 = eventWt;
@@ -1950,11 +1950,23 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
       effWt *= eTrigEff_[1]->GetEfficiency(htot->FindBin(Photons.at(0).Pt()));
     }
     if (applyDRfitWt) {
-      effWt /= (min(HT, 900.0) - 489.9)*(0.00024699) + 1.0858;  // Z Pt weighted
-      // Graph_from_hHT_DR_zmm  Z Pt weighted
-      // Function parameter 0:  0.964825557643 +/- 0.0401018207416
-      // Function parameter 1:  0.000246994762406 +/- 7.73416116005e-05
-      // Average y0 = 1.0858.  x0 = (y0 -p0) / p1
+      if (runBlock_.find("2016") != std::string::npos)
+	effWt /= (min(HT, 900.0) - 497.1)*(0.00011466) + 0.900;  // 2016
+      // Graph_from_hHT_DR_zmm
+      // Function parameter 0:  0.843020160316 +/- 0.0348336458629
+      // Function parameter 1:  0.000114662993277 +/- 6.57638091784e-05
+      // Average y0 = 0.900.  x0 = (y0 -p0) / p1
+      else
+	effWt /= (min(HT, 900.0) - 489.2)*(0.00025739) + 1.0858;  // 2017 Z Pt weighted
+      // Graph_from_hHT_DR_zmm
+      // Function parameter 0:  0.961193586511 +/- 0.0401249241206
+      // Function parameter 1:  0.000257387819072 +/- 7.74713707439e-05
+      // Average y0 = 1.0871.  x0 = (y0 -p0) / p1
+      // effWt /= (min(HT, 900.0) - 497.4)*(0.0002288) + 1.0395;  // Run2 Z Pt weighted
+      // Graph_from_hHT_DR_zmm
+      // Function parameter 0:  0.92567079283 +/- 0.021512658121
+      // Function parameter 1:  0.000228788345936 +/- 4.08070918994e-05
+      // Average y0 = 1.0395.  x0 = (y0 -p0) / p1
       // effWt /= (min(MHT, 900.0) - 399.6)*(  -0.00040321 *1/3) + 0.8389;  // New Fdir, 28 Jan, 2019
       // Graph_from_hMHT_DR_zmm
       // Function parameter 0:  0.999926406018 +/- 0.0291554520092

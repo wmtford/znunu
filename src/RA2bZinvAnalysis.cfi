@@ -28,5 +28,6 @@ apply b-tag SF = false
 apply pileup weight = true
 use custom pileup weight = true
 apply HEM jet veto = true
+apply Z Pt weight = true
 apply double-ratio fit weight = false
 apply scale factors to MC = false

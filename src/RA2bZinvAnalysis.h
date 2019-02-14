@@ -167,6 +167,7 @@ private:
   bool applyPuWeight_;
   bool customPuWeight_;
   bool applyHEMjetVeto_;
+  bool applyZptWt_;
   bool applyDRfitWt_;
   bool applySFwtToMC_;
   TH1* puHist_;
@@ -203,12 +204,15 @@ private:
 
   #endif  // VERSION
 
-  // Declare dummy tree variables missing in some versions
+  // Declare dummy tree variables valid only in MC
 
   Double_t        puWeight;
   Double_t        Weight;
   Double_t        TrueNumInteractions;
   Double_t        NonPrefiringProb;
+  vector<TLorentzVector> *GenParticles;
+  vector<int>     *GenParticles_PdgId;
+  vector<int>     *GenParticles_Status;
 
 #endif  // !ISMC
 
