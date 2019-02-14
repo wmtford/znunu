@@ -8,7 +8,9 @@
 #include "TROOT.h"
 #include "TH1F.h"
 #include "TFile.h"
-#include "TEnv.h"
+#include "TApplication.h"
+#include "TMath.h"
+using TMath::Sqrt; using TMath::Power; using TMath::Max;
 
 #include <fstream>
 #include <iostream>
@@ -28,14 +30,15 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
   int NbinsNJet = CCbins.binsj();
   std::vector< std::vector<int> > jetSubBins = CCbins.jetSubBins();
 
+  bool useMCJfactors = false;
   bool doJfromData = false;
-  int extrapByMCthreshold = NbinsNJet - 1;  // Use MC for the NJets 9+ bin
+  int extrapByMCthreshold = NbinsNJet - 1;  // Use MC for the last NJets bin
   // std::vector<int> extrapFromRange = {5, 6};
   float relErrXsec_ttz = 0.3;
 
-  TFile ZllData("../outputs/histsDY_2017v16.root");  if (!ZllData.IsOpen()) return;
-  TFile photonData("../outputs/histsPhoton_2017v16.root");  if (!photonData.IsOpen()) return;
-  TFile ZllXMC("../outputs/histsDYMC_2017v16.root");  if (!ZllXMC.IsOpen()) return;
+  TFile ZllData("../outputs/histsDY_Run2v16.root");  if (!ZllData.IsOpen()) return;
+  TFile photonData("../outputs/histsPhoton_Run2v16.root");  if (!photonData.IsOpen()) return;
+  TFile ZllXMC("../outputs/histsDYMC_Run2v16_ZptWt.root");  if (!ZllXMC.IsOpen()) return;
   
   // Get the Z->ll and photon data and MC histograms
   TH1F* hCC_zmm = (TH1F*) ZllData.Get("hCC_zmm");
@@ -64,12 +67,37 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
   // hCCJb_MCall->Add(hCCJb_ttmm);  // Omit non-peaking, since data are purity corrected.
   // hCCJb_MCall->Add(hCCJb_ttee);
 
+  // For calculation of the ttz cross section uncertainty from the ttz fraction.
+  TH1F* hCCjb_dymm = (TH1F*) ZllXMC.Get("hCCjb_dymm");
+  TH1F* hCCjb_dyee = (TH1F*) ZllXMC.Get("hCCjb_dyee");
+  TH1F* hCCjb_ttzmm = (TH1F*) ZllXMC.Get("hCCjb_ttzmm");
+  TH1F* hCCjb_ttzee = (TH1F*) ZllXMC.Get("hCCjb_ttzee");
+  TH1F* hCCjb_VVmm = (TH1F*) ZllXMC.Get("hCCjb_VVmm");
+  TH1F* hCCjb_VVee = (TH1F*) ZllXMC.Get("hCCjb_VVee");
+  TH1F* hCCjb_ttmm = (TH1F*) ZllXMC.Get("hCCjb_ttmm");
+  TH1F* hCCjb_ttee = (TH1F*) ZllXMC.Get("hCCjb_ttee");
+  TH1F* hCCjb_MCall = (TH1F*) hCCjb_dymm->Clone();  hCCjb_MCall->SetName("hCCjb_MCall");
+  hCCjb_MCall->Add(hCCjb_dyee);
+  hCCjb_MCall->Add(hCCjb_ttzmm);
+  hCCjb_MCall->Add(hCCjb_ttzee);
+  hCCjb_MCall->Add(hCCjb_VVmm);
+  hCCjb_MCall->Add(hCCjb_VVee);
+  hCCjb_MCall->Add(hCCjb_ttmm);
+  hCCjb_MCall->Add(hCCjb_ttee);
+  hCCjb_ttzmm->Print("all");
+  hCCjb_ttzee->Print("all");
+  TH1F* hCCjb_MCttzFrac = (TH1F*) hCCjb_ttzmm->Clone();
+  hCCjb_MCttzFrac->SetNameTitle("hCCjb_MCttzFrac", "hCCjb_MCttzFrac");
+  hCCjb_MCttzFrac->Add(hCCjb_ttzee);
+  hCCjb_MCttzFrac->Divide(hCCjb_MCall);
+  hCCjb_MCttzFrac->Print("all");
+
   // Calculate Z->ll data stat errors
   std::vector<float> DYstat;
   for (int j = 0; j < NbinsNJet; ++j) {
     float b0 = 0, b0err = 0, bb = 0, bberr = 0;
     for (int b = 0; b < CCbins.binsb(j); ++b) {
-      int jj = j < extrapByMCthreshold ? j : j-1;
+      int jj = j < extrapByMCthreshold || !useMCJfactors ? j : j-1;
       int  binCCjb = CCbins.jb(jj, b);  if (binCCjb <= 0) continue;
       if (b == 0) {
 	b0 = hCCjb_zll->GetBinContent(binCCjb);
@@ -126,9 +154,12 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
     DYpurSys.push_back(ype/y);
   }
 
-  // Calculate the MC J factors from MC to extend the Nb/0b F factors
+  std::vector<float> systJ = {0, 0, 0, 0};
+  std::vector<std::pair<float, float>> Jextrap;
+
+  // Calculate the MC J factors to extend the Nb/0b F factors
   // Take the Nphoton average of F over NJet sub-bins at each kin bin.
-  std::vector<std::pair<float, float>> Jextrap, jb0;
+  std::vector<std::pair<float, float>> jb0;
   for (int j = 0; j <= extrapByMCthreshold; ++j) {
     for (int b = 0; b < CCbins.binsb(j); ++b) {
       for (int k = 0; k < kinSize; ++k) {
@@ -183,31 +214,7 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
   }
 
   // Jextrap systematics derived from analysis of the above for data, MC
-  std::vector<float> systJ = {0, 0.10, 0.10, 0.20};
-
-  if (extrapByMCthreshold != NbinsNJet - 1) return;
-
-  // Calculate the ttz cross section uncertainty from the ttz fraction.
-  TH1F* hCCjb_dymm = (TH1F*) ZllXMC.Get("hCCjb_dymm");
-  TH1F* hCCjb_dyee = (TH1F*) ZllXMC.Get("hCCjb_dyee");
-  TH1F* hCCjb_ttzmm = (TH1F*) ZllXMC.Get("hCCjb_ttzmm");
-  TH1F* hCCjb_ttzee = (TH1F*) ZllXMC.Get("hCCjb_ttzee");
-  TH1F* hCCjb_VVmm = (TH1F*) ZllXMC.Get("hCCjb_VVmm");
-  TH1F* hCCjb_VVee = (TH1F*) ZllXMC.Get("hCCjb_VVee");
-  TH1F* hCCjb_ttmm = (TH1F*) ZllXMC.Get("hCCjb_ttmm");
-  TH1F* hCCjb_ttee = (TH1F*) ZllXMC.Get("hCCjb_ttee");
-  TH1F* hCCjb_MCall = (TH1F*) hCCjb_dymm->Clone();  hCCjb_MCall->SetName("hCCjb_MCall");
-  hCCjb_MCall->Add(hCCjb_dyee);
-  hCCjb_MCall->Add(hCCjb_ttzmm);
-  hCCjb_MCall->Add(hCCjb_ttzee);
-  hCCjb_MCall->Add(hCCjb_VVmm);
-  hCCjb_MCall->Add(hCCjb_VVee);
-  hCCjb_MCall->Add(hCCjb_ttmm);
-  hCCjb_MCall->Add(hCCjb_ttee);
-  TH1F* hCCjb_MCttzFrac = (TH1F*) hCCjb_ttzmm->Clone();  hCCjb_MCttzFrac->SetName("hCCjb_MCttzFrac");
-  hCCjb_MCttzFrac->Add(hCCjb_ttzee);
-  hCCjb_MCttzFrac->Divide(hCCjb_MCall);
-  hCCjb_MCttzFrac->Print("all");
+  systJ = {0, 0.10, 0.10, 0.20};
 
   // Calculate Nb/0b F factors
   // Take the Nphoton average of F over NJet sub-bins at each kin bin.
@@ -217,7 +224,7 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
       for (int k = 0; k < kinSize; ++k) {
 	int binCC = CCbins.jbk(j, b, k);  if (binCC <= 0) continue;
 	int binCCjb = CCbins.jb(j, b);  if (binCCjb <= 0) continue;
-	if (j < extrapByMCthreshold) {
+	if (j < extrapByMCthreshold || !useMCJfactors) {
 	  float Npho = 0, NphoF = 0, fbb = 0;
 	  for (auto J : jetSubBins.at(j)) {
 	    int binCCJb = CCbins.Jb(J, b);  if (binCCJb <= 0) continue;
@@ -261,7 +268,7 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
     }
   }
 
-  // Get the k-integrated nubmers for AN
+  // Get the k-integrated numbers for AN
   float yj0 = 1;
   for (int j = 0; j < NbinsNJet; ++j) {
     for (int b = 0; b < CCbins.binsb(j); ++b) {
@@ -270,7 +277,7 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
 	if (CCbins.jbk(j, b, k) < 0) continue;
 	validkbin = true;
 	int binCCjb = CCbins.jb(j, b);  if (binCCjb <= 0) continue;
-	if (j < extrapByMCthreshold) {
+	if (j < extrapByMCthreshold || !useMCJfactors) {
 	  float yjb = hCCjb_zmm->GetBinContent(binCCjb) * h_pur_m->GetBinContent(binCCjb)
 	    +         hCCjb_zee->GetBinContent(binCCjb) * h_pur_e->GetBinContent(binCCjb);
 	  if (b == 0) {
@@ -311,7 +318,7 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
 	int binCC = CCbins.jbk(j, b, k);  if (binCC <= 0) continue;
 	int binCCjb = CCbins.jb(j, b);  if (binCCjb <= 0) continue;
 	float JextrapErr, ttzErr;
-	if (j < extrapByMCthreshold || b == 0) {
+	if (j < extrapByMCthreshold || !useMCJfactors || b == 0) {
 	  JextrapErr = 0;
 	  ttzErr = 0;
 	} else {
@@ -322,6 +329,13 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
 				     hCCjb_MCttzFrac->GetBinContent(CCbins.jb(j, 0)) +
 				     hCCjb_MCttzFrac->GetBinContent(CCbins.jb(j-1, 0))
 				     );
+	  // Deal also with negative MC weights
+	  // ttzErr = relErrXsec_ttz * (Max(0., hCCjb_MCttzFrac->GetBinContent(binCCjb)) -
+	  // 			     Max(0., hCCjb_MCttzFrac->GetBinContent(CCbins.jb(j-1, b))) -
+	  // 			     Max(0., hCCjb_MCttzFrac->GetBinContent(CCbins.jb(j, 0))) +
+	  // 			     Max(0., hCCjb_MCttzFrac->GetBinContent(CCbins.jb(j-1, 0)))
+	  // 			     );
+	  // if (ttzErr < 0) ttzErr = 0.01;
 	}
   	// fprintf(datFile, " %1d %1d %1d| |%7d|%7d|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f\n", j, b, k,
   	sprintf(linebuf, " %1d %1d %1d| |%7d|%7d|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f\n", j, b, k,
@@ -331,8 +345,8 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
 		DYstat.at(binCCjb - 1),
 		JextrapErr,
 		ttzErr,
-		j >= extrapByMCthreshold ? systJ.at(b) : 0,
-		j >= extrapByMCthreshold ? systJ.at(b) : 0,
+		j >= extrapByMCthreshold && useMCJfactors ? systJ.at(b) : 0,
+		j >= extrapByMCthreshold && useMCJfactors ? systJ.at(b) : 0,
 		systKin.at(b),
 		DYpurSys.at(binCCjb - 1)
 		);
@@ -347,8 +361,8 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
 		  100*DYstat.at(binCCjb - 1),
 		  100*DYpurSys.at(binCCjb - 1),
 		  100*JextrapErr,
-		  // j >= extrapByMCthreshold ? 100*systJ.at(b) : 0,
-		  j >= extrapByMCthreshold ? 100*systJ.at(b) : 0,
+		  // j >= extrapByMCthreshold && useMCJfactors ? 100*systJ.at(b) : 0,  // for asymmetric error
+		  j >= extrapByMCthreshold && useMCJfactors ? 100*systJ.at(b) : 0,
 		  100*ttzErr,
 		  100*systKin.at(b)
 		  );
