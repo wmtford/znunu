@@ -4,33 +4,58 @@
 void mergeHists() {
   gROOT->Reset();
 
-  bool addLinear12 = false;
+  bool addLinearXlast = false;
   std::vector<Double_t> scale;
   TString matchHname(""), newHname("");
 
-  std::vector<const char*> mmFiles = {"../outputs/histsZjets_2016v16.root"};
+  // Zinv expectation histogram
+  std::vector<const char*> mmFiles = {"../outputs/histsZjets_2017v16_ZptWt.root",
+  				      "../outputs/histsZjets_2018v16_ZptWt.root",
+  				      "../outputs/histsZjets_2018HEMv16_ZptWt.root",
+  				      "../outputs/histsZjets_2016v16.root"};
+  scale = {1, 21.0/59.2, 38.2/59.2, 1};
+  addLinearXlast = true;
   matchHname = "hCCzinvAll";
   newHname += "plot_zinv_nj5_nb4_kin10_1";
 
+  // gJets MC
   // std::vector<const char*> mmFiles = {
-  //   "../outputs/histsGjets_2017v16_DRwt2.root",
-  //   "../outputs/histsGjets_2018v16_DRwt2.root",
-  //   "../outputs/histsGjets_2016v16_DRwt2.root"
+  //   "../outputs/histsGjets_2017v16.root",
+  //   "../outputs/histsGjets_2018v16.root",
+  //   "../outputs/histsGjets_2018HEMv16.root",
+  //   "../outputs/histsGjets_2016v16.root"
   // };
-  // addLinear12 = true;
+  // scale = {1, 21.0/59.2, 38.2/59.2, 1};
+  // addLinearXlast = true;
 
+  // // DY MC (mm and ee combined in each file)
   // std::vector<const char*> mmFiles = {
-  //   "../outputs/histsDYMC_2016v16.root",
-  //   "../outputs/histsDYMC_2017v16.root"
+  //   // "../outputs/histsDYMC_2017v16_noZptWt.root",
+  //   // "../outputs/histsDYMC_2018v16_noZptWt.root",
+  //   // "../outputs/histsDYMC_2018HEMv16_noZptWt.root",
+  //   "../outputs/histsDYMC_2017v16_ZptWt.root",
+  //   "../outputs/histsDYMC_2018v16_ZptWt.root",
+  //   "../outputs/histsDYMC_2018HEMv16_ZptWt.root",
+  //   "../outputs/histsDYMC_2016v16.root"
   // };
-  // scale = {1, (41.5+59.4)/41.5};
+  // scale = {1, 21.0/59.2, 38.2/59.2, 1};
+  // addLinearXlast = true;
 
+  // DY data (mm and ee combined in each file)
   // std::vector<const char*> mmFiles = {
   //   "../outputs/histsDY_2016v16.root",
   //   "../outputs/histsDY_2017v16.root",
   //   "../outputs/histsDY_2018v16.root"
   // };
 
+  // Photon data
+  // std::vector<const char*> mmFiles = {
+  //   "../outputs/histsPhoton_2016v16.root",
+  //   "../outputs/histsPhoton_2017v16.root",
+  //   "../outputs/histsPhoton_2018v16.root"
+  // };
+
+  // DY data in separate mm, ee files
   std::vector<const char*> eeFiles;
   // std::vector<const char*> mmFiles = {
   //   "histsZmm2017B.root",
@@ -76,15 +101,15 @@ void mergeHists() {
 	if (!(cl->InheritsFrom("TH1F") || cl->InheritsFrom("TH1D"))) continue;
 	TH1 *h = (TH1*)key->ReadObj();
 	if (!matchHname.IsNull() && !matchHname.EqualTo(h->GetName())) continue;
-	h->SetNameTitle(newHname, newHname);
+	if (!newHname.IsNull()) h->SetNameTitle(newHname, newHname);
 	if (fdx == 0) {
 	  histos.push_back((TH1*) h->Clone());
 	  histos.back()->Scale(wt);
 	} else {
-	  if (addLinear12 && fdx == 1) {
+	  if (addLinearXlast && fdx < inFiles[iem].size() - 1) {
 	    for (int binx = 1; binx <= h->GetNbinsX(); ++binx) {
-	      histos[hdx]->SetBinContent(binx, histos[hdx]->GetBinContent(binx) + h->GetBinContent(binx));
-	      histos[hdx]->SetBinError(binx, histos[hdx]->GetBinError(binx) + h->GetBinError(binx));
+	      histos[hdx]->SetBinContent(binx, histos[hdx]->GetBinContent(binx) + wt*(h->GetBinContent(binx)));
+	      histos[hdx]->SetBinError(binx, histos[hdx]->GetBinError(binx) + wt*(h->GetBinError(binx)));
 	    }
 	  }
 	  else
