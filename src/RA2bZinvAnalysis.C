@@ -657,6 +657,8 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       eventWt *= MCwt;
     }  // isMC_
 
+    effWt_ = effPurCorr_.weight(CCbins_, NJets, BTags, MHT, HT, *ZCandidates, *Photons,
+				*Electrons, *Muons, *Photons_isEB, applyDRfitWt_);
     // Trigger requirements
     bool passTrg = true;
     if (!isMC_) {
@@ -670,7 +672,12 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 
     for (auto & hg : histograms) {
       if (hg->name.Contains(TString("hCut"))) {
-	cutHistFiller.fill((TH1D*) hg->hist, 1, passTrg, passHEM);
+	double cutHistWt = 1;
+	if (hg->name.Contains(TString("Wt"))) {
+	  cutHistWt = eventWt;
+	  if (applySFwtToMC_ && isMC_) cutHistWt *= effWt_;
+	}
+	cutHistFiller.fill((TH1D*) hg->hist, cutHistWt, passTrg, passHEM);
 	continue;
       }
       if (!passTrg) break;
@@ -693,9 +700,8 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 	  if (BTags > 0) continue;
 	  int CCbin = CCbins_->jbk(CCbins_->jbin(NJets), CCbins_->bbin(NJets, BTags), CCbins_->kinBin(HT, MHT));
 	  if (CCbin <= 0) continue;
+	  if ((UInt_t) CCbin != RA2bin) cout << "CCbin = " << CCbin << ", != " << RA2bin << endl;
 	}
-	effWt_ = effPurCorr_.weight(CCbins_, NJets, BTags, MHT, HT, *ZCandidates, *Photons,
-				    *Electrons, *Muons, *Photons_isEB, applyDRfitWt_);
 	eventWt *= effWt_;
       }
 
@@ -740,10 +746,16 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   bool isPhoton = (sampleKey == "photon" || sampleKey =="photonqcd");
 
   histConfig hCutFlow;
-  hCutFlow.name = TString("hCutFlow_") + sample;  hCutFlow.title = "Cut flow";
+  hCutFlow.name = TString("hCutFlow_") + sample;  hCutFlow.title = "Cut flow unweighted";
   hCutFlow.NbinsX = 12;  hCutFlow.rangeX.first = 0;  hCutFlow.rangeX.second = 12;
   hCutFlow.axisTitles.first = "";  hCutFlow.axisTitles.second = "Events surviving";
   histograms.push_back(&hCutFlow);
+
+  histConfig hCutFlowWt;
+  hCutFlowWt.name = TString("hCutFlowWt_") + sample;  hCutFlowWt.title = "Cut flow with weights";
+  hCutFlowWt.NbinsX = 12;  hCutFlowWt.rangeX.first = 0;  hCutFlowWt.rangeX.second = 12;
+  hCutFlowWt.axisTitles.first = "";  hCutFlowWt.axisTitles.second = "Weighted events surviving";
+  histograms.push_back(&hCutFlowWt);
 
   histConfig hCuts;
   hCuts.name = TString("hCuts_") + sample;  hCuts.title = "Cuts passed";
@@ -1753,6 +1765,45 @@ RA2bZinvAnalysis::efficiencyAndPurity::openFiles() {
   muonIsoSFFile_.push_back(new TFile((plotDir+"SF_Muon2017_NUM_MiniIso02Cut_DEN_MediumID_PAR_pt_eta.root").Data(), "read"));
   muonIsoSFFile_.push_back(new TFile((plotDir+"SF_Muon2017_NUM_MiniIso02Cut_DEN_MediumID_PAR_pt_eta.root").Data(), "read"));
 
+  DRfun_ = new TF1("DRfun", "[0] + [1]*min([3], x)");
+  // DRfun_ = new TF1("DRfun", "[2] + (1/3)*[1]*(min([3], x) - ([2] - [0]) / [1])");
+  DRpars_.push_back({0.8430, 0.0001147, 0.9000, 900});
+  // Graph_from_hHT_DR_zmm
+  // Function parameter 0:  0.843020160316 +/- 0.0348336458629
+  // Function parameter 1:  0.000114662993277 +/- 6.57638091784e-05
+  // Average y0 = 0.900.  x0 = (y0 -p0) / p1
+  DRpars_.push_back({0.9611, 0.0002574, 1.0871, 900});
+  DRpars_.push_back({0.9611, 0.0002574, 1.0871, 900});
+  // effWt /= (min(HT, 900.0) - 489.2)*(0.00025739) + 1.0858;  // 2017 Z Pt weighted
+  // Graph_from_hHT_DR_zmm
+  // Function parameter 0:  0.961193586511 +/- 0.0401249241206
+  // Function parameter 1:  0.000257387819072 +/- 7.74713707439e-05
+  // Average y0 = 1.0871.  x0 = (y0 -p0) / p1
+
+  // effWt /= (min(HT, 900.0) - 497.4)*(0.0002288) + 1.0395;  // Run2 Z Pt weighted
+  // Graph_from_hHT_DR_zmm
+  // Function parameter 0:  0.92567079283 +/- 0.021512658121
+  // Function parameter 1:  0.000228788345936 +/- 4.08070918994e-05
+  // Average y0 = 1.0395.  x0 = (y0 -p0) / p1
+  // effWt /= (min(MHT, 900.0) - 399.6)*(  -0.00040321 *1/3) + 0.8389;  // New Fdir, 28 Jan, 2019
+  // Graph_from_hMHT_DR_zmm
+  // Function parameter 0:  0.999926406018 +/- 0.0291554520092
+  // Function parameter 1:  -0.000403207439065 +/- 7.19133297508e-05
+  // Average y0 = 0.8389.  x0 = (y0 -p0) / p1
+  // effWt /= (min(MHT, 900.0) - 400.2)*( -0.00039455 *2/3) + 0.8401;  // gJets_signal.dat 28 Jan, 2019
+  // Function parameter 0:  0.997861381979 +/- 0.0292274226244
+  // Function parameter 1:  -0.000394553221914 +/- 7.21321517572e-05
+  // Average y0 = 0.8401.  x0 = (y0 -p0) / p1
+  // effWt /= (min(MHT, 900.0) - 397.7)*( -0.00058276 *2/3) + 0.8401;
+  // Function parameter 0:  1.07188729834 +/- 0.// 047180710618
+  // Function parameter 1:  -0.000582762306737 +/- 0.000115148917583
+  // Average y0 = 0.8401.  x0 = (y0 -p0) / p1
+  // effWt /= (min(MHT, 900.0) - 397.4)*( -0.0005098 *2/3) + 0.8134;  // 16 Jan 2019
+  // Function parameter 0:  1.01601616809 +/- 0.0459169526921
+  // Function parameter 1:  -0.00050983094812 +/- 0.000112511842395
+  // Average y0 = 0.8134.  x0 = (y0 -p0) / p1
+  // effWt /= min(MHT, 900.0)*( -0.0005284) + 1.056;  // FIXME:  hard-wired correction
+
 }  // ======================================================================================
 
 void
@@ -1847,8 +1898,13 @@ RA2bZinvAnalysis::efficiencyAndPurity::getHistos(const char* sample, int current
     if (eTrigEff_.back() == nullptr)  cout << "***** Histogram " << te << " not found *****" << endl;
     // hSFeff_ = (TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_SFg_MHT");  // Maybe this should be h_NJets
     // if (hSFeff_ == nullptr) cout << "***** Histogram h_MHT not found *****" << endl;
+
     hSFeff_.push_back((TH2F*) photonSFFile_.at(currentYear)->Get("EGamma_SF2D"));
     if (hSFeff_.back() == nullptr) cout << "***** Histogram for photon SFs not found *****" << endl;
+
+    DRfun_->SetParameters(DRpars_.at(currentYear).data());
+    cout << "DR intercept = " << DRpars_.at(currentYear)[0] << ", slope = " << DRpars_.at(currentYear)[1]
+	 << ", Ave. value = " << DRpars_.at(currentYear)[2] << ", saturation point = " << DRpars_.at(currentYear)[3] << endl;
   }
 
 }  // ======================================================================================
@@ -1890,16 +1946,8 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
     if (hTrigEff_[0] != nullptr) {
       Double_t zpt = ZCandidates.at(0).Pt();  zpt = max(hTrigEff_[0]->GetBinLowEdge(1), zpt);
       int bin = hTrigEff_[0]->GetNbinsX();  while (zpt < hTrigEff_[0]->GetBinLowEdge(bin)) bin--;
-      // Double_t ht = HT >= hTrigEff_[0]->GetBinLowEdge(1) ? HT : hTrigEff_[0]->GetBinLowEdge(1);
-      // int bin = hTrigEff_[0]->GetNbinsX();  while (ht < hTrigEff_[0]->GetBinLowEdge(bin)) bin--;
       effWt *= hTrigEff_[0]->GetBinContent(bin);
     }
-    // if (hSFeff_ != nullptr) {
-    //   // Maybe this should be NJets for dyee:
-    //   Double_t mht = MHT >= hSFeff_->GetBinLowEdge(1) ? MHT : hSFeff_->GetBinLowEdge(1);
-    //   int bin = hSFeff_->GetNbinsX();  while (mht < hSFeff_->GetBinLowEdge(bin)) bin--;
-    //   effWt *= hSFeff_->GetBinContent(bin);
-    // }
     if (hSFeff_[0] != nullptr && hSFeff_[1] != nullptr) {
       float pt = 0; float eta = 0;
       int globalbin_ID = 0; int globalbin_ISO = 0;
@@ -1944,53 +1992,15 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
     // }
     if(EBphoton.at(0) == 1 && eTrigEff_[0] != nullptr) {
       TH1F* htot = (TH1F*) eTrigEff_[0]->GetTotalHistogram();
-      effWt *= eTrigEff_[0]->GetEfficiency(htot->FindBin(Photons.at(0).Pt()));
+      effWt *= eTrigEff_[0]->GetEfficiency(min(htot->GetNbinsX(), htot->FindBin(Photons.at(0).Pt())));
     } else if(EBphoton.at(0) == 0 && eTrigEff_[1] != nullptr) {
       TH1F* htot = (TH1F*) eTrigEff_[1]->GetTotalHistogram();
-      effWt *= eTrigEff_[1]->GetEfficiency(htot->FindBin(Photons.at(0).Pt()));
+      effWt *= eTrigEff_[1]->GetEfficiency(min(htot->GetNbinsX(), htot->FindBin(Photons.at(0).Pt())));
     }
-    if (applyDRfitWt) {
-      if (runBlock_.find("2016") != std::string::npos)
-	effWt /= (min(HT, 900.0) - 497.1)*(0.00011466) + 0.900;  // 2016
-      // Graph_from_hHT_DR_zmm
-      // Function parameter 0:  0.843020160316 +/- 0.0348336458629
-      // Function parameter 1:  0.000114662993277 +/- 6.57638091784e-05
-      // Average y0 = 0.900.  x0 = (y0 -p0) / p1
-      else
-	effWt /= (min(HT, 900.0) - 489.2)*(0.00025739) + 1.0858;  // 2017 Z Pt weighted
-      // Graph_from_hHT_DR_zmm
-      // Function parameter 0:  0.961193586511 +/- 0.0401249241206
-      // Function parameter 1:  0.000257387819072 +/- 7.74713707439e-05
-      // Average y0 = 1.0871.  x0 = (y0 -p0) / p1
-      // effWt /= (min(HT, 900.0) - 497.4)*(0.0002288) + 1.0395;  // Run2 Z Pt weighted
-      // Graph_from_hHT_DR_zmm
-      // Function parameter 0:  0.92567079283 +/- 0.021512658121
-      // Function parameter 1:  0.000228788345936 +/- 4.08070918994e-05
-      // Average y0 = 1.0395.  x0 = (y0 -p0) / p1
-      // effWt /= (min(MHT, 900.0) - 399.6)*(  -0.00040321 *1/3) + 0.8389;  // New Fdir, 28 Jan, 2019
-      // Graph_from_hMHT_DR_zmm
-      // Function parameter 0:  0.999926406018 +/- 0.0291554520092
-      // Function parameter 1:  -0.000403207439065 +/- 7.19133297508e-05
-      // Average y0 = 0.8389.  x0 = (y0 -p0) / p1
-      // effWt /= (min(MHT, 900.0) - 400.2)*( -0.00039455 *2/3) + 0.8401;  // gJets_signal.dat 28 Jan, 2019
-      // Function parameter 0:  0.997861381979 +/- 0.0292274226244
-      // Function parameter 1:  -0.000394553221914 +/- 7.21321517572e-05
-      // Average y0 = 0.8401.  x0 = (y0 -p0) / p1
-      // effWt /= (min(MHT, 900.0) - 397.7)*( -0.00058276 *2/3) + 0.8401;
-      // Function parameter 0:  1.07188729834 +/- 0.// 047180710618
-      // Function parameter 1:  -0.000582762306737 +/- 0.000115148917583
-      // Average y0 = 0.8401.  x0 = (y0 -p0) / p1
-      // effWt /= (min(MHT, 900.0) - 397.4)*( -0.0005098 *2/3) + 0.8134;  // 16 Jan 2019
-      // Function parameter 0:  1.01601616809 +/- 0.0459169526921
-      // Function parameter 1:  -0.00050983094812 +/- 0.000112511842395
-      // Average y0 = 0.8134.  x0 = (y0 -p0) / p1
-      // effWt /= min(MHT, 900.0)*( -0.0005284) + 1.056;  // FIXME:  hard-wired correction
-    }
-    // if (hSFeff_ != nullptr) {
-    //   Double_t mht = MHT >= hSFeff_->GetBinLowEdge(1) ? MHT : hSFeff_->GetBinLowEdge(1);
-    //   int bin = hSFeff_->GetNbinsX();  while (mht < hSFeff_->GetBinLowEdge(bin)) bin--;
-    //   effWt *= hSFeff_->GetBinContent(bin);
-    // }
+
+    if (applyDRfitWt) effWt /= DRfun_->Eval(HT);
+
+    // hSFeff_[0] = nullptr;  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if (hSFeff_[0] != nullptr) {
       float photon_pt = 0; float photon_eta = 0;
       int globalbin_photon = 0;

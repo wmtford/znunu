@@ -126,6 +126,8 @@ public:
     std::vector<TH1F*> hPurity_, hTrigEff_;
     std::vector<TF1*> fTrigEff_;
     std::vector<TEfficiency*> eTrigEff_;
+    TF1* DRfun_ = new TF1;
+    std::vector< std::vector<Double_t> > DRpars_;
 
     /* TH1F* hSFeff_; */
     std::vector<TH2F*> hSFeff_;
