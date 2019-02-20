@@ -150,7 +150,7 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
       dataFile_DR = DRfnRoot+TString("_ldp.dat");
       dataFile_DY = DYfnRoot+TString( "_ldp.dat");
       output_rootFile = "ZinvHistos_ldp.root";
-      output_plotFile = "ZinvBGpred_ldp.png";
+      output_plotFile = "ZinvBGpred_ldp.pdf";
     } else if (doSample == HDP) {
       for (auto fnroot : gJetsFnRoot) {
 	dataFile_gJets.push_back(fnroot.first+"_hdp.dat");
@@ -159,7 +159,7 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
       dataFile_DR = DRfnRoot+TString("_hdp.dat");
       dataFile_DY = DYfnRoot+TString("_hdp.dat");
       output_rootFile = "ZinvHistos_hdp.root";
-      output_plotFile = "ZinvBGpred_hdp.png";
+      output_plotFile = "ZinvBGpred_hdp.pdf";
     }
   } else {
     MaxNjets = 5;
@@ -174,7 +174,7 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
     dataFile_DR = DRfnRoot+TString("_signal.dat");
     dataFile_DY = DYfnRoot+TString("_signal.dat");
     output_rootFile = "ZinvHistos.root";
-    output_plotFile = "ZinvBGpred.png";
+    output_plotFile = "ZinvBGpred.pdf";
   }
   MaxKinDY = expandDYkin ? MaxKin : 1;
   Int_t MaxBins;
@@ -826,7 +826,7 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
   ErrorsLegend->AddEntry(hzvvDYsysPur, "DYpur");
   ErrorsLegend->Draw();
   Cerrors->Update();
-  if (doSample == Signal)  Cerrors->SaveAs("errorComponents.png");
+  if (doSample == Signal)  Cerrors->SaveAs("errorComponents.pdf");
 
 
 }  // ---------------------------------------------------------------
