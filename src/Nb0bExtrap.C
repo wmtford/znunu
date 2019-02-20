@@ -36,9 +36,21 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
   // std::vector<int> extrapFromRange = {5, 6};
   float relErrXsec_ttz = 0.3;
 
-  TFile ZllData("../outputs/histsDY_Run2v16.root");  if (!ZllData.IsOpen()) return;
-  TFile photonData("../outputs/histsPhoton_Run2v16.root");  if (!photonData.IsOpen()) return;
-  TFile ZllXMC("../outputs/histsDYMC_Run2v16_ZptWt.root");  if (!ZllXMC.IsOpen()) return;
+  // TFile ZllData("../outputs/histsDY_2016v16.root");  if (!ZllData.IsOpen()) return;
+  // TFile photonData("../outputs/histsPhoton_2016v16.root");  if (!photonData.IsOpen()) return;
+  // TFile ZllXMC("../outputs/histsDYMC_2016v16_noPU.root");  if (!ZllXMC.IsOpen()) return;
+  // TFile ZllData("../outputs/histsDY_2017v16.root");  if (!ZllData.IsOpen()) return;
+  // TFile photonData("../outputs/histsPhoton_2017v16.root");  if (!photonData.IsOpen()) return;
+  // TFile ZllXMC("../outputs/histsDYMC_2017v16_ZptWt.root");  if (!ZllXMC.IsOpen()) return;
+  // TFile ZllData("../outputs/histsDY_2018ABv16.root");  if (!ZllData.IsOpen()) return;
+  // TFile photonData("../outputs/histsPhoton_2018ABv16.root");  if (!photonData.IsOpen()) return;
+  // TFile ZllXMC("../outputs/histsDYMC_2018v16_ZptWt.root");  if (!ZllXMC.IsOpen()) return;
+  TFile ZllData("../outputs/histsDY_2018CDv16.root");  if (!ZllData.IsOpen()) return;
+  TFile photonData("../outputs/histsPhoton_2018CDv16.root");  if (!photonData.IsOpen()) return;
+  TFile ZllXMC("../outputs/histsDYMC_2018HEMv16_ZptWt.root");  if (!ZllXMC.IsOpen()) return;
+  // TFile ZllData("../outputs/histsDY_Run2v16.root");  if (!ZllData.IsOpen()) return;
+  // TFile photonData("../outputs/histsPhoton_Run2v16.root");  if (!photonData.IsOpen()) return;
+  // TFile ZllXMC("../outputs/histsDYMC_Run2v16_ZptWt.root");  if (!ZllXMC.IsOpen()) return;
   
   // Get the Z->ll and photon data and MC histograms
   TH1F* hCC_zmm = (TH1F*) ZllData.Get("hCC_zmm");
@@ -330,12 +342,7 @@ void Nb0bExtrap(const std::string& era = "Run2", const std::string& deltaPhi = "
 				     hCCjb_MCttzFrac->GetBinContent(CCbins.jb(j-1, 0))
 				     );
 	  // Deal also with negative MC weights
-	  // ttzErr = relErrXsec_ttz * (Max(0., hCCjb_MCttzFrac->GetBinContent(binCCjb)) -
-	  // 			     Max(0., hCCjb_MCttzFrac->GetBinContent(CCbins.jb(j-1, b))) -
-	  // 			     Max(0., hCCjb_MCttzFrac->GetBinContent(CCbins.jb(j, 0))) +
-	  // 			     Max(0., hCCjb_MCttzFrac->GetBinContent(CCbins.jb(j-1, 0)))
-	  // 			     );
-	  // if (ttzErr < 0) ttzErr = 0.01;
+	  if (ttzErr < 0) ttzErr = relErrXsec_ttz;
 	}
   	// fprintf(datFile, " %1d %1d %1d| |%7d|%7d|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f\n", j, b, k,
   	sprintf(linebuf, " %1d %1d %1d| |%7d|%7d|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f\n", j, b, k,

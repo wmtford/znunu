@@ -144,7 +144,7 @@ def purityFits(dataFileName, MCFileName):
 def main():
   ROOT.gROOT.Reset()
   ROOT.gROOT.SetBatch(1)
-  purities = purityFits('../outputs/histsDY_Run2v16.root', '../outputs/histsDYMC_Run2v16.root')
+  purities = purityFits('../outputs/histsDY_Run2v16.root', '../outputs/histsDYMC_Run2v16_ZptWt.root')
   
 if __name__ == "__main__":
   main()
