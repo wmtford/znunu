@@ -23,6 +23,16 @@ tree_DYm_CleanVars/tree_SingleMuon_2018C.root
 tree_DYm_CleanVars/tree_SingleMuon_2018D.root
 ##
 
+zmm2018AB 10   # DY->mumu data 2018 A & B
+tree_DYm_CleanVars/tree_SingleMuon_2018A.root
+tree_DYm_CleanVars/tree_SingleMuon_2018B.root
+##
+
+zmm2018CD 10   # DY->mumu data 2018 C & D
+tree_DYm_CleanVars/tree_SingleMuon_2018C.root
+tree_DYm_CleanVars/tree_SingleMuon_2018D.root
+##
+
 zmmRun2 20   # DY->mumu data 2016
 tree_DYm_CleanVars/tree_SingleMuon_2016B.root
 tree_DYm_CleanVars/tree_SingleMuon_2016C.root
@@ -67,6 +77,16 @@ tree_DYe_CleanVars/tree_EGamma_2018C.root
 tree_DYe_CleanVars/tree_EGamma_2018D.root
 ##
 
+zee2018AB 10   # DY->ee data 2018 A & B
+tree_DYe_CleanVars/tree_EGamma_2018A.root
+tree_DYe_CleanVars/tree_EGamma_2018B.root
+##
+
+zee2018CD 10   # DY->ee data 2018 C & D
+tree_DYe_CleanVars/tree_EGamma_2018C.root
+tree_DYe_CleanVars/tree_EGamma_2018D.root
+##
+
 zeeRun2 20   # DY->ee data 2016
 tree_DYe_CleanVars/tree_SingleElectron_2016B.root
 tree_DYe_CleanVars/tree_SingleElectron_2016C.root
@@ -107,6 +127,16 @@ tree_GJet_CleanVars/tree_SinglePhoton_2017F.root
 photon2018 10   # Photon data 2018
 tree_GJet_CleanVars/tree_EGamma_2018A.root
 tree_GJet_CleanVars/tree_EGamma_2018B.root
+tree_GJet_CleanVars/tree_EGamma_2018C.root
+tree_GJet_CleanVars/tree_EGamma_2018D.root
+##
+
+photon2018AB 10   # Photon data 2018 A & B
+tree_GJet_CleanVars/tree_EGamma_2018A.root
+tree_GJet_CleanVars/tree_EGamma_2018B.root
+##
+
+photon2018CD 10   # Photon data 2018 C & D
 tree_GJet_CleanVars/tree_EGamma_2018C.root
 tree_GJet_CleanVars/tree_EGamma_2018D.root
 ##
