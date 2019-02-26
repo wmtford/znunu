@@ -51,6 +51,14 @@ public:
   void dumpSelEvIDs(const char* sample, const char* idFileName);
   TCut getCuts(const TString sampleKey);
   void setTriggerIndexList(const char* sample);
+  double getPtZ() {
+    if (!isMC_) return -1;
+    for (int iGen = 0, nGen =  GenParticles_PdgId->size(); iGen < nGen; ++iGen) {
+      if (GenParticles_PdgId->at(iGen)==23 && GenParticles_Status->at(iGen) == 62)
+	return GenParticles->at(iGen).Pt();
+    }
+    return -1;
+  };
   void checkTrigPrescales(const char* sample);
   void runMakeClass(const std::string& sample);
 
@@ -315,6 +323,7 @@ private:
   void fillMHT_DR_xWt(TH1D* h, double wt) {h->Fill(MHT, wt*MHT);}
   void fillNJets_DR_xWt(TH1D* h, double wt) {h->Fill(Double_t(NJets), wt*NJets);}
   void fillSFwt_DR(TH1D* h, double wt) {double wtt = effWt_ > 0 ? wt/effWt_ : wt;  h->Fill(effWt_, wtt);}
+  void fillgenZpt(TH1D* h, double wt) {h->Fill(getPtZ(), wt);}
   void fillZpt(TH1D* h, double wt) {for (auto & theZ : *ZCandidates) h->Fill(theZ.Pt(), wt);}
   void fillPhotonPt(TH1D* h, double wt) {for (auto & theG : *Photons) h->Fill(theG.Pt(), wt);}
   void fillMuonEta(TH1D* h, double wt) {for (auto & theMu : *Muons) h->Fill(theMu.Eta(), wt);}

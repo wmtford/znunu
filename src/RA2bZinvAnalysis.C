@@ -559,16 +559,37 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 	TString path = thisFile->GetName();
 	if (verbosity_ >= 1) cout << "Current file in chain: " << path << endl;
 	// Set MCwtCorr for this file
-	if (applyZptWt_ && path.Contains("V16") && path.Contains("MC2017") &&
+	if (path.Contains("V16") && path.Contains("MC2017") &&
 	    (path.Contains("DYJetsToLL") || path.Contains("ZJetsToNuNu"))) {
-	  if      (path.Contains("HT-100to200")) MCwtCorr = 0.968;
-	  else if (path.Contains("HT-200to400")) MCwtCorr = 1.018;
-	  else if (path.Contains("HT-400to600")) MCwtCorr = 1.062;
-	  else if (path.Contains("HT-600to800")) MCwtCorr = 1.083;
-	  else if (path.Contains("HT-800to1200")) MCwtCorr = 1.098;
-	  else if (path.Contains("HT-1200to2500")) MCwtCorr = 1.117;
-	  else if (path.Contains("HT-2500toInf")) MCwtCorr = 1.145;
+	  if (applyZptWt_) {
+	    if      (path.Contains("HT-100to200")) MCwtCorr = 1.05713;
+	    else if (path.Contains("HT-200to400")) MCwtCorr = 1.20695;
+	    else if (path.Contains("HT-400to600")) MCwtCorr = 1.30533;
+	    else if (path.Contains("HT-600to800")) MCwtCorr = 1.38453;
+	    else if (path.Contains("HT-800to1200")) MCwtCorr = 1.40301;
+	    else if (path.Contains("HT-1200to2500")) MCwtCorr = 1.42145;
+	    else if (path.Contains("HT-2500toInf")) MCwtCorr = 1.11697;
+	  } else {
+	    if      (path.Contains("HT-100to200")) MCwtCorr = 1.09226;
+	    else if (path.Contains("HT-200to400")) MCwtCorr = 1.18517;
+	    else if (path.Contains("HT-400to600")) MCwtCorr = 1.22966;
+	    else if (path.Contains("HT-600to800")) MCwtCorr = 1.27798;
+	    else if (path.Contains("HT-800to1200")) MCwtCorr = 1.27728;
+	    else if (path.Contains("HT-1200to2500")) MCwtCorr = 1.27279;
+	    else if (path.Contains("HT-2500toInf")) MCwtCorr = 0.975599;
+	  }
 	}
+	// Following is the original HT reweighting to match 2016 MC
+	// if (applyZptWt_ && path.Contains("V16") && path.Contains("MC2017") &&
+	//     (path.Contains("DYJetsToLL") || path.Contains("ZJetsToNuNu"))) {
+	//   if      (path.Contains("HT-100to200")) MCwtCorr = 0.968;
+	//   else if (path.Contains("HT-200to400")) MCwtCorr = 1.018;
+	//   else if (path.Contains("HT-400to600")) MCwtCorr = 1.062;
+	//   else if (path.Contains("HT-600to800")) MCwtCorr = 1.083;
+	//   else if (path.Contains("HT-800to1200")) MCwtCorr = 1.098;
+	//   else if (path.Contains("HT-1200to2500")) MCwtCorr = 1.117;
+	//   else if (path.Contains("HT-2500toInf")) MCwtCorr = 1.145;
+	// }
       }
       chain->GetEntry(entry);  // Pull in tree variables for reinitialization
       setTriggerIndexList(sample);
@@ -636,13 +657,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       if (applyZptWt_ && (TString(sample).Contains("dy") || TString(sample).Contains("zinv"))
 	  && (currentYear == Year2017 || currentYear == Year2018)) {
 	// Apply Z Pt weight for 2017 MC
-	double ptZ = -1.0;
-	for (int iGen = 0, nGen =  GenParticles_PdgId->size(); iGen < nGen; ++iGen) {
-	  if (GenParticles_PdgId->at(iGen)==23 && GenParticles_Status->at(iGen) == 62) {
-	    ptZ = GenParticles->at(iGen).Pt();
-	    break;
-	  }
-	}
+	double ptZ = getPtZ();
 	ZPtWt = 1.0;
 	if (ptZ > 0.0) {
 	  int iptbin;
@@ -682,7 +697,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       }
       if (!passTrg) break;
       if (!passHEM) break;
-      // bool keep = false; for (auto & theE : *Electrons) {if (!passHEMobjVeto(theE)) keep = true;}  if (!keep) break;  //  !!!!!!!!!!
+      // bool keep = false; for (auto & theE : *Electrons) {if (!passHEMobjVeto(theE)) keep = true;}  if (!keep) break;
 
       hg->NminusOneFormula->GetNdata();
       double selWt = hg->NminusOneFormula->EvalInstance(0);
@@ -1027,6 +1042,13 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hnZcand.axisTitles.first = "N(Z candidates)";  hnZcand.axisTitles.second = "Events / bin";
   hnZcand.filler1D = &RA2bZinvAnalysis::fillnZcand;  hnZcand.omitCuts.push_back(&massCut_);
   histograms.push_back(&hnZcand);
+
+  histConfig hgenZpt;
+  hgenZpt.name = TString("hgenZpt_") + sample;  hgenZpt.title = "Generated Zpt";
+  hgenZpt.NbinsX = 60;  hgenZpt.rangeX.first = 0;  hgenZpt.rangeX.second = 3000;
+  hgenZpt.axisTitles.first = "Gen P_t(Z) [GeV]";  hgenZpt.axisTitles.second = "Events / 50 GeV";
+  hgenZpt.filler1D = &RA2bZinvAnalysis::fillgenZpt;
+  if (isMC_) histograms.push_back(&hgenZpt);
 
   histConfig hZpt;
   hZpt.name = TString("hZpt_") + sample;  hZpt.title = "Z Pt";
@@ -1620,6 +1642,7 @@ RA2bZinvAnalysis::setBTags() {
       if (Jets_bDiscriminatorCSV->at(j) > csvMthreshold_) BTags++;
     }
   }
+  // From Rishi email of 20 Feb 2019, DeepCSV 2018 WP: 0.4184 and the 2017 WP: 0.4941
   return BTagsOrig;
 }  // ======================================================================================
 
@@ -1767,15 +1790,30 @@ RA2bZinvAnalysis::efficiencyAndPurity::openFiles() {
 
   DRfun_ = new TF1("DRfun", "[0] + [1]*min([3], x)");
   // DRfun_ = new TF1("DRfun", "[2] + (1/3)*[1]*(min([3], x) - ([2] - [0]) / [1])");
-  DRpars_.push_back({0.8430, 0.0001147, 0.9000, 900});
-  // Graph_from_hHT_DR_zmm
+  DRpars_.push_back({0.8229, 0.0001665, 0.9061, 900});
+  DRpars_.push_back({0.8229, 0.0001665, 0.9061, 900});
+  DRpars_.push_back({0.8229, 0.0001665, 0.9061, 900});
+  // Graph_from_hHT_DR_zmm  Run 2 no PU
+  // Function parameter 0:  0.822859680122 +/- 0.0188240089302
+  // Function parameter 1:  0.000166574459092 +/- 3.55474346141e-05
+  // DRpars_.push_back({0.8378, 0.0001363, 0.9054, 900});
+  // Graph_from_hHT_DR_zmm  2016 noPU
+  // Function parameter 0:  0.837859796025 +/- 0.0352792948296
+  // Function parameter 1:  0.000136284149882 +/- 6.6930863488e-05
+  // DRpars_.push_back({0.8430, 0.0001147, 0.9000, 900});
+  // Graph_from_hHT_DR_zmm  2016 first iteration
   // Function parameter 0:  0.843020160316 +/- 0.0348336458629
   // Function parameter 1:  0.000114662993277 +/- 6.57638091784e-05
   // Average y0 = 0.900.  x0 = (y0 -p0) / p1
-  DRpars_.push_back({0.9611, 0.0002574, 1.0871, 900});
-  DRpars_.push_back({0.9611, 0.0002574, 1.0871, 900});
-  // effWt /= (min(HT, 900.0) - 489.2)*(0.00025739) + 1.0858;  // 2017 Z Pt weighted
-  // Graph_from_hHT_DR_zmm
+  // DRpars_.push_back({0.8246, 0.0001274, 0.8877, 900});
+  // DRpars_.push_back({0.8246, 0.0001274, 0.8877, 900});
+  // Graph_from_hHT_DR_zmm  2017 HT17wt ZptWt
+  // Function parameter 0:  0.824632395818 +/- 0.0327675716282
+  // Function parameter 1:  0.000127461473018 +/- 6.25698022129e-05
+  // DRpars_.push_back({0.9611, 0.0002574, 1.0871, 900});
+  // DRpars_.push_back({0.9611, 0.0002574, 1.0871, 900});
+  // effWt /= (min(HT, 900.0) - 489.2)*(0.00025739) + 1.0858;
+  // Graph_from_hHT_DR_zmm    // 2017 HT16Wt ZptWt
   // Function parameter 0:  0.961193586511 +/- 0.0401249241206
   // Function parameter 1:  0.000257387819072 +/- 7.74713707439e-05
   // Average y0 = 1.0871.  x0 = (y0 -p0) / p1
@@ -2000,7 +2038,6 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
 
     if (applyDRfitWt) effWt /= DRfun_->Eval(HT);
 
-    // hSFeff_[0] = nullptr;  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if (hSFeff_[0] != nullptr) {
       float photon_pt = 0; float photon_eta = 0;
       int globalbin_photon = 0;
