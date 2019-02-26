@@ -25,7 +25,7 @@ else:
 #################################################
 
 haveHistograms = True
-runYear = "2018CD"
+runYear = "Run2"
 
 DYkfactor = 1.23
 
@@ -73,33 +73,46 @@ for sample in doSample:
             dataZllFile = ROOT.TFile('../outputs/histsDY_2016v16.root')
             dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_2016v16.root')
             mcZllFile = ROOT.TFile('../outputs/histsDYMC_2016v16_noPU.root')
-            mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2016v16_DR2016wt_noPU.root')
+            mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2016v16_noPU.root')
+            # mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2016v16_DR2016wt_noPU.root')
         elif (runYear is "2017"):
             iPeriod = 6
             dataZllFile = ROOT.TFile('../outputs/histsDY_2017v16.root')
             dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_2017v16.root')
-            mcZllFile = ROOT.TFile('../outputs/histsDYMC_2017v16_ZptWt.root')
-            mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2017v16_DR2017wt.root')
+            mcZllFile = ROOT.TFile('../outputs/histsDYMC_2017v16_HT17wt_ZptWt.root')
+            mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2017v16.root')
+            # mcZllFile = ROOT.TFile('../outputs/histsDYMC_2017v16_ZptWt.root')
+            # mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2017v16_DR2017wt.root')
         elif (runYear is "2018AB"):
             iPeriod = 8
             dataZllFile = ROOT.TFile('../outputs/histsDY_2018ABv16.root')
             dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_2018ABv16.root')
-            mcZllFile = ROOT.TFile('../outputs/histsDYMC_2018v16_ZptWt.root')
-            mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2018v16_DR2017wt.root')
+            mcZllFile = ROOT.TFile('../outputs/histsDYMC_2018v16_HT17wt_ZptWt.root')
+            mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2018v16.root')
+            # mcZllFile = ROOT.TFile('../outputs/histsDYMC_2018v16_ZptWt.root')
+            # mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2018v16_DR2017wt.root')
+            mcLumiRatio_mm = 21.0/59.2
+            mcLumiRatio_ee =  21.0/59.2
+            mcLumiRatio_photon =  21.0/59.2
         elif (runYear is "2018CD"):
             iPeriod = 8
             dataZllFile = ROOT.TFile('../outputs/histsDY_2018CDv16.root')
             dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_2018CDv16.root')
-            mcZllFile = ROOT.TFile('../outputs/histsDYMC_2018HEMv16_ZptWt.root')
-            mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2018HEMv16_DR2017wt.root')
+            mcZllFile = ROOT.TFile('../outputs/histsDYMC_2018HEMv16_HT17wt_ZptWt.root')
+            mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2018HEMv16.root')
+            # mcZllFile = ROOT.TFile('../outputs/histsDYMC_2018HEMv16_ZptWt.root')
+            # mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2018HEMv16_DR2017wt.root')
+            mcLumiRatio_mm = 38.2/59.2
+            mcLumiRatio_ee =  38.2/59.2
+            mcLumiRatio_photon =  38.2/59.2
         elif (runYear is "Run2"):
             iPeriod = 9
             dataZllFile = ROOT.TFile('../outputs/histsDY_Run2v16.root')
             dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_Run2v16.root')
             # mcZllFile = ROOT.TFile('../outputs/histsDYMC_Run2v16_noZptWt.root')
-            mcZllFile = ROOT.TFile('../outputs/histsDYMC_Run2v16_ZptWt.root')
-            # mcPhotonFile = ROOT.TFile('../outputs/histsGjets_Run2v16.root')
-            mcPhotonFile = ROOT.TFile('../outputs/histsGjets_Run2v16_DRwt_noPU.root')
+            mcZllFile = ROOT.TFile('../outputs/histsDYMC_Run2v16_HT17wt_ZptWt_noPU.root')
+            mcPhotonFile = ROOT.TFile('../outputs/histsGjets_Run2v16_DRRun2wt.root')
+            # mcPhotonFile = ROOT.TFile('../outputs/histsGjets_Run2v16_noPU.root')
         histoNJets['pho_da'] = dataPhotonFile.Get("hNJets_DR_photon")
         histoNJets['pho_cg'] = histoNJets['pho_da'].Clone()
         for i in range(1, histoNJets['pho_cg'].GetNbinsX()+1):
@@ -215,19 +228,19 @@ for sample in doSample:
             1: 0,
             2: 1,
             3: 2,
-            4: 0,
+            4: 3,
             5: 1,
             6: 2,
-            7: 3,
-            8: 1,
-            9: 2,
-            10: 1,
-            11: 2,
-            12: 4,
-            13: 5,
+            7: 1,
+            8: 2,
+            9: 4,
+            10: 5,
+            11: 0,
+            12: 1,
+            13: 2,
             -1: 0,
     }
-    
+
     dr = dr_out[0][0]
     edr = dr_out[0][1]
     
@@ -257,17 +270,14 @@ for sample in doSample:
     ## had to add this funny business to 
     ## remove the bins that don't have
     ## any events
-    removedBins = RA2b.getRemovedBins(nbRange=0,kinRange=kinRange)
-    subtractBins = removedBins[0]
-    avoidBins = removedBins[1]
-    uncutBin = 0
+    kinSkip = [1,4,11]
+    njSkip = [4,5]
     Bin = 1
     
     print "DR | DR cv error | DR shape up | DR shape down | 0b purity | purity error | trig eff | trig eff error | lepton SF | lepton SF error | btag SF | btag SF error |"
     for nj in range(1,6):
         for kin in kinRange:
-            uncutBin+=1
-            if(uncutBin in avoidBins):
+            if (nj in njSkip and kin in kinSkip):
                 continue
             mht = mhtDict[kin]
             ht = htDict[kin]
