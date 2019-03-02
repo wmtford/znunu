@@ -8,19 +8,17 @@ import RA2b
 ROOT.gROOT.Reset()
 ROOT.gROOT.SetBatch(1)
 
-singleOutFile = False
+singleOutFile = True
 doDatavMC = False
-doDatavData = True
-doMCvMC = False
-runYear = "2018"
+doDatavData = False
+doMCvMC = True
+runYear = "Run2"
 doMumu = True
 doEe = True
 doLl = True
 doPhoton = True
-fScaleM = 1
-fScaleE = 1
-fScaleL = 1
-fScaleP = 1
+nScale = [1, 1, 1, 1]
+dScale = [1, 1, 1, 1]
 MZmmMax = 0
 MZeeMax = 0
 setMin = None
@@ -41,8 +39,6 @@ def histNamesBuild(namesRootList, suffix):
   for nameRoot in namesRootList:
     histNames.append(nameRoot+"_"+suffix)
   return histNames
-
-reaction = -1
 
 hists = []
 filehistsM = {}
@@ -68,6 +64,7 @@ if (doDatavMC):
               ['        ttbar', '        VV', '        ttZ', '        DY'],
               ['QCD', '#gamma+jets']] 
   if (runYear is "2016"):
+    # Consider mulitplying DYMC by new 2016 k factor instead of old:  scale = 1.257/1.23
     iPeriod = 5
     NfileZll = ROOT.TFile('../outputs/histsDY_2016v16.root')
     NfilePhoton = ROOT.TFile('../outputs/histsPhoton_2016v16.root')
@@ -75,6 +72,7 @@ if (doDatavMC):
     DfilePhoton = ROOT.TFile('../outputs/histsGjets_2016v16_DR2016wt_noPU.root')
     legendsN = ['Z#mu#mu'+' 2016 data', 'Zee 2016 data', 'Zll 2016 data', 'photon 2016 data']
   elif (runYear is "2017"):
+    # Consider mulitplying DYMC by 2017 k factor instead of 2016:  scale = 1.165/1.23
     iPeriod = 6
     NfileZll = ROOT.TFile('../outputs/histsDY_2017v16.root')
     NfilePhoton = ROOT.TFile('../outputs/histsPhoton_2017v16.root')
@@ -86,8 +84,8 @@ if (doDatavMC):
     iPeriod = 9
     NfileZll = ROOT.TFile('../outputs/histsDY_Run2v16.root')
     NfilePhoton = ROOT.TFile('../outputs/histsPhoton_Run2v16.root')
-    DfileZll = ROOT.TFile('../outputs/histsDYMC_Run2v16_ZptWt.root')
-    DfilePhoton = ROOT.TFile('../outputs/histsGjets_Run2v16_DRwt_noPU.root')
+    DfileZll = ROOT.TFile('../outputs/histsDYMC_Run2v16_HT17wt_ZptWt_noPU.root')
+    DfilePhoton = ROOT.TFile('../outputs/histsGjets_Run2v16_DRRun2wt.root')
     legendsN = ['Z#mu#mu'+' Run2 data', 'Zee Run2 data', 'Zll Run2 data', 'photon Run2 data']
 
 elif (doDatavData):
@@ -107,7 +105,7 @@ elif (doDatavData):
     DfilePhoton = ROOT.TFile('../outputs/histsPhoton_2016v16.root')
     legendsN = ['Z#mu#mu 2017 data', 'Zee 2017 data', 'Zll 2017 data', 'photon 2017 data']
     legendsD = [[' 2016 scaled'], [' 2016 scaled'], [' 2016 scaled'], [' 2016 scaled']]
-    fScaleM = 41.5/35.9
+    dScale = [41.5/35.9, 41.5/35.9, 41.5/35.9, 41.5/35.9]
   elif (runYear is "2018"):
     iPeriod = 8
     NfileZll = ROOT.TFile('../outputs/histsDY_2018v16.root')
@@ -116,107 +114,116 @@ elif (doDatavData):
     DfilePhoton = ROOT.TFile('../outputs/histsPhoton_2017v16.root')
     legendsN = ['Z#mu#mu 2018 data', 'Zee 2018 data', 'Zll 2018 data', 'photon 2018 data']
     legendsD = [[' 2017 scaled'], [' 2017 scaled'], [' 2017 scaled'], [' 2017 scaled']]
-    fScaleM = 59.5/41.5
-
-    fScaleE = 59.2/41.5
-    fScaleL = 59.4/41.5
-    fScaleP = 59.2/41.5
+    dScale = [59.5/41.5, 59.5/41.5, 59.5/41.5, 59.5/41.5]
 
 elif (doMCvMC):
-  # Compare MC
-  # varNames = [["hHT", "hMHT", "hNJets", "hBTags", "hCC", 'hCCjk', 'hCCjb'],
-  #             ["hHT", "hMHT", "hNJets", "hBTags", "hCC", 'hCCjk', 'hCCjb'],
+  # # Compare MC
+  # # varNames = [["hHT", "hMHT", "hNJets", "hBTags", "hCC", 'hCCjk', 'hCCjb'],
+  # #             ["hHT", "hMHT", "hNJets", "hBTags", "hCC", 'hCCjk', 'hCCjb'],
+  # #             ['hCC', 'hCCjk', 'hCCjb'],
+  # #             ["hHT", "hMHT", "hNJets", "hBTags", "hCC", 'hCCjk', 'hCCjb']]
+  # varNames = [['hHT', 'hMHT', 'hNJets', 'hBTags', 'hZmass', 'hZpt', 'hgenZpt', 'hMuonEta', 'hVertices', 'hCC', 'hCCjk', 'hCCjb'],
+  #             ['hHT', 'hMHT', 'hNJets', 'hBTags', 'hZmass', 'hZpt', 'hgenZpt', 'hElectronEta', 'hVertices', 'hCC', 'hCCjk', 'hCCjb'],
   #             ['hCC', 'hCCjk', 'hCCjb'],
-  #             ["hHT", "hMHT", "hNJets", "hBTags", "hCC", 'hCCjk', 'hCCjb']]
-  varNames = [['hHT', 'hMHT', 'hNJets', 'hBTags', 'hZmass', 'hZpt', 'hMuonEta', 'hVertices', 'hCC', 'hCCjk', 'hCCjb'],
-              ['hHT', 'hMHT', 'hNJets', 'hBTags', 'hZmass', 'hZpt', 'hElectronEta', 'hVertices', 'hCC', 'hCCjk', 'hCCjb'],
-              ['hCC', 'hCCjk', 'hCCjb'],
-              ['hHT', 'hMHT', 'hNJets', 'hBTags', 'hPhotonPt', 'hPhotonEta', 'hVertices', 'hCC', 'hCCjk']]
-  iPeriod = 6
+  #             ['hHT', 'hMHT', 'hNJets', 'hBTags', 'hPhotonPt', 'hPhotonEta', 'hVertices', 'hCC', 'hCCjk']]
 
-  # NfileZll = ROOT.TFile('../outputs/histsZjets_2017v16.root')
-  # NfilePhoton = ROOT.TFile('../outputs/histsZjets_2017v16.root')
-  # sampleSuffixN = ['zinv', 'zinv', 'zinv', 'zinv']
-  # legendsN = ['Z#nu#nu 2017 MC', 'Z#nu#nu 2017 MC', 'Z#nu#nu 2017 MC','Z#nu#nu 2017 MC']
-  # NfileZll = ROOT.TFile('../outputs/histsDYMC_2017v16_noZptWt.root')
-  NfileZll = ROOT.TFile('../outputs/histsDYMC_2017v16_ZptWt.root')
-  NfilePhoton = ROOT.TFile('../outputs/histsGjets_2017v16.root')
-  sampleSuffixN = ["dymm", "dyee", 'dyll', "gjets"]
-  legendsN = ['DY#mu#mu 2017 MC', 'DYee 2017 MC', 'DYll 2017 MC', '#gamma+jets incl. 2017']
+  # # 2017 vs 2016
+  # iPeriod = 6
 
-  DfileZll = ROOT.TFile('../outputs/histsDYMC_2016v16_noPU.root')
-  DfilePhoton = ROOT.TFile('../outputs/histsGjets_2016v16.root')
-  sampleSuffixD = [["dymm"], ["dyee"], ['dyll'], ["gjets"]]
-  # legendsD = [['DY#mu#mu 2018 MC'], ['DYee 2018 MC'], ['DYll 2018 MC'], ['#gamma+jets incl. 2018']] 
-  # ratioMin = [6, 6, 6, 0]
-  # ratioMax = [13, 13, 13, 1.1]
-  # sampleSuffixD = sampleSuffixN
-  legendsD = [['        2016'], ['        2016'], ['        2016'], ['        2016']]
+  # # NfileZll = ROOT.TFile('../outputs/histsZjets_2017v16.root')
+  # # NfilePhoton = ROOT.TFile('../outputs/histsZjets_2017v16.root')
+  # # sampleSuffixN = ['zinv', 'zinv', 'zinv', 'zinv']
+  # # legendsN = ['Z#nu#nu 2017 MC', 'Z#nu#nu 2017 MC', 'Z#nu#nu 2017 MC','Z#nu#nu 2017 MC']
+  # # NfileZll = ROOT.TFile('../outputs/histsDYMC_2017v16_noZptWt.root')
+  # NfileZll = ROOT.TFile('../outputs/histsDYMC_2017v16_HT17wt_ZptWt.root')
+  # NfilePhoton = ROOT.TFile('../outputs/histsGjets_2017v16.root')
+  # sampleSuffixN = ["dymm", "dyee", 'dyll', "gjets"]
+  # legendsN = ['DY#mu#mu 2017 MC', 'DYee 2017 MC', 'DYll 2017 MC', '#gamma+jets incl. 2017']
 
-  fScaleM = 41.5/35.9
-  # fScaleM = 41.5/59.4
-  fScaleE = fScaleM
-  fScaleL = fScaleM
-  fScaleP = fScaleM
-  # ratioMin = [0.8, 0.8, 0.8, 0]
-  # ratioMax = [1.2, 1.2, 1.2, 2]
+  # DfileZll = ROOT.TFile('../outputs/histsDYMC_2016v16_noPU.root')
+  # DfilePhoton = ROOT.TFile('../outputs/histsGjets_2016v16_noPU.root')
+  # sampleSuffixD = [["dymm"], ["dyee"], ['dyll'], ["gjets"]]
+  # # legendsD = [['DY#mu#mu 2018 MC'], ['DYee 2018 MC'], ['DYll 2018 MC'], ['#gamma+jets incl. 2018']] 
+  # # ratioMin = [6, 6, 6, 0]
+  # # ratioMax = [13, 13, 13, 1.1]
+  # # sampleSuffixD = sampleSuffixN
+  # legendsD = [['        2016'], ['        2016'], ['        2016'], ['        2016']]
+  # dScale = [41.5/35.9, 41.5/35.9, 41.5/35.9, 41.5/35.9]
+  # # ratioMin = [0.8, 0.8, 0.8, 0]
+  # # ratioMax = [1.2, 1.2, 1.2, 2]
+
+  # R_ZZ, R_Zgamma, Run 2
+  iPeriod = 8
+  NfileZll = ROOT.TFile('../outputs/histsZjets_Run2v16_HT17wt_ZptWt.root')
+  NfilePhoton = ROOT.TFile('../outputs/histsZjets_Run2v16_HT17wt_ZptWt.root')
+  DfileZll = ROOT.TFile('../outputs/histsDYMC_Run2v16_HT17wt_ZptWt_noPU.root')
+  DfilePhoton = ROOT.TFile('../outputs/histsGjets_Run2v16_noPU.root')
+  doMumu = False
+  doEe = False
+  varNames = [['hCC', 'hCCjk', 'hCCjb'], ['hCC', 'hCCjk', 'hCCjb']]
+  sampleSuffixN = ["zinv", "zinv"]
+  legendsN = ['Z+jets incl. Run 2', 'Z+jets incl. Run 2']
+  sampleSuffixD = [['dyll'], ['gjets']]
+  legendsD = [['DYll Run 2 MC'], ['#gamma+jets * k Run 2']]
+  nScale = [1, 1/1.23]
+  ratioMax = [11, 1.1]
 
 # =============================================================================
-
+reaction = -1
 if (doMumu):
   reaction += 1
   legend = []
-  histnamesN = histNamesBuild(varNames[0], sampleSuffixN[0])
-  legend.append(legendsN[0])
+  histnamesN = histNamesBuild(varNames[reaction], sampleSuffixN[reaction])
+  legend.append(legendsN[reaction])
   histnamesD = []
-  for hnd in sampleSuffixD[0]:
-    histnamesD.append(histNamesBuild(varNames[0], hnd))
-  for ld in legendsD[0]:
+  for hnd in sampleSuffixD[reaction]:
+    histnamesD.append(histNamesBuild(varNames[reaction], hnd))
+  for ld in legendsD[reaction]:
     legend.append(ld)
-  filehistsM['N'] = (NfileZll, histnamesN)
-  filehistsM['D'] = (DfileZll, fScaleM, histnamesD)
+  filehistsM['N'] = (NfileZll, nScale[reaction], histnamesN)
+  filehistsM['D'] = (DfileZll, dScale[reaction], histnamesD)
   hists.append(filehistsM)
   legList.append(legend)
 if (doEe):
   reaction += 1
   legend = []
-  histnamesN = histNamesBuild(varNames[1], sampleSuffixN[1])
-  legend.append(legendsN[1])
+  histnamesN = histNamesBuild(varNames[reaction], sampleSuffixN[reaction])
+  legend.append(legendsN[reaction])
   histnamesD = []
-  for hnd in sampleSuffixD[1]:
-    histnamesD.append(histNamesBuild(varNames[1], hnd))
-  for ld in legendsD[1]:
+  for hnd in sampleSuffixD[reaction]:
+    histnamesD.append(histNamesBuild(varNames[reaction], hnd))
+  for ld in legendsD[reaction]:
     legend.append(ld)
-  filehistsE['N'] = (NfileZll, histnamesN)
-  filehistsE['D'] = (DfileZll, fScaleE, histnamesD)
+  filehistsE['N'] = (NfileZll, nScale[reaction], histnamesN)
+  filehistsE['D'] = (DfileZll, dScale[reaction], histnamesD)
   hists.append(filehistsE)
   legList.append(legend)
 if (doLl):
   reaction += 1
   legend = []
-  histnamesN = histNamesBuild(varNames[2], sampleSuffixN[2])
-  legend.append(legendsN[2])
+  histnamesN = histNamesBuild(varNames[reaction], sampleSuffixN[reaction])
+  legend.append(legendsN[reaction])
   histnamesD = []
-  for hnd in sampleSuffixD[2]:
-    histnamesD.append(histNamesBuild(varNames[2], hnd))
-  for ld in legendsD[2]:
+  for hnd in sampleSuffixD[reaction]:
+    histnamesD.append(histNamesBuild(varNames[reaction], hnd))
+  for ld in legendsD[reaction]:
     legend.append(ld)
-  filehistsL['N'] = (NfileZll, histnamesN)
-  filehistsL['D'] = (DfileZll, fScaleL, histnamesD)
+  filehistsL['N'] = (NfileZll, nScale[reaction], histnamesN)
+  filehistsL['D'] = (DfileZll, dScale[reaction], histnamesD)
   hists.append(filehistsL)
   legList.append(legend)
 if (doPhoton):
   reaction += 1
   legend = []
-  histnamesN = histNamesBuild(varNames[3], sampleSuffixN[3])
-  legend.append(legendsN[3])
+  histnamesN = histNamesBuild(varNames[reaction], sampleSuffixN[reaction])
+  legend.append(legendsN[reaction])
   histnamesD = []
-  for hnd in sampleSuffixD[3]:
-    histnamesD.append(histNamesBuild(varNames[3], hnd))
-  for ld in legendsD[3]:
+  for hnd in sampleSuffixD[reaction]:
+    histnamesD.append(histNamesBuild(varNames[reaction], hnd))
+  for ld in legendsD[reaction]:
     legend.append(ld)
-  filehistsP['N'] = (NfilePhoton, histnamesN)
-  filehistsP['D'] = (DfilePhoton, fScaleP, histnamesD)
+  filehistsP['N'] = (NfilePhoton, nScale[reaction], histnamesN)
+  filehistsP['D'] = (DfilePhoton, dScale[reaction], histnamesD)
   hists.append(filehistsP)
   legList.append(legend)
 
@@ -231,15 +238,16 @@ for samples in hists:
   reaction += 1
   Nfile = samples['N'][0]
   Dfile = samples['D'][0]
-  for i in range(len(samples['N'][1])):
-    nhName = samples['N'][1][i]
-    print "nhName = "+str(nhName)
+  for i in range(len(samples['N'][2])):
+    nhName = samples['N'][2][i]
+    print "nhName = "+str(nhName)+" in file "+str(Nfile)
     hNumer = Nfile.Get(nhName)
     hNumer.SetName(str(nhName)+"N")
+    hNumer.Scale(samples['N'][1])
     hDenList = []
     for c in range(len(samples['D'][2])):  # Denominator may have multiple components
       dhName = samples['D'][2][c][i]  # scale is stored in samples['D'][1]
-      print "dhName = "+str(dhName)
+      print "dhName = "+str(dhName)+" in file "+str(Dfile)
       hDen = Dfile.Get(dhName)
       hDen.SetName(str(dhName)+"D")
       hDen.Scale(samples['D'][1])
@@ -265,6 +273,9 @@ for samples in hists:
       # textCoords = textCoordsDefault
       # legCoords = legCoordsDefault
     # print "legCoords = "+str(legCoords[0])+", "+str(legCoords[1])+", "+str(legCoords[2])+", "+str(legCoords[3])
+    doClosureStyle = False
+    # if ("hCC" in nhName):
+    #   doClosureStyle = True
     canvTuple = RA2b.getPlotAndRatio(
       numHists=hNumer, denomHists=hDenList, doRatio=True,
       doLogy=doLogy, doCMSlumi=True, iPeriod=iPeriod, drawHorizontalLine=True,
@@ -272,7 +283,8 @@ for samples in hists:
       ratioMin=ratioMin[reaction], ratioMax=ratioMax[reaction], setMin=setMin, setMax=setMax,
       legList = legList[reaction],
       # legCoords = legCoords,
-      drawText = drawText, textCoords = textCoords
+      drawText = drawText, textCoords = textCoords,
+      doClosureStyle = doClosureStyle
       )
     # For 174-bin plot
     # canvas = RA2b.getPlotAndRatio(
