@@ -1302,7 +1302,8 @@ RA2bZinvAnalysis::fillFilterCuts(TH1D* h, double wt) {
   if (!(PFCaloMETRatio < 5)) h->Fill(13.5, wt);
   if (era_ == "2016" && !(HT5/HT <= 2))
     h->Fill(14.5, wt);
-  else if (!(DeltaPhi1 >= 1.025*HT5/HT - 0.5875))
+  // else if (!(DeltaPhi1 >= 1.025*HT5/HT - 0.5875))
+  else if (!HTRatioDPhiFilter)
     h->Fill(14.5, wt);
   if (isSkim_ && ntupleVersion_ == "V16" && runBlock_.find("2017") != std::string::npos && !EcalNoiseJetFilter)
     h->Fill(15.5, wt);
