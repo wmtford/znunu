@@ -121,12 +121,16 @@ public:
 		  vector<TLorentzVector> Electrons,
 		  vector<TLorentzVector> Muons,
 		  vector<double> EBphoton,
-		  bool applyDRfitWt);
+		  bool applyDRfitWt,
+      int currentYear);
   private:
     std::vector<TFile*> purityTrigEffFile_;
     std::vector<TFile*> photonTrigEffFile_;
     std::vector<TFile*> photonSFFile_;
-    std::vector<TFile*> elecSFFile_;
+    //std::vector<TFile*> elecSFFile_;
+    std::vector<TFile*> elecIDandIsoSFFile_;
+    std::vector<TFile*> elecRecoLowSFFile_;
+    std::vector<TFile*> elecRecoHighSFFile_;
     std::vector<TFile*> muonIDSFFile_;
     std::vector<TFile*> muonIsoSFFile_;
     TFile* prefiringWeightFile_;
@@ -277,7 +281,7 @@ private:
   bool passHEMobjVeto(TLorentzVector& obj, double ptThresh = 0) {
     if (!isMC_ && RunNum < StartHEM) return true;
     if (isMC_ && runBlock_.find("HEM") == std::string::npos) return true;
-    if (-3.0 <= obj.Eta() && obj.Eta() <= -1.4 && 
+    if (-3.0 <= obj.Eta() && obj.Eta() <= -1.4 &&
 	-1.57 <= obj.Phi() && obj.Phi() <= -0.87 &&
 	obj.Pt() > ptThresh)
       return false;

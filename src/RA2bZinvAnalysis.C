@@ -385,7 +385,7 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
   else
     commonCuts_ =    "globalSuperTightHalo2016Filter==1";
   commonCuts_ += " && HBHENoiseFilter==1";
-  commonCuts_ += " && HBHEIsoNoiseFilter==1"; 
+  commonCuts_ += " && HBHEIsoNoiseFilter==1";
   commonCuts_ += " && EcalDeadCellTriggerPrimitiveFilter==1";
   commonCuts_ += " && BadChargedCandidateFilter";
   commonCuts_ += " && BadPFMuonFilter";
@@ -394,7 +394,7 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
     // commonCuts_ += " && ecalBadCalibFilter==1";  // Added for 94X
   if (!isMC_)
     commonCuts_ += " && eeBadScFilter==1";
-  // Kevin Pedro, re V16:  Please note that I have included only the JetID "event cleaning" cut in these skims. 
+  // Kevin Pedro, re V16:  Please note that I have included only the JetID "event cleaning" cut in these skims.
   // The PFCaloMETRatio, HT5/HT, and noMuonJet cuts are left out,
   // so the impact of these cuts can be tested and refined if necessary.
   if (isSkim_ && ntupleVersion_ == "V16") {
@@ -471,7 +471,7 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
   cuts += commonCuts_;
 
   return cuts;
- 
+
 }  // ======================================================================================
 
 void
@@ -673,7 +673,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
     }  // isMC_
 
     effWt_ = effPurCorr_.weight(CCbins_, NJets, BTags, MHT, HT, *ZCandidates, *Photons,
-				*Electrons, *Muons, *Photons_isEB, applyDRfitWt_);
+				*Electrons, *Muons, *Photons_isEB, applyDRfitWt_, currentYear);
     // Trigger requirements
     bool passTrg = true;
     if (!isMC_) {
@@ -1223,7 +1223,7 @@ RA2bZinvAnalysis::fillCC(TH1D* h, double wt) {
   if (!applyBTagSF_) {
     int binNb = CCbins_->bbin(NJets, BTags);
     binCC = (hName.Contains("spl") || hName.Contains("Jb")) ?
-      CCbins_->Jbk(binNjets, binNb, binKin) : 
+      CCbins_->Jbk(binNjets, binNb, binKin) :
       useTreeCCbin_ ? RA2bin : CCbins_->jbk(binNjets, binNb, binKin);
     if (binCC <= 0) return;
     if (verbosity_ >= 4) cout << "j = " << binNjets << ", b = " << binNb << ", k = " << binKin << ", binCC = "
@@ -1282,7 +1282,7 @@ RA2bZinvAnalysis::fillZmassjb(TH1D* h, double wt) {
       h->Fill(ZCandidates->at(0).M(), wt);
     }
   }
-  
+
 }  // ======================================================================================
 
 void
@@ -1758,7 +1758,7 @@ RA2bZinvAnalysis::cutHistos::fill(TH1D* hcf, Double_t wt, bool passTrg, bool pas
   }
 }  // ======================================================================================
 
-void 
+void
 RA2bZinvAnalysis::efficiencyAndPurity::openFiles() {
   TString plotDir("../plots/histograms/");
 
@@ -1772,21 +1772,33 @@ RA2bZinvAnalysis::efficiencyAndPurity::openFiles() {
   photonTrigEffFile_.push_back(new TFile((plotDir+"triggersRa2bRun2_v3_withTEffs.root").Data(), "read"));
   photonTrigEffFile_.push_back(new TFile((plotDir+"triggersRa2bRun2_v3_withTEffs.root").Data(), "read"));
 
-  photonSFFile_.push_back(new TFile((plotDir+"2017_PhotonsLoose.root").Data(), "read"));
-  photonSFFile_.push_back(new TFile((plotDir+"2017_PhotonsLoose.root").Data(), "read"));
-  photonSFFile_.push_back(new TFile((plotDir+"2017_PhotonsLoose.root").Data(), "read"));
+  photonSFFile_.push_back(new TFile((plotDir+"Photons2016_SF_all.root").Data(), "read"));
+  photonSFFile_.push_back(new TFile((plotDir+"Photons2017_SF_all.root").Data(), "read"));
+  photonSFFile_.push_back(new TFile((plotDir+"Photons2018_SF_all.root").Data(), "read"));
 
-  elecSFFile_.push_back(new TFile((plotDir+"ElectronScaleFactors_Run2017.root").Data(), "read"));
-  elecSFFile_.push_back(new TFile((plotDir+"ElectronScaleFactors_Run2017.root").Data(), "read"));
-  elecSFFile_.push_back(new TFile((plotDir+"ElectronScaleFactors_Run2017.root").Data(), "read"));
+  // elecSFFile_.push_back(new TFile((plotDir+"ElectronScaleFactors_Run2017.root").Data(), "read"));
+  // elecSFFile_.push_back(new TFile((plotDir+"ElectronScaleFactors_Run2017.root").Data(), "read"));
+  // elecSFFile_.push_back(new TFile((plotDir+"ElectronScaleFactors_Run2017.root").Data(), "read"));
 
-  muonIDSFFile_.push_back(new TFile((plotDir+"RunBCDEF_Muon2017_SF_ID.root").Data(), "read"));
-  muonIDSFFile_.push_back(new TFile((plotDir+"RunBCDEF_Muon2017_SF_ID.root").Data(), "read"));
-  muonIDSFFile_.push_back(new TFile((plotDir+"RunBCDEF_Muon2017_SF_ID.root").Data(), "read"));
+  elecIDandIsoSFFile_.push_back(new TFile((plotDir+"Electrons2016_SF_ISOandID.root").Data(), "read"));
+  elecIDandIsoSFFile_.push_back(new TFile((plotDir+"Electrons2017_SF_ISOandID.root").Data(), "read"));
+  elecIDandIsoSFFile_.push_back(new TFile((plotDir+"Electrons2018_SF_ISOandID.root").Data(), "read"));
 
-  muonIsoSFFile_.push_back(new TFile((plotDir+"SF_Muon2017_NUM_MiniIso02Cut_DEN_MediumID_PAR_pt_eta.root").Data(), "read"));
-  muonIsoSFFile_.push_back(new TFile((plotDir+"SF_Muon2017_NUM_MiniIso02Cut_DEN_MediumID_PAR_pt_eta.root").Data(), "read"));
-  muonIsoSFFile_.push_back(new TFile((plotDir+"SF_Muon2017_NUM_MiniIso02Cut_DEN_MediumID_PAR_pt_eta.root").Data(), "read"));
+  elecRecoLowSFFile_.push_back(new TFile((plotDir+"Electrons2016_SF_RECOlow.root").Data(), "read"));
+  elecRecoLowSFFile_.push_back(new TFile((plotDir+"Electrons2017_SF_RECOlow.root").Data(), "read"));
+  //elecRecoLowSFFile_.push_back(new TFile((plotDir+"Electrons2018_SF_RECOlow.root").Data(), "read"));//not available yet for 2018
+
+  elecRecoHighSFFile_.push_back(new TFile((plotDir+"Electrons2016_SF_RECOhigh.root").Data(), "read"));//pt>20
+  elecRecoHighSFFile_.push_back(new TFile((plotDir+"Electrons2017_SF_RECOhigh.root").Data(), "read"));//pt>20
+  elecRecoHighSFFile_.push_back(new TFile((plotDir+"Electrons2018_SF_RECOhigh.root").Data(), "read"));//pt>10
+
+  muonIDSFFile_.push_back(new TFile((plotDir+"Muons2016_SF_ID.root").Data(), "read"));
+  muonIDSFFile_.push_back(new TFile((plotDir+"Muons2017_SF_ID.root").Data(), "read"));
+  muonIDSFFile_.push_back(new TFile((plotDir+"Muons2018_SF_ID.root").Data(), "read"));
+
+  muonIsoSFFile_.push_back(new TFile((plotDir+"Muons2016_SF_ISO.root").Data(), "read"));
+  muonIsoSFFile_.push_back(new TFile((plotDir+"Muons2017_SF_ISO.root").Data(), "read"));
+  muonIsoSFFile_.push_back(new TFile((plotDir+"Muons2018_SF_ISO.root").Data(), "read"));
 
   DRfun_ = new TF1("DRfun", "[0] + [1]*min([3], x)");
   // DRfun_ = new TF1("DRfun", "[2] + (1/3)*[1]*(min([3], x) - ([2] - [0]) / [1])");
@@ -1886,26 +1898,63 @@ RA2bZinvAnalysis::efficiencyAndPurity::getHistos(const char* sample, int current
     // if (FdirHist_ == nullptr) cout << "***** Histogram h_bin46_NJets8910 not found *****" << endl;
     FdirGraph_ = (TGraphErrors*) purityTrigEffFile_.at(currentYear)->Get("h_bin46_NJets8910");
     if (FdirGraph_ == nullptr) cout << "***** Histogram h_bin46_NJets8910 not found *****" << endl;
-  } else if (theSample_.Contains("dymm") || theSample_.Contains("ttmm") || 
+  } else if (theSample_.Contains("dymm") || theSample_.Contains("ttmm") ||
 	     theSample_.Contains("ttzmm") || theSample_.Contains("VVmm")) {
     hTrigEff_.push_back((TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_trig_m"));
     if (hTrigEff_.back() == nullptr) cout << "***** Histogram h_trig_m not found *****" << endl;
     // hSFeff_ = (TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_SFm_MHT");
     // if (hSFeff_ == nullptr) cout << "***** Histogram h_MHT not found *****" << endl;
-    hSFeff_.push_back((TH2F*) muonIDSFFile_.at(currentYear)->Get("NUM_MediumID_DEN_genTracks_pt_abseta"));
-    if (hSFeff_.back() == nullptr) cout << "***** Histogram for muon ID SFs not found *****" << endl;
-    hSFeff_.push_back((TH2F*) muonIsoSFFile_.at(currentYear)->Get("TnP_MC_NUM_MiniIso02Cut_DEN_MediumID_PAR_pt_eta"));
-    if (hSFeff_.back() == nullptr) cout << "***** Histogram for muon iso SFs not found *****" << endl;
+
+    //These change based on year
+    if (currentYear == Year2016) {
+      hSFeff_.push_back((TH2F*) muonIDSFFile_.at(currentYear)->Get("NUM_MediumID_DEN_genTracks_eta_pt"));
+      if (hSFeff_.back() == nullptr) cout << "***** Histogram for muon ID SFs not found *****" << endl;
+      hSFeff_.push_back((TH2F*) muonIsoSFFile_.at(currentYear)->Get("NUM_TightRelIso_DEN_MediumID_eta_pt"));
+      if (hSFeff_.back() == nullptr) cout << "***** Histogram for muon iso SFs not found *****" << endl;
+    }
+    else {
+      hSFeff_.push_back((TH2F*) muonIDSFFile_.at(currentYear)->Get("NUM_MediumID_DEN_genTracks_pt_abseta"));
+      if (hSFeff_.back() == nullptr) cout << "***** Histogram for muon ID SFs not found *****" << endl;
+      hSFeff_.push_back((TH2F*) muonIsoSFFile_.at(currentYear)->Get("NUM_TightRelIso_DEN_MediumID_pt_abseta"));
+      if (hSFeff_.back() == nullptr) cout << "***** Histogram for muon iso SFs not found *****" << endl;
+    }
+
   } else if (theSample_.Contains("dyee") || theSample_.Contains("ttee") ||
 	     theSample_.Contains("ttzee") || theSample_.Contains("VVee")) {
     hTrigEff_.push_back((TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_trig_e"));
     if (hTrigEff_.back() == nullptr) cout << "***** Histogram h_trig_e not found *****" << endl;
     // hSFeff_ = (TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_SFe_MHT");  // Maybe this should be h_NJets
     // if (hSFeff_ == nullptr) cout << "***** Histogram h_MHT not found *****" << endl;
-    hSFeff_.push_back((TH2F*) elecSFFile_.at(currentYear)->Get("Run2017_CutBasedVetoNoIso94XV2"));
-    if (hSFeff_.back() == nullptr) cout << "***** Histogram for electron ID SFs not found *****" << endl;
-    hSFeff_.push_back((TH2F*) elecSFFile_.at(currentYear)->Get("Run2017_MVAVLooseTightIP2DMini"));
-    if (hSFeff_.back() == nullptr) cout << "***** Histogram for electron iso SFs not found *****" << endl;
+
+    //These change based on year
+    if (currentYear == Year2016) {
+      hSFeff_.push_back((TH2F*) elecIDandIsoSFFile_.at(currentYear)->Get("Run2016_CutBasedVetoNoIso94XV2"));
+      if (hSFeff_.back() == nullptr) cout << "***** Histogram for electron ID SFs not found *****" << endl;
+      hSFeff_.push_back((TH2F*) elecIDandIsoSFFile_.at(currentYear)->Get("Run2016_Mini"));
+      if (hSFeff_.back() == nullptr) cout << "***** Histogram for electron iso SFs not found *****" << endl;
+    }
+    else if (currentYear == Year2017) {
+      hSFeff_.push_back((TH2F*) elecIDandIsoSFFile_.at(currentYear)->Get("Run2017_CutBasedVetoNoIso94XV2"));
+      if (hSFeff_.back() == nullptr) cout << "***** Histogram for electron ID SFs not found *****" << endl;
+      hSFeff_.push_back((TH2F*) elecIDandIsoSFFile_.at(currentYear)->Get("Run2017_MVAVLooseTightIP2DMini"));
+      if (hSFeff_.back() == nullptr) cout << "***** Histogram for electron iso SFs not found *****" << endl;
+    }
+    else if (currentYear == Year2018) {
+      hSFeff_.push_back((TH2F*) elecIDandIsoSFFile_.at(currentYear)->Get("Run2018_CutBasedVetoNoIso94XV2"));
+      if (hSFeff_.back() == nullptr) cout << "***** Histogram for electron ID SFs not found *****" << endl;
+      hSFeff_.push_back((TH2F*) elecIDandIsoSFFile_.at(currentYear)->Get("Run2018_Mini"));
+      if (hSFeff_.back() == nullptr) cout << "***** Histogram for electron iso SFs not found *****" << endl;
+    }
+    hSFeff_.push_back((TH2F*) elecRecoHighSFFile_.at(currentYear)->Get("EGamma_SF2D"));
+    if (hSFeff_.back() == nullptr) cout << "***** Histogram for electron reco (high pT) SFs not found *****" << endl;
+
+    //Electron reco (pt<10 GeV) SFs for 2018 not (yet) available
+    if (currentYear != Year2018) {
+      hSFeff_.push_back((TH2F*) elecRecoLowSFFile_.at(currentYear)->Get("EGamma_SF2D"));
+      if (hSFeff_.back() == nullptr) cout << "***** Histogram for electron reco (low pT) SFs not found *****" << endl;
+    }
+
+
   } else if (theSample_.Contains("gjets")) {
     // // Troy-style trigger efficiency histograms:
     // hTrigEff_.push_back((TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_trig_eb"));
@@ -1955,7 +2004,8 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
 					      vector<TLorentzVector> Electrons,
 					      vector<TLorentzVector> Muons,
 					      vector<double> EBphoton,
-					      bool applyDRfitWt) {
+					      bool applyDRfitWt,
+                int currentYear) {
   // For double ratio, apply weights for purity, Fdir, trigger eff, reco eff.
   double effWt = 1;
 
@@ -1990,27 +2040,48 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
       float pt = 0; float eta = 0;
       int globalbin_ID = 0; int globalbin_ISO = 0;
 
-      if (theSample_.Contains("ee")) {
-	int numElectrons = Electrons.size();
-	for (int i=0; i<numElectrons; i++){
-	  pt  = Electrons.at(i).Pt();
-	  eta = Electrons.at(i).Eta();
-	  if (pt>500) pt=499.9;
-	  globalbin_ID  = hSFeff_[0]->FindBin(eta,pt); globalbin_ISO = hSFeff_[1]->FindBin(eta,pt);
-	  effWt *= hSFeff_[0]->GetBinContent(globalbin_ID)*hSFeff_[1]->GetBinContent(globalbin_ISO);
-	}
+      if (theSample_.Contains("ee") && hSFeff_[2]!=nullptr) {
+         int globalbin_RECO = 0;
+	       int numElectrons = Electrons.size();
+	       for (int i=0; i<numElectrons; i++){
+	          pt  = Electrons.at(i).Pt(); if (pt>500) pt=499.9;
+	          eta = Electrons.at(i).Eta();
+            globalbin_ID  = hSFeff_[0]->FindBin(eta,pt); globalbin_ISO = hSFeff_[1]->FindBin(eta,pt);
+            effWt *= hSFeff_[0]->GetBinContent(globalbin_ID)*hSFeff_[1]->GetBinContent(globalbin_ISO);
+            if (currentYear == Year2018) { //2018 only has reco SFs for pt>10
+              if (pt<=10.0) pt = 10.1;
+              globalbin_RECO = hSFeff_[2]->FindBin(eta,pt);
+              effWt *= hSFeff_[2]->GetBinContent(globalbin_RECO);
+            }
+            else { //2016 and 2017 have reco SFs for 0-20 GeV and >20 GeV
+              if (pt>20) {
+                globalbin_RECO = hSFeff_[2]->FindBin(eta,pt);
+                effWt *= hSFeff_[2]->GetBinContent(globalbin_RECO);
+              }
+              else {
+                globalbin_RECO = hSFeff_[3]->FindBin(eta,pt);
+                effWt *= hSFeff_[3]->GetBinContent(globalbin_RECO);
+              }
+            } //2016 or 2017
+          } //loop over all electrons (should be two)
       }
 
       else if (theSample_.Contains("mm")) {
-	int numMuons = Muons.size();
-	for (int i=0; i<numMuons; i++){
-	  pt = Muons.at(i).Pt();
-	  eta = fabs(Muons.at(i).Eta());
-	  if (pt>120) pt=119.9;
-	  globalbin_ID  = hSFeff_[0]->FindBin(pt,eta); globalbin_ISO = hSFeff_[1]->FindBin(pt,eta);
-	  effWt *= hSFeff_[0]->GetBinContent(globalbin_ID)*hSFeff_[1]->GetBinContent(globalbin_ISO);
-	}
+	       int numMuons = Muons.size();
+	       for (int i=0; i<numMuons; i++){
+	          pt = Muons.at(i).Pt(); if (pt>120) pt=119.9;
+            if (currentYear == Year2016) {
+	             eta = Muons.at(i).Eta();
+	             globalbin_ID  = hSFeff_[0]->FindBin(eta,pt); globalbin_ISO = hSFeff_[1]->FindBin(eta,pt);
+            }
+            else { //2017 and 2018 have abs(eta), and the x- and y-axis are swapped compared to 2016
+              eta = abs(Muons.at(i).Eta());
+              globalbin_ID  = hSFeff_[0]->FindBin(pt,eta); globalbin_ISO = hSFeff_[1]->FindBin(pt,eta);
+            }
+	          effWt *= hSFeff_[0]->GetBinContent(globalbin_ID)*hSFeff_[1]->GetBinContent(globalbin_ISO);
+	       }
       }
+
     }
 
   } else if (theSample_.Contains("gjets")) {
@@ -2043,15 +2114,15 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
       int globalbin_photon = 0;
       int numPhotons = Photons.size();
       for (int i=0; i<numPhotons; i++){
-	photon_pt = Photons.at(i).Pt(); photon_eta = Photons.at(i).Eta();
-	if (photon_pt>500) photon_pt=499.9;
-	globalbin_photon  = hSFeff_[0]->FindBin(photon_eta,photon_pt);
-	effWt *= hSFeff_[0]->GetBinContent(globalbin_photon);
+	       photon_pt = Photons.at(i).Pt(); photon_eta = Photons.at(i).Eta();
+	       if (photon_pt>500) photon_pt=499.9;
+	       globalbin_photon  = hSFeff_[0]->FindBin(photon_eta,photon_pt);
+	       effWt *= hSFeff_[0]->GetBinContent(globalbin_photon);
       }
     }
   }
   return effWt;
-  
+
 }  // ======================================================================================
 
 void
