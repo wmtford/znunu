@@ -13,6 +13,12 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
 
   gEnv->SetValue("TFile.AsyncPrefetching", 1);
 
+  bool doHzinvMC = false;
+  bool doHZllData = true;
+  bool doHZllMC = false;
+  bool doHphotonData = false;
+  bool doHphotonMC = false;
+
   bool doHzvv = false;
   bool doHttzvv = false;
   bool doHzmm = false;
@@ -26,14 +32,41 @@ void RA2bZinvDriver(const std::string& runBlock = "") {
   bool doHVVee = false;
   bool doHttmm = false;
   bool doHttee = false;
-  bool doHgjets = true;
-  bool doHgjetsqcd = true;
+  bool doHgjets = false;
+  bool doHgjetsqcd = false;
+  if (doHzinvMC) {
+    doHzvv = true;
+    doHttzvv = true;
+  }
+  if (doHZllData) {
+    doHzmm = true;
+    doHzee = true;
+  }
+  if (doHZllMC) {
+    doHdymm = true;
+    doHdyee = true;
+    doHttzmm = true;
+    doHttzee = true;
+    doHVVmm = true;
+    doHVVee = true;
+    doHttmm = true;
+    doHttee = true;
+  }
+  if (doHphotonData) doHphoton = true;
+  if (doHphotonMC) {
+    doHgjets = true;
+    doHgjetsqcd = true;
+  }
+
   const std::string makeClassSample = "";  // Must be compatible with compiler directives
   bool doListTrigPrescales = false;
   const std::string dumpSelEvIDsample("");
 
   // RA2bZinvAnalysis analyzer("", runBlock);  // Default configuration, V12
-  std::string cfgName("data");  cfgName += runBlock;  cfgName = regex_replace(cfgName, regex("HEM"), "");  cfgName += ".cfg";
+  std::string cfgName("data");  cfgName += runBlock;  cfgName += ".cfg";
+  cfgName = regex_replace(cfgName, regex("HEM"), "");
+  cfgName = regex_replace(cfgName, regex("AB"), "");
+  cfgName = regex_replace(cfgName, regex("CD"), "");
   RA2bZinvAnalysis analyzer(cfgName, runBlock);
   // RA2bZinvAnalysis analyzer("data2016.cfg", runBlock);
   // RA2bZinvAnalysis analyzer("data2017.cfg", runBlock);
@@ -210,15 +243,12 @@ void combine(std::vector<TH1*> hl1, std::vector<TH1*> hl2) {
   for (auto& h1 : hl1) {
     TString h1Name(h1->GetName());
     if (!h1Name.Contains("hCC")) continue;
-    if (h1Name.Contains("spl")) continue;
     TString heeName = h1Name;  heeName("mm") = "ee";
     TString hllName = h1Name;  hllName("mm") = "ll";
-    // TString hcNameTS = h1Name;  hcNameTS("mm") = "ll";
-    // const char* hcName = hcNameTS.Data();
     for (auto& h2 : hl2) {
       TString h2Name(h2->GetName());
       if (h2Name.EqualTo(heeName)) {
-	TH1D* hll = (TH1D*) h1->Clone();  hll->SetName(hllName);
+	TH1D* hll = (TH1D*) h1->Clone();  hll->SetNameTitle(hllName, hllName);
 	hll->Add(h2);
 	hll->Print();
 	hll->Draw();
