@@ -3944,7 +3944,7 @@ def getPlotAndRatio(numHists, denomHists=None, bottomPlots=None, doStack=None, T
                 if(numDrawStyles[i]=='HIST' or numDrawStyles[i]=='eHIST' or numDrawStyles[i]=='hist'):
                     leg.AddEntry(numHists[i], legList[i],'l')
                 else:
-                    leg.AddEntry(numHists[i], legList[i],'p')
+                    leg.AddEntry(numHists[i], legList[i],'ep')
     leg.SetBorderSize(1)
     leg.SetFillStyle(1001) 
     leg.SetFillColor(0) 

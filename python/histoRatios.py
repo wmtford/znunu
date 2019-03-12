@@ -12,7 +12,7 @@ singleOutFile = True
 doDatavMC = False
 doDatavData = False
 doMCvMC = True
-runYear = "Run2"
+runYear = "2017"
 doMumu = True
 doEe = True
 doLl = True
@@ -117,56 +117,56 @@ elif (doDatavData):
     dScale = [59.5/41.5, 59.5/41.5, 59.5/41.5, 59.5/41.5]
 
 elif (doMCvMC):
-  # # Compare MC
-  # # varNames = [["hHT", "hMHT", "hNJets", "hBTags", "hCC", 'hCCjk', 'hCCjb'],
-  # #             ["hHT", "hMHT", "hNJets", "hBTags", "hCC", 'hCCjk', 'hCCjb'],
-  # #             ['hCC', 'hCCjk', 'hCCjb'],
-  # #             ["hHT", "hMHT", "hNJets", "hBTags", "hCC", 'hCCjk', 'hCCjb']]
-  # varNames = [['hHT', 'hMHT', 'hNJets', 'hBTags', 'hZmass', 'hZpt', 'hgenZpt', 'hMuonEta', 'hVertices', 'hCC', 'hCCjk', 'hCCjb'],
-  #             ['hHT', 'hMHT', 'hNJets', 'hBTags', 'hZmass', 'hZpt', 'hgenZpt', 'hElectronEta', 'hVertices', 'hCC', 'hCCjk', 'hCCjb'],
+  # Compare MC
+  # varNames = [["hHT", "hMHT", "hNJets", "hBTags", "hCC", 'hCCjk', 'hCCjb'],
+  #             ["hHT", "hMHT", "hNJets", "hBTags", "hCC", 'hCCjk', 'hCCjb'],
   #             ['hCC', 'hCCjk', 'hCCjb'],
-  #             ['hHT', 'hMHT', 'hNJets', 'hBTags', 'hPhotonPt', 'hPhotonEta', 'hVertices', 'hCC', 'hCCjk']]
+  #             ["hHT", "hMHT", "hNJets", "hBTags", "hCC", 'hCCjk', 'hCCjb']]
+  varNames = [['hHT', 'hMHT', 'hNJets', 'hBTags', 'hZmass', 'hZpt', 'hgenZpt', 'hMuonEta', 'hVertices', 'hCC', 'hCCjk', 'hCCjb'],
+              ['hHT', 'hMHT', 'hNJets', 'hBTags', 'hZmass', 'hZpt', 'hgenZpt', 'hElectronEta', 'hVertices', 'hCC', 'hCCjk', 'hCCjb'],
+              ['hCC', 'hCCjk', 'hCCjb'],
+              ['hHT', 'hMHT', 'hNJets', 'hBTags', 'hPhotonPt', 'hPhotonEta', 'hVertices', 'hCC', 'hCCjk', 'hCCjb']]
 
-  # # 2017 vs 2016
-  # iPeriod = 6
+  # 2017 vs 2016
+  iPeriod = 6
 
-  # # NfileZll = ROOT.TFile('../outputs/histsZjets_2017v16.root')
-  # # NfilePhoton = ROOT.TFile('../outputs/histsZjets_2017v16.root')
-  # # sampleSuffixN = ['zinv', 'zinv', 'zinv', 'zinv']
-  # # legendsN = ['Z#nu#nu 2017 MC', 'Z#nu#nu 2017 MC', 'Z#nu#nu 2017 MC','Z#nu#nu 2017 MC']
-  # # NfileZll = ROOT.TFile('../outputs/histsDYMC_2017v16_noZptWt.root')
-  # NfileZll = ROOT.TFile('../outputs/histsDYMC_2017v16_HT17wt_ZptWt.root')
-  # NfilePhoton = ROOT.TFile('../outputs/histsGjets_2017v16.root')
-  # sampleSuffixN = ["dymm", "dyee", 'dyll', "gjets"]
-  # legendsN = ['DY#mu#mu 2017 MC', 'DYee 2017 MC', 'DYll 2017 MC', '#gamma+jets incl. 2017']
+  # NfileZll = ROOT.TFile('../outputs/histsZjets_2017v16.root')
+  # NfilePhoton = ROOT.TFile('../outputs/histsZjets_2017v16.root')
+  # sampleSuffixN = ['zinv', 'zinv', 'zinv', 'zinv']
+  # legendsN = ['Z#nu#nu 2017 MC', 'Z#nu#nu 2017 MC', 'Z#nu#nu 2017 MC','Z#nu#nu 2017 MC']
+  # NfileZll = ROOT.TFile('../outputs/histsDYMC_2017v16_noZptWt.root')
+  NfileZll = ROOT.TFile('../outputs/histsDYMC_2017v16_HT17wt_ZptWt.root')
+  NfilePhoton = ROOT.TFile('../outputs/histsGjets_2017v16.root')
+  sampleSuffixN = ["dymm", "dyee", 'dyll', "gjets"]
+  legendsN = ['DY#mu#mu 2017 MC', 'DYee 2017 MC', 'DYll 2017 MC', '#gamma+jets incl. 2017']
 
-  # DfileZll = ROOT.TFile('../outputs/histsDYMC_2016v16_noPU.root')
-  # DfilePhoton = ROOT.TFile('../outputs/histsGjets_2016v16_noPU.root')
-  # sampleSuffixD = [["dymm"], ["dyee"], ['dyll'], ["gjets"]]
-  # # legendsD = [['DY#mu#mu 2018 MC'], ['DYee 2018 MC'], ['DYll 2018 MC'], ['#gamma+jets incl. 2018']] 
-  # # ratioMin = [6, 6, 6, 0]
-  # # ratioMax = [13, 13, 13, 1.1]
-  # # sampleSuffixD = sampleSuffixN
-  # legendsD = [['        2016'], ['        2016'], ['        2016'], ['        2016']]
-  # dScale = [41.5/35.9, 41.5/35.9, 41.5/35.9, 41.5/35.9]
-  # # ratioMin = [0.8, 0.8, 0.8, 0]
-  # # ratioMax = [1.2, 1.2, 1.2, 2]
+  DfileZll = ROOT.TFile('../outputs/histsDYMC_2016v16_noPU.root')
+  DfilePhoton = ROOT.TFile('../outputs/histsGjets_2016v16_noPU.root')
+  sampleSuffixD = [["dymm"], ["dyee"], ['dyll'], ["gjets"]]
+  # legendsD = [['DY#mu#mu 2018 MC'], ['DYee 2018 MC'], ['DYll 2018 MC'], ['#gamma+jets incl. 2018']] 
+  # ratioMin = [6, 6, 6, 0]
+  # ratioMax = [13, 13, 13, 1.1]
+  # sampleSuffixD = sampleSuffixN
+  legendsD = [['2016 MC scaled'], ['2016 MC scaled'], ['2016 MC scaled'], ['2016 MC scaled']]
+  dScale = [41.5/35.9, 41.5/35.9, 41.5/35.9, 41.5/35.9]
+  # ratioMin = [0.8, 0.8, 0.8, 0]
+  # ratioMax = [1.2, 1.2, 1.2, 2]
 
   # R_ZZ, R_Zgamma, Run 2
-  iPeriod = 8
-  NfileZll = ROOT.TFile('../outputs/histsZjets_Run2v16_HT17wt_ZptWt.root')
-  NfilePhoton = ROOT.TFile('../outputs/histsZjets_Run2v16_HT17wt_ZptWt.root')
-  DfileZll = ROOT.TFile('../outputs/histsDYMC_Run2v16_HT17wt_ZptWt_noPU.root')
-  DfilePhoton = ROOT.TFile('../outputs/histsGjets_Run2v16_noPU.root')
-  doMumu = False
-  doEe = False
-  varNames = [['hCC', 'hCCjk', 'hCCjb'], ['hCC', 'hCCjk', 'hCCjb']]
-  sampleSuffixN = ["zinv", "zinv"]
-  legendsN = ['Z+jets incl. Run 2', 'Z+jets incl. Run 2']
-  sampleSuffixD = [['dyll'], ['gjets']]
-  legendsD = [['DYll Run 2 MC'], ['#gamma+jets * k Run 2']]
-  nScale = [1, 1/1.23]
-  ratioMax = [11, 1.1]
+  # iPeriod = 8
+  # NfileZll = ROOT.TFile('../outputs/histsZjets_Run2v16_HT17wt_ZptWt.root')
+  # NfilePhoton = ROOT.TFile('../outputs/histsZjets_Run2v16_HT17wt_ZptWt.root')
+  # DfileZll = ROOT.TFile('../outputs/histsDYMC_Run2v16_HT17wt_ZptWt_noPU.root')
+  # DfilePhoton = ROOT.TFile('../outputs/histsGjets_Run2v16_noPU.root')
+  # doMumu = False
+  # doEe = False
+  # varNames = [['hCC', 'hCCjk', 'hCCjb'], ['hCC', 'hCCjk', 'hCCjb']]
+  # sampleSuffixN = ["zinv", "zinv"]
+  # legendsN = ['Z+jets incl. Run 2', 'Z+jets incl. Run 2']
+  # sampleSuffixD = [['dyll'], ['gjets']]
+  # legendsD = [['DYll Run 2 MC'], ['#gamma+jets * k Run 2']]
+  # nScale = [1, 1/1.23]
+  # ratioMax = [11, 1.1]
 
 # =============================================================================
 reaction = -1
@@ -284,7 +284,7 @@ for samples in hists:
       legList = legList[reaction],
       # legCoords = legCoords,
       drawText = drawText, textCoords = textCoords,
-      doClosureStyle = doClosureStyle
+      doClosureStyle = doClosureStyle, markerSize=0.8
       )
     # For 174-bin plot
     # canvas = RA2b.getPlotAndRatio(
