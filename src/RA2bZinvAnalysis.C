@@ -446,7 +446,7 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
   minDphicut_ = minDphiCutMap_.at(deltaPhi_);
   // HEMgeomcut_ = "(-3.0 < Electrons[0].Eta() && Electrons[0].Eta() < -1.4 && -1.57 < Electrons[0].Phi() && Electrons[0].Phi() < -0.87)
   //             || (-3.0 < Electrons[1].Eta() && Electrons[1].Eta() < -1.4 && -1.57 < Electrons[1].Phi() && Electrons[1].Phi() < -0.87)";
-
+  // Extended HEM cut η[-3.2, -1.2] φ[-1.77, -0.67] 
 
 
   // For test of same-flavor isoLeptonTracks veto
@@ -2115,10 +2115,10 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
       int globalbin_photon = 0;
       int numPhotons = Photons.size();
       for (int i=0; i<numPhotons; i++){
-	       photon_pt = Photons.at(i).Pt(); photon_eta = Photons.at(i).Eta();
-	       if (photon_pt>500) photon_pt=499.9;
-	       globalbin_photon  = hSFeff_[0]->FindBin(photon_eta,photon_pt);
-	       effWt *= hSFeff_[0]->GetBinContent(globalbin_photon);
+	photon_pt = Photons.at(i).Pt(); photon_eta = Photons.at(i).Eta();
+	if (photon_pt>500) photon_pt=499.9;
+	globalbin_photon  = hSFeff_[0]->FindBin(photon_eta,photon_pt);
+	effWt *= hSFeff_[0]->GetBinContent(globalbin_photon);
       }
     }
   }

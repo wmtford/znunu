@@ -9,7 +9,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #define VERSION 16
-#define ISMC
+/* #define ISMC */
 #define ISSKIM
 
 #include "CCbinning.h"
@@ -281,17 +281,23 @@ private:
   bool passHEMobjVeto(TLorentzVector& obj, double ptThresh = 0) {
     if (!isMC_ && RunNum < StartHEM) return true;
     if (isMC_ && runBlock_.find("HEM") == std::string::npos) return true;
-    if (-3.0 <= obj.Eta() && obj.Eta() <= -1.4 &&
-	-1.57 <= obj.Phi() && obj.Phi() <= -0.87 &&
+    // Original HEM cut η[-3.0, -1.4] φ[-1.57, -0.87] 
+    // Extended HEM cut η[-3.2, -1.2] φ[-1.77, -0.67] 
+    if (-3.2 <= obj.Eta() && obj.Eta() <= -1.2 &&
+	-1.77 <= obj.Phi() && obj.Phi() <= -0.67 &&
 	obj.Pt() > ptThresh)
       return false;
     else return true;
   };
-  bool passHEMjetVeto(double ptThresh = 30) {
+  bool passHEMjetVeto(double ptThresh = 30, double dPhiThresh = 0.5) {
     if (!isMC_ && RunNum < StartHEM) return true;
     if (isMC_ && runBlock_.find("HEM") == std::string::npos) return true;
-    for (auto & jet : *Jets)
-      if (!passHEMobjVeto(jet, ptThresh)) return false;
+    for (auto & jet : *Jets) {
+      if (!passHEMobjVeto(jet, ptThresh)) {
+	Double_t dPhi = TVector2::Phi_mpi_pi(jet.Phi() - MHTPhi);
+	if (abs(dPhi) < dPhiThresh) return false;
+      }
+    }
     return true;
   };
   void cleanVars() {
