@@ -26,6 +26,9 @@
 #include <TChainElement.h>
 #include "../../Analysis/btag/BTagCorrector.h"
 
+#include <TMath.h>
+using namespace TMath;
+
 // members needed by nested classes
 static TString HTcut_;
 static TString MHTcut_;
@@ -115,14 +118,15 @@ public:
     ~efficiencyAndPurity() {};
     void openFiles();
     void getHistos(const char* sample, int currentYear);
-    double weight(CCbinning* CCbins, Int_t NJets, Int_t BTags, Double_t MHT, Double_t HT,
-		  vector<TLorentzVector> ZCandidates,
-		  vector<TLorentzVector> Photons,
-		  vector<TLorentzVector> Electrons,
-		  vector<TLorentzVector> Muons,
-		  vector<double> EBphoton,
-		  bool applyDRfitWt,
-      int currentYear);
+    pair<double, double> weight(CCbinning* CCbins, Int_t NJets, Int_t BTags, Double_t MHT, Double_t HT,
+				vector<TLorentzVector> ZCandidates,
+				vector<TLorentzVector> Photons,
+				vector<TLorentzVector> Electrons,
+				vector<TLorentzVector> Muons,
+				vector<double> EBphoton,
+				bool applyDRfitWt,
+				int currentYear);
+    double quadSum(double x, double y) {return Sqrt(Power(x,2) + Power(y,2));};
   private:
     std::vector<TFile*> purityTrigEffFile_;
     std::vector<TFile*> photonTrigEffFile_;
@@ -193,7 +197,7 @@ private:
   TString photonVeto_;
   TString photonCut_;
   double csvMthreshold_;
-  double effWt_;
+  double effWt_, effSys_;
 
 #ifdef ISMC
 
@@ -257,6 +261,7 @@ private:
   void fillCutFlow(TH1D* hcf, Double_t wt);
   Int_t setBTags();
   efficiencyAndPurity effPurCorr_;
+
   double prefiring_weight_photon(unsigned p){
     double w = 1;
     if (hPrefiring_photon_ != nullptr)
@@ -264,6 +269,7 @@ private:
 						 hPrefiring_photon_->GetYaxis()->FindBin(Photons->at(p).Pt())));
     return w;
   };
+
   double prefiring_weight_electron(unsigned p){
     double w = 1;
     if (hPrefiring_photon_ != nullptr)
@@ -271,6 +277,7 @@ private:
 						 hPrefiring_photon_->GetYaxis()->FindBin(Electrons->at(p).Pt())));
     return w;
   };
+
   double prefiring_weight_jet(unsigned j){
     double w = 1;
     if (hPrefiring_jet_ != nullptr)
@@ -278,6 +285,7 @@ private:
 					      hPrefiring_jet_->GetYaxis()->FindBin(Jets->at(j).Pt()))) ;
     return w;
   };
+
   bool passHEMobjVeto(TLorentzVector& obj, double ptThresh = 0) {
     if (!isMC_ && RunNum < StartHEM) return true;
     if (isMC_ && runBlock_.find("HEM") == std::string::npos) return true;
@@ -289,6 +297,7 @@ private:
       return false;
     else return true;
   };
+
   bool passHEMjetVeto(double ptThresh = 30, double dPhiThresh = 0.5) {
     if (!isMC_ && RunNum < StartHEM) return true;
     if (isMC_ && runBlock_.find("HEM") == std::string::npos) return true;
@@ -300,6 +309,7 @@ private:
     }
     return true;
   };
+
   void cleanVars() {
 #ifndef ISSKIM
     NJets = NJetsclean;
@@ -333,6 +343,7 @@ private:
   void fillMHT_DR_xWt(TH1D* h, double wt) {h->Fill(MHT, wt*MHT);}
   void fillNJets_DR_xWt(TH1D* h, double wt) {h->Fill(Double_t(NJets), wt*NJets);}
   void fillSFwt_DR(TH1D* h, double wt) {double wtt = effWt_ > 0 ? wt/effWt_ : wt;  h->Fill(effWt_, wtt);}
+  void fillSFsys_DR(TH1D* h, double wt) {double wtt = effWt_ > 0 ? wt/effWt_ : wt;  h->Fill(effSys_, wtt);}
   void fillgenZpt(TH1D* h, double wt) {h->Fill(getPtZ(), wt);}
   void fillZpt(TH1D* h, double wt) {for (auto & theZ : *ZCandidates) h->Fill(theZ.Pt(), wt);}
   void fillPhotonPt(TH1D* h, double wt) {for (auto & theG : *Photons) h->Fill(theG.Pt(), wt);}

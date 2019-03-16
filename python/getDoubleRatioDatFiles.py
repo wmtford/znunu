@@ -244,29 +244,72 @@ for sample in doSample:
     dr = dr_out[0][0]
     edr = dr_out[0][1]
     
-    effFile = ROOT.TFile("../plots/histograms/effHists.root")
-        
-    h_pur_m = effFile.Get("h_pur_m")
-    h_pur_e = effFile.Get("h_pur_e")
-    h_trig_m = effFile.Get("h_trig_m")    
-    h_trig_e = effFile.Get("h_trig_e")    
-    
     ## hard code the btag SF and error for now
     btagSF = 1.
     btagSFerror = 0.005
     
-    ## hard coded lepton SFs
-    lepSF = 0.95
-    eLepSF = 0.05
+    ## lepton SFs
+    # lepSF = 0.95
+    # eLepSF = 0.05
+    # mcZllFile = ROOT.TFile('../src/histsDYMC2018.root')  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # dataZllFile = ROOT.TFile('../src/histsZll2018AB.root')  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+    h_SF_m = mcZllFile.Get("hSFwt_DR_dymm")
+    h_SFerr_m = mcZllFile.Get("hSFsys_DR_dymm")
+    h_SF_e = mcZllFile.Get("hSFwt_DR_dyee")
+    h_SFerr_e = mcZllFile.Get("hSFsys_DR_dyee")
+    mcy_m = h_SF_m.GetSumOfWeights()
+    mcy_e = h_SF_e.GetSumOfWeights()
+    lepSF = (mcy_m*h_SF_m.GetMean() + mcy_e*h_SF_e.GetMean()) / (mcy_m + mcy_e)
+    eLepSF = (mcy_m*h_SFerr_m.GetMean() + mcy_e*h_SFerr_e.GetMean()) / (mcy_m + mcy_e)
     
+    ## purity as function of Njets bin
+    #  This assumes Run2 era binning
+    #  First get mumu, ee yields for each NJets bin
+    hNJetsCC_zmm_da = dataZllFile.Get("hNJets_DRCC_zmm")
+    day_m = []
+    day_m.append(hNJetsCC_zmm_da.GetBinContent(1) + hNJetsCC_zmm_da.GetBinContent(2))
+    day_m.append(hNJetsCC_zmm_da.GetBinContent(3) + hNJetsCC_zmm_da.GetBinContent(4))
+    day_m.append(hNJetsCC_zmm_da.GetBinContent(5) + hNJetsCC_zmm_da.GetBinContent(6))
+    day_m.append(hNJetsCC_zmm_da.GetBinContent(7) + hNJetsCC_zmm_da.GetBinContent(8))
+    day_m.append(hNJetsCC_zmm_da.GetBinContent(9))
+    print "day_m[0] = "+str(day_m[0])
+    print "day_m[4] = "+str(day_m[4])
+    hNJetsCC_zee_da = dataZllFile.Get("hNJets_DRCC_zee")
+    day_e = []
+    day_e.append(hNJetsCC_zee_da.GetBinContent(1) + hNJetsCC_zee_da.GetBinContent(2))
+    day_e.append(hNJetsCC_zee_da.GetBinContent(3) + hNJetsCC_zee_da.GetBinContent(4))
+    day_e.append(hNJetsCC_zee_da.GetBinContent(5) + hNJetsCC_zee_da.GetBinContent(6))
+    day_e.append(hNJetsCC_zee_da.GetBinContent(7) + hNJetsCC_zee_da.GetBinContent(8))
+    day_e.append(hNJetsCC_zee_da.GetBinContent(9))
+    effFile = ROOT.TFile("../plots/histograms/effHists.root")
+    h_pur_m = effFile.Get("h_pur_m")
+    h_pur_e = effFile.Get("h_pur_e")
+    pur_m = []
+    pur_m.append(h_pur_m.GetBinContent(1))
+    pur_m.append(h_pur_m.GetBinContent(4))
+    pur_m.append(h_pur_m.GetBinContent(8))
+    purError_m = []
+    purError_m.append(h_pur_m.GetBinError(1))
+    purError_m.append(h_pur_m.GetBinError(4))
+    purError_m.append(h_pur_m.GetBinError(8))
+    pur_e = []
+    pur_e.append(h_pur_e.GetBinContent(1))
+    pur_e.append(h_pur_e.GetBinContent(4))
+    pur_e.append(h_pur_e.GetBinContent(8))
+    purError_e = []
+    purError_e.append(h_pur_e.GetBinError(1))
+    purError_e.append(h_pur_e.GetBinError(4))
+    purError_e.append(h_pur_e.GetBinError(8))
+
     ## trigger
-    trig = (h_trig_m.GetBinContent(1)+h_trig_e.GetBinContent(1))/2.
-    trigError = (h_trig_m.GetBinError(1)+h_trig_e.GetBinError(1))/2.
+    # h_trig_m = effFile.Get("h_trig_m")    
+    # h_trig_e = effFile.Get("h_trig_e")    
+    # trig = (h_trig_m.GetBinContent(1)+h_trig_e.GetBinContent(1))/2.
+    # trigError = (h_trig_m.GetBinError(1)+h_trig_e.GetBinError(1))/2.
+    ## Now absorb trigger efficiency into SF
+    trig = 1
+    trigError = 0
     
-    ## purity just take 3-4 jet 0b
-    pur = (h_pur_m.GetBinContent(4)+h_pur_e.GetBinContent(4))/2.
-    purError = (h_pur_m.GetBinError(4)+h_pur_e.GetBinError(4))/2.
-        
     ## had to add this funny business to 
     ## remove the bins that don't have
     ## any events
@@ -276,6 +319,7 @@ for sample in doSample:
     
     print "DR | DR cv error | DR shape up | DR shape down | 0b purity | purity error | trig eff | trig eff error | lepton SF | lepton SF error | btag SF | btag SF error |"
     for nj in range(1,6):
+        indpur = min(3, nj)-1
         for kin in kinRange:
             if (nj in njSkip and kin in kinSkip):
                 continue
@@ -285,7 +329,16 @@ for sample in doSample:
             EdrUp = (max(EdrUp**2-edr**2,0))**0.5
             EdrDown = max(dr_out[1]['NJets'][min(max(nj,1),5)-1][1], dr_out[1]['HT'][ht][1], dr_out[1]['MHT'][mht][1])
             EdrDown = (max(EdrDown**2-edr**2,0))**0.5
-            print str(round(dr,4))+" | "+str(round(edr,4))+" | "+str(round(EdrUp,4))+" | "+str(round(EdrDown,4))+" | "+str(round(pur,4))+" | "+str(round(purError/pur,4))+" | "+str(round(trig,4))+" | "+str(round(trigError/trig,4))+" | "+str(round(lepSF,4))+" | "+str(round(eLepSF,4))+" | "+str(round(btagSF,4))+" | "+str(round(btagSFerror,4)) + " | "
+            daytot = day_m[nj-1] + day_e[nj-1]
+            if (daytot > 0):
+                purav = (day_m[nj-1]*pur_m[indpur] + day_e[nj-1]*pur_e[indpur]) / daytot
+                purErrav = (day_m[nj-1]*purError_m[indpur] + day_e[nj-1]*purError_e[indpur]) / (daytot*purav)
+            else:
+                purav = (pur_m[indpur] + pur_e[indpur]) / 2
+                purErrav = (purError_m[indpur] + purError_e[indpur]) / (2*purav)
+            print ("%7.4f |%7.4f |%7.4f |%7.4f |%7.4f |%7.4f |%7.4f |%7.4f |%7.4f |%7.4f |%7.4f |%7.4f |" %
+                   (dr, edr, EdrUp, EdrDown, purav, purErrav, trig, trigError/trig, lepSF, eLepSF, btagSF, btagSFerror)
+                   )
             Bin+=1
 
     print "\a"
