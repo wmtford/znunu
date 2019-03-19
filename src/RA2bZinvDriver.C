@@ -2,22 +2,33 @@
   Run from the command line with
   root -l -b RA2bZinvLoadClasses.C RA2bZinvDriver.C
   or
-  root -l -b RA2bZinvLoadClasses.C RA2bZinvDriver.C\(\"2016B\"\)
+  root -l -b RA2bZinvLoadClasses.C RA2bZinvDriver.C\(\"2018AB\"\)
+  or
+  root -l -b RA2bZinvLoadClasses.C RA2bZinvDriver.C\(1,\"2018AB\")
 */
 
 #include "TROOT.h"
 #include "TEnv.h"
 
-void RA2bZinvDriver(const std::string& runBlock = "") {
+void RA2bZinvDriver(const std::string& runBlock = "", int toDo = -1) {
   cout << "runBlock passed to Driver = " << runBlock << endl;
 
   gEnv->SetValue("TFile.AsyncPrefetching", 1);
 
-  bool doHzinvMC = false;
-  bool doHZllData = true;
-  bool doHZllMC = false;
+  enum samples {ZllData, PhotonData, ZllMC, PhotonMC, ZinvMC};
+  bool doHZllData = false;
   bool doHphotonData = false;
+  bool doHZllMC = false;
   bool doHphotonMC = false;
+  bool doHzinvMC = false;
+  switch(toDo) {
+  case ZllData: doHZllData = true;  cout << "Zll Data" << endl;  break;
+  case PhotonData: doHphotonData = true;  cout << "Photon Data" << endl;  break;
+  case ZllMC: doHZllMC = true;  cout << "Zll MC" << endl;  break;
+  case PhotonMC: doHphotonMC = true;  cout << "Photon MC" << endl;;  break;
+  case ZinvMC: doHzinvMC = true;  cout << "Zinv MC" << endl;  break;
+  default: cout << "Default" << endl;  break;
+  }
 
   bool doHzvv = false;
   bool doHttzvv = false;
