@@ -24,11 +24,11 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
   TH1D* getHist(TFile* tFile, const char* histName);
   enum runBlock {Y2016, Y2017, Y2018AB, Y2018CD, Run2};
 
-  int doRun = Run2;
+  int doRun = Y2017;
   bool doClosure = true;
-  bool useDYMC = false;
+  bool useDYMC = true;
   bool useZllData = false;
-  bool usePhotonData = true;
+  bool usePhotonData = false;
   bool useMCJfactors = false;
   bool doJfromData = false;
   cout << "case " << doRun << ", doClosure = " << doClosure << ", useDYMC = " << useDYMC
@@ -45,7 +45,7 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
   TFile *ZllData, *photonData, *ZllXMC, *photonMC, *zinvMC;
 
   switch(doRun) {
-  case Y2016: {
+  case Y2016:
     if (doClosure) {
       zinvMC = openFile("../outputs/histsZjets_2016v16_noPU.root");  if (zinvMC == nullptr) return;
     }
@@ -55,8 +55,8 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
     }
     ZllXMC = openFile("../outputs/histsDYMC_2016v16_noPU.root");  if (ZllXMC == nullptr) return;
     break;
-  };
-  case Y2017: {
+
+  case Y2017:
     if (doClosure) {
       zinvMC = openFile("../outputs/histsZjets_2017v16_HT17wt_ZptWt.root");  if (zinvMC == nullptr) return;
     }
@@ -66,8 +66,8 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
     }
     ZllXMC = openFile("../outputs/histsDYMC_2017v16_HT17wt_ZptWt.root");  if (ZllXMC == nullptr) return;
     break;
-  };
-  case Y2018AB: {
+
+  case Y2018AB:
     if (doClosure) {
       zinvMC = openFile("../outputs/histsZjets_2018v16_HT17wt_ZptWt.root");  if (zinvMC == nullptr) return;
     }
@@ -77,8 +77,8 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
     }
     ZllXMC = openFile("../outputs//histsDYMC_2018v16_HT17wt_ZptWt.root");  if (ZllXMC == nullptr) return;
     break;
-  };
-  case Y2018CD: {
+
+  case Y2018CD:
     if (doClosure) {
       zinvMC = openFile("../outputs/histsZjets_2018HEMv16_HT17wt_ZptWt.root");  if (zinvMC == nullptr) return;
     }
@@ -88,8 +88,8 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
     }
     ZllXMC = openFile("../outputs//histsDYMC_2018HEMv16_HT17wt_ZptWt.root");  if (ZllXMC == nullptr) return;
     break;
-  };
-  case Run2: {
+
+  case Run2:
     if (doClosure) {
       if (useZllData) {
 	ZllData = openFile("../outputs/histsDY_Run2v16.root");	if (ZllData == nullptr) return;
@@ -97,7 +97,7 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
 	photonData = openFile("../outputs/histsPhoton_Run2v16.root");  if (photonData == nullptr) return;
 	// photonMC = openFile("../outputs/histsGjets_Run2v16_noPU.root");  if (photonMC == nullptr) return;
       } else {
-	zinvMC = openFile("../outputs/histsZjets_Run2v16_HT17wt_ZptWt.root");  if (zinvMC == nullptr) return;
+	zinvMC = openFile("../outputs/histsZjets_Run2v16_HT17wt_ZptWt_noPU.root");  if (zinvMC == nullptr) return;
       }
     } else {
       ZllData = openFile("../outputs/histsDY_Run2v16.root");  if (ZllData == nullptr) return;
@@ -105,7 +105,10 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
     }
     ZllXMC = openFile("../outputs//histsDYMC_Run2v16_HT17wt_ZptWt_noPU.root");  if (ZllXMC == nullptr) return;
     break;
-  };
+    
+  default:
+    cout << "No valid run year specified" << endl;
+    return;
   }
 
   // Get the Z->ll and photon data and MC histograms
@@ -148,8 +151,13 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
       hCCJb_zmm = getHist(ZllXMC, "hCCJb_dymm");
       hCCJb_zee = getHist(ZllXMC, "hCCJb_dyee");
       hCCJb_zll = getHist(ZllXMC, "hCCJb_dyll");
-      hCCspl_photon = getHist(ZllXMC, "hCCspl_dyll");
-      hCC_photon = getHist(ZllXMC, "hCC_dyll");
+      if (useDYMC) {
+	hCCspl_photon = getHist(ZllXMC, "hCCspl_dyll");
+	hCC_photon = getHist(ZllXMC, "hCC_dyll");
+      } else {  // Use Zinv MC
+	hCCspl_photon = getHist(zinvMC, "hCCspl_zinv");
+	hCC_photon = getHist(zinvMC, "hCC_zinv");
+      }
     }
     hCC_photon->Print("all");
   } else {  // Not closure
@@ -161,13 +169,8 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
     hCCJb_zmm = getHist(ZllData, "hCCJb_zmm");
     hCCJb_zee = getHist(ZllData, "hCCJb_zee");
     hCCJb_zll = getHist(ZllData, "hCCJb_zll");
-    if (useDYMC) {
-      hCCspl_photon = getHist(ZllXMC, "hCCspl_dyll");
-      hCC_photon = getHist(ZllXMC, "hCC_dyll");
-    } else {  // Use Zinv MC
-      hCCspl_photon = getHist(zinvMC, "hCCspl_zinv");
-      hCC_photon = getHist(zinvMC, "hCC_zinv");
-    }
+    hCCspl_photon = getHist(photonData, "hCCspl_photon");
+    hCC_photon = getHist(photonData, "hCC_photon");
   }
 
   // Fetch and combine DY MC contributions, split

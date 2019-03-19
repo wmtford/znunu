@@ -272,8 +272,6 @@ for sample in doSample:
     day_m.append(hNJetsCC_zmm_da.GetBinContent(5) + hNJetsCC_zmm_da.GetBinContent(6))
     day_m.append(hNJetsCC_zmm_da.GetBinContent(7) + hNJetsCC_zmm_da.GetBinContent(8))
     day_m.append(hNJetsCC_zmm_da.GetBinContent(9))
-    print "day_m[0] = "+str(day_m[0])
-    print "day_m[4] = "+str(day_m[4])
     hNJetsCC_zee_da = dataZllFile.Get("hNJets_DRCC_zee")
     day_e = []
     day_e.append(hNJetsCC_zee_da.GetBinContent(1) + hNJetsCC_zee_da.GetBinContent(2))
