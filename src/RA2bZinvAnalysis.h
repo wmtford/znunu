@@ -298,12 +298,13 @@ private:
     else return true;
   };
 
-  bool passHEMjetVeto(double ptThresh = 30, double dPhiThresh = 0.5) {
+  bool passHEMjetVeto(double ptThresh = 30, double dPhiThresh = 0.5, TH1D* hg = nullptr, double wt = 1) {
     if (!isMC_ && RunNum < StartHEM) return true;
     if (isMC_ && runBlock_.find("HEM") == std::string::npos) return true;
     for (auto & jet : *Jets) {
       if (!passHEMobjVeto(jet, ptThresh)) {
 	Double_t dPhi = TVector2::Phi_mpi_pi(jet.Phi() - MHTPhi);
+	if (hg != nullptr) hg->Fill(dPhi, wt);
 	if (abs(dPhi) < dPhiThresh) return false;
       }
     }
@@ -349,6 +350,7 @@ private:
   void fillPhotonPt(TH1D* h, double wt) {for (auto & theG : *Photons) h->Fill(theG.Pt(), wt);}
   void fillMuonEta(TH1D* h, double wt) {for (auto & theMu : *Muons) h->Fill(theMu.Eta(), wt);}
   void fillElectronEta(TH1D* h, double wt) {for (auto & theE : *Electrons) h->Fill(theE.Eta(), wt);}
+  void fillJetDphi(TH1D* h, double wt) {bool passHEM = passHEMjetVeto(30, 1, h, wt);}
   void fillPhotonEta(TH1D* h, double wt) {for (auto & theG : *Photons) h->Fill(theG.Eta(), wt);}
   void fillGpt(TH1D* h, double wt) {for (auto & theG : *Photons) h->Fill(theG.Pt(), wt);}
   void fillZGmass(TH1D* h, double wt);

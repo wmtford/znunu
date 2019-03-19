@@ -117,6 +117,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   activeBranches_.push_back("HT");
   activeBranches_.push_back("HT5");
   activeBranches_.push_back("MHT");
+  activeBranches_.push_back("MHTPhi");
   activeBranches_.push_back("JetID");
   activeBranches_.push_back("Jets");
   activeBranches_.push_back("Jets_hadronFlavor");
@@ -684,6 +685,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
     bool passHEM = true;
     if (applyHEMjetVeto_ && !passHEMjetVeto()) passHEM = false;
 
+    int CCbin = -2;
     for (auto & hg : histograms) {
       if (hg->name.Contains(TString("hCut"))) {
 	double cutHistWt = 1;
@@ -698,6 +700,10 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       if (!passHEM) break;
       // bool keep = false; for (auto & theE : *Electrons) {if (!passHEMobjVeto(theE)) keep = true;}  if (!keep) break;
 
+      if (CCbin == -2) {
+	CCbin = CCbins_->jbk(CCbins_->jbin(NJets), CCbins_->bbin(NJets, BTags), CCbins_->kinBin(HT, MHT));
+	if ((UInt_t) CCbin != RA2bin && !(CCbin == -1 && RA2bin == 0)) cout << "CCbin = " << CCbin << ", != " << RA2bin << endl;
+      }
       hg->NminusOneFormula->GetNdata();
       double selWt = hg->NminusOneFormula->EvalInstance(0);
       if (selWt == 0) continue;
@@ -712,9 +718,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 	// For MC, or double ratio, apply weights for trigger eff, reco eff.
 	if (hg->name.Contains(TString("_DR"))) {
 	  if (BTags > 0) continue;
-	  int CCbin = CCbins_->jbk(CCbins_->jbin(NJets), CCbins_->bbin(NJets, BTags), CCbins_->kinBin(HT, MHT));
 	  if (CCbin <= 0) continue;
-	  if ((UInt_t) CCbin != RA2bin) cout << "CCbin = " << CCbin << ", != " << RA2bin << endl;
 	}
 	eventWt *= effWt_;
       }
@@ -1090,6 +1094,13 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hElectronEta.axisTitles.first = "Eta(electron) [GeV]";  hElectronEta.axisTitles.second = "Events / 0.1";
   hElectronEta.filler1D = &RA2bZinvAnalysis::fillElectronEta;
   if (sampleKey == "zee") histograms.push_back(&hElectronEta);
+
+  histConfig hJetDphi;
+  hJetDphi.name = TString("hJetDphi_") + sample;  hJetDphi.title = "Delta phi (jet, MHT) HEM";
+  hJetDphi.NbinsX = 200;  hJetDphi.rangeX.first = -1;  hJetDphi.rangeX.second = 1;
+  hJetDphi.axisTitles.first = "#Delta#phi";  hJetDphi.axisTitles.second = "Events / 0.01";
+  hJetDphi.filler1D = &RA2bZinvAnalysis::fillJetDphi;  hJetDphi.addCuts = "RA2bin>0";
+  // histograms.push_back(&hJetDphi);  // This was for debugging
 
   histConfig hZmass;
   hZmass.name = TString("hZmass_") + sample;  hZmass.title = "Z mass";
@@ -1819,22 +1830,6 @@ RA2bZinvAnalysis::efficiencyAndPurity::openFiles() {
   // Graph_from_hHT_DR_zmm  2016 noPU
   // Function parameter 0:  0.837859796025 +/- 0.0352792948296
   // Function parameter 1:  0.000136284149882 +/- 6.6930863488e-05
-  // DRpars_.push_back({0.8430, 0.0001147, 0.9000, 900});
-  // Graph_from_hHT_DR_zmm  2016 first iteration
-  // Function parameter 0:  0.843020160316 +/- 0.0348336458629
-  // Function parameter 1:  0.000114662993277 +/- 6.57638091784e-05
-  // Average y0 = 0.900.  x0 = (y0 -p0) / p1
-  // DRpars_.push_back({0.8246, 0.0001274, 0.8877, 900});
-  // DRpars_.push_back({0.8246, 0.0001274, 0.8877, 900});
-  // Graph_from_hHT_DR_zmm  2017 HT17wt ZptWt
-  // Function parameter 0:  0.824632395818 +/- 0.0327675716282
-  // Function parameter 1:  0.000127461473018 +/- 6.25698022129e-05
-  // DRpars_.push_back({0.9611, 0.0002574, 1.0871, 900});
-  // DRpars_.push_back({0.9611, 0.0002574, 1.0871, 900});
-  // effWt /= (min(HT, 900.0) - 489.2)*(0.00025739) + 1.0858;
-  // Graph_from_hHT_DR_zmm    // 2017 HT16Wt ZptWt
-  // Function parameter 0:  0.961193586511 +/- 0.0401249241206
-  // Function parameter 1:  0.000257387819072 +/- 7.74713707439e-05
   // Average y0 = 1.0871.  x0 = (y0 -p0) / p1
 
   // effWt /= (min(HT, 900.0) - 497.4)*(0.0002288) + 1.0395;  // Run2 Z Pt weighted
@@ -1842,24 +1837,6 @@ RA2bZinvAnalysis::efficiencyAndPurity::openFiles() {
   // Function parameter 0:  0.92567079283 +/- 0.021512658121
   // Function parameter 1:  0.000228788345936 +/- 4.08070918994e-05
   // Average y0 = 1.0395.  x0 = (y0 -p0) / p1
-  // effWt /= (min(MHT, 900.0) - 399.6)*(  -0.00040321 *1/3) + 0.8389;  // New Fdir, 28 Jan, 2019
-  // Graph_from_hMHT_DR_zmm
-  // Function parameter 0:  0.999926406018 +/- 0.0291554520092
-  // Function parameter 1:  -0.000403207439065 +/- 7.19133297508e-05
-  // Average y0 = 0.8389.  x0 = (y0 -p0) / p1
-  // effWt /= (min(MHT, 900.0) - 400.2)*( -0.00039455 *2/3) + 0.8401;  // gJets_signal.dat 28 Jan, 2019
-  // Function parameter 0:  0.997861381979 +/- 0.0292274226244
-  // Function parameter 1:  -0.000394553221914 +/- 7.21321517572e-05
-  // Average y0 = 0.8401.  x0 = (y0 -p0) / p1
-  // effWt /= (min(MHT, 900.0) - 397.7)*( -0.00058276 *2/3) + 0.8401;
-  // Function parameter 0:  1.07188729834 +/- 0.// 047180710618
-  // Function parameter 1:  -0.000582762306737 +/- 0.000115148917583
-  // Average y0 = 0.8401.  x0 = (y0 -p0) / p1
-  // effWt /= (min(MHT, 900.0) - 397.4)*( -0.0005098 *2/3) + 0.8134;  // 16 Jan 2019
-  // Function parameter 0:  1.01601616809 +/- 0.0459169526921
-  // Function parameter 1:  -0.00050983094812 +/- 0.000112511842395
-  // Average y0 = 0.8134.  x0 = (y0 -p0) / p1
-  // effWt /= min(MHT, 900.0)*( -0.0005284) + 1.056;  // FIXME:  hard-wired correction
 
 }  // ======================================================================================
 
