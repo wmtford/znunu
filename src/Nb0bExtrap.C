@@ -24,9 +24,9 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
   TH1D* getHist(TFile* tFile, const char* histName);
   enum runBlock {Y2016, Y2017, Y2018AB, Y2018CD, Run2};
 
-  int doRun = Y2017;
-  bool doClosure = true;
-  bool useDYMC = true;
+  int doRun = Run2;
+  bool doClosure = false;
+  bool useDYMC = false;
   bool useZllData = false;
   bool usePhotonData = false;
   bool useMCJfactors = false;
@@ -103,7 +103,7 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
       ZllData = openFile("../outputs/histsDY_Run2v16.root");  if (ZllData == nullptr) return;
       photonData = openFile("../outputs/histsPhoton_Run2v16.root");  if (photonData == nullptr) return;
     }
-    ZllXMC = openFile("../outputs//histsDYMC_Run2v16_HT17wt_ZptWt_noPU.root");  if (ZllXMC == nullptr) return;
+    ZllXMC = openFile("../outputs/histsDYMC_Run2v16_HT17wt_ZptWt_noPU.root");  if (ZllXMC == nullptr) return;
     break;
     
   default:

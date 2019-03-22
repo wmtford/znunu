@@ -26,6 +26,7 @@ else:
 
 haveHistograms = True
 runYear = "Run2"
+postDRfit = True
 
 DYkfactor = 1.23
 
@@ -73,24 +74,28 @@ for sample in doSample:
             dataZllFile = ROOT.TFile('../outputs/histsDY_2016v16.root')
             dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_2016v16.root')
             mcZllFile = ROOT.TFile('../outputs/histsDYMC_2016v16_noPU.root')
-            mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2016v16_noPU.root')
-            # mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2016v16_DR2016wt_noPU.root')
+            if (postDRfit):
+                mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2016v16_noPU_DR2016wt.root')
+            else:
+                mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2016v16_noPU.root')
         elif (runYear is "2017"):
             iPeriod = 6
             dataZllFile = ROOT.TFile('../outputs/histsDY_2017v16.root')
             dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_2017v16.root')
             mcZllFile = ROOT.TFile('../outputs/histsDYMC_2017v16_HT17wt_ZptWt.root')
-            mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2017v16.root')
-            # mcZllFile = ROOT.TFile('../outputs/histsDYMC_2017v16_ZptWt.root')
-            # mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2017v16_DR2017wt.root')
+            if (postDRfit):
+                mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2017v16_DR2017wt.root')
+            else:
+                mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2017v16.root')
         elif (runYear is "2018AB"):
             iPeriod = 8
             dataZllFile = ROOT.TFile('../outputs/histsDY_2018ABv16.root')
             dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_2018ABv16.root')
             mcZllFile = ROOT.TFile('../outputs/histsDYMC_2018v16_HT17wt_ZptWt.root')
-            mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2018v16.root')
-            # mcZllFile = ROOT.TFile('../outputs/histsDYMC_2018v16_ZptWt.root')
-            # mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2018v16_DR2017wt.root')
+            if (postDRfit):
+                mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2018v16_DR2017wt.root')
+            else:
+                 mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2018v16.root')
             mcLumiRatio_mm = 21.0/59.2
             mcLumiRatio_ee =  21.0/59.2
             mcLumiRatio_photon =  21.0/59.2
@@ -99,9 +104,10 @@ for sample in doSample:
             dataZllFile = ROOT.TFile('../outputs/histsDY_2018CDv16.root')
             dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_2018CDv16.root')
             mcZllFile = ROOT.TFile('../outputs/histsDYMC_2018HEMv16_HT17wt_ZptWt.root')
-            mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2018HEMv16.root')
-            # mcZllFile = ROOT.TFile('../outputs/histsDYMC_2018HEMv16_ZptWt.root')
-            # mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2018HEMv16_DR2017wt.root')
+            if (postDRfit):
+                mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2018HEMv16_DR2017wt.root')
+            else:
+                mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2018HEMv16.root')
             mcLumiRatio_mm = 38.2/59.2
             mcLumiRatio_ee =  38.2/59.2
             mcLumiRatio_photon =  38.2/59.2
@@ -109,10 +115,11 @@ for sample in doSample:
             iPeriod = 9
             dataZllFile = ROOT.TFile('../outputs/histsDY_Run2v16.root')
             dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_Run2v16.root')
-            # mcZllFile = ROOT.TFile('../outputs/histsDYMC_Run2v16_noZptWt.root')
             mcZllFile = ROOT.TFile('../outputs/histsDYMC_Run2v16_HT17wt_ZptWt_noPU.root')
-            mcPhotonFile = ROOT.TFile('../outputs/histsGjets_Run2v16_DRRun2wt.root')
-            # mcPhotonFile = ROOT.TFile('../outputs/histsGjets_Run2v16_noPU.root')
+            if (postDRfit):
+                mcPhotonFile = ROOT.TFile('../outputs/histsGjets_Run2v16_noPU_DRRun2wt.root')
+            else:
+                mcPhotonFile = ROOT.TFile('../outputs/histsGjets_Run2v16_noPU.root')
         histoNJets['pho_da'] = dataPhotonFile.Get("hNJets_DR_photon")
         histoNJets['pho_cg'] = histoNJets['pho_da'].Clone()
         for i in range(1, histoNJets['pho_cg'].GetNbinsX()+1):

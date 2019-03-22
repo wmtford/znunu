@@ -1820,10 +1820,15 @@ RA2bZinvAnalysis::efficiencyAndPurity::openFiles() {
 
   DRfun_ = new TF1("DRfun", "[0] + [1]*min([3], x)");
   // DRfun_ = new TF1("DRfun", "[2] + (1/3)*[1]*(min([3], x) - ([2] - [0]) / [1])");
-  DRpars_.push_back({0.8229, 0.0001665, 0.9061, 900});
-  DRpars_.push_back({0.8229, 0.0001665, 0.9061, 900});
-  DRpars_.push_back({0.8229, 0.0001665, 0.9061, 900});
-  // Graph_from_hHT_DR_zmm  Run 2 no PU
+  DRpars_.push_back({0.8386, 0.0001812, 0.9290, 900});
+  DRpars_.push_back({0.8386, 0.0001812, 0.9290, 900});
+  DRpars_.push_back({0.8386, 0.0001812, 0.9290, 900});
+  // Graph_from_hHT_DR_zmm  Run 2 19 Mar 2019
+  // Function parameter 0:  0.838552899836 +/- 0.0192480033502
+  // Function parameter 1:  0.000181188022872 +/- 3.63880256987e-05
+  // Average y0 = 0.9290;  x0 = (y0 -p0) / p1
+  // DRpars_.push_back({0.8229, 0.0001665, 0.9061, 900});
+  // Graph_from_hHT_DR_zmm  Run 2 21 Feb 2019
   // Function parameter 0:  0.822859680122 +/- 0.0188240089302
   // Function parameter 1:  0.000166574459092 +/- 3.55474346141e-05
   // DRpars_.push_back({0.8378, 0.0001363, 0.9054, 900});
