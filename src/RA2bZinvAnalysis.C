@@ -204,15 +204,19 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
     activeBranches_.push_back("NonPrefiringProbDn");
   }
 
-  // For now we have only 2016 pileup and BTag correction files
-  if (runBlock_.empty() || runBlock_.find("2016")!=std::string::npos || runBlock_.find("2017")!=std::string::npos || runBlock_.find("2018")!=std::string::npos) {
+  if (runBlock_.find("2016")!=std::string::npos) {
+    // For now we have only 2016 pileup correction files
     if (applyPuWeight_ && customPuWeight_) {
       TFile* pufile = TFile::Open("../../Analysis/corrections/PileupHistograms_0121_69p2mb_pm4p6.root", "READ");
       puHist_ = (TH1*) pufile->Get("pu_weights_down");
     }
-    BTagSFfile_ = "../../Analysis/btag/CSVv2_Moriond17_B_H_mod.csv";
-
-  } // runBlock 2016
+    BTagSFfile_ = useDeepCSV_ ? "../datFiles/DeepCSV_2016LegacySF_WP_V1.csv" :
+                                "../../Analysis/btag/CSVv2_Moriond17_B_H_mod.csv";
+  } else if (runBlock_.find("2017")!=std::string::npos) {
+    BTagSFfile_ = "../datFiles/DeepCSV_94XSF_WP_V4_B_F.csv";
+  } else if (runBlock_.find("2018")!=std::string::npos) {
+    BTagSFfile_ = "../datFiles/DeepCSV_102XSF_WP_V1.csv";
+  }
 
   CCbins_ = new CCbinning(era_, deltaPhi_);
 
@@ -1263,20 +1267,24 @@ RA2bZinvAnalysis::fillCC(TH1D* h, double wt) {
 			      << ", Jets_hadronFlavor = " << Jets_hadronFlavor->size()
 			      << " Jets_HTMask = " << Jets_HTMask->size() << endl;
     vector<double> probNb = btagcorr_->GetCorrections(Jets, Jets_hadronFlavor, Jets_HTMask);
-    for (int binNb = 0; binNb < CCbins_->binsb(CCbins_->jbin(NJets)); ++binNb) {
-      binCC = hName.Contains("spl") ? CCbins_->Jbk(binNjets, binNb, binKin) : CCbins_->jbk(binNjets, binNb, binKin);
-      if (binCC <= 0) return;
-      if (verbosity_ >= 4) cout << "j = " << binNjets << ", NbTags = " << BTags << ", b = " << binNb
-				<< ", b wt = " << probNb[binNb] << ", k = " << binKin << ", binCC = " << binCC << endl;
+    for (int b = 0; b < (int) probNb.size(); ++b) {
+      int NbinsB = hName.Contains("spl") || hName.Contains("Jb") ? CCbins_-> binsB(binNjets) : CCbins_-> binsb(binNjets);
+      int binNb = min(b, NbinsB-1);
+      binCC = hName.Contains("spl") || hName.Contains("Jb") ? 
+	CCbins_->Jbk(binNjets, binNb, binKin) : CCbins_->jbk(binNjets, binNb, binKin);
+      if (binCC <= 0) break;
+      if (verbosity_ >= 4) cout << "j = " << binNjets << ", NbTags = " << BTags << ", b = " << b
+				<< ", b wt = " << probNb[b] << ", k = " << binKin << ", binCC = " << binCC << endl;
       if (hName.Contains("jb") || hName.Contains("Jb")) {
 	binCCjb = hName.Contains("jb") ? CCbins_->jb(binNjets, binNb) : CCbins_->Jb(binNjets, binNb);
-	if (binCCjb <= 0) return;
-	h->Fill(Double_t(binCCjb), wt*probNb[binNb]);
+	if (binCCjb <= 0) break;
+	h->Fill(Double_t(binCCjb), wt*probNb[b]);
       } else if (hName.Contains("jk")) {
+	if (b > 0) break;
 	int binCCjk = CCbins_->jk(binNjets, binKin);
-	if (binCCjk > 0) h->Fill(Double_t(binCCjk), wt*probNb[0]);
+	if (binCCjk > 0) h->Fill(Double_t(binCCjk), wt*probNb[b]);
       } else {
-	h->Fill(Double_t(binCC), wt*probNb[binNb]);
+	h->Fill(Double_t(binCC), wt*probNb[b]);
       }
     }
   }  // if apply BTagSF
