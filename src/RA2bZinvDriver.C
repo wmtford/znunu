@@ -70,12 +70,14 @@ void RA2bZinvDriver(const std::string& runBlock = "", int toDo = -1) {
   }
 
   const std::string makeClassSample = "";  // Must be compatible with compiler directives
+  // const std::string makeClassSample = "dymm";  // for example, when ISMC is defined
   bool doListTrigPrescales = false;
   const std::string dumpSelEvIDsample("");
 
   // RA2bZinvAnalysis analyzer("", runBlock);  // Default configuration, V12
   std::string cfgName("data");  cfgName += runBlock;  cfgName += ".cfg";
   cfgName = regex_replace(cfgName, regex("HEM"), "");
+  cfgName = regex_replace(cfgName, regex("HEP"), "");
   cfgName = regex_replace(cfgName, regex("AB"), "");
   cfgName = regex_replace(cfgName, regex("CD"), "");
   RA2bZinvAnalysis analyzer(cfgName, runBlock);

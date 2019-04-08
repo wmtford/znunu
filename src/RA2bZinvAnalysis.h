@@ -9,7 +9,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #define VERSION 16
-/* #define ISMC */
+#define ISMC
 #define ISSKIM
 
 #include "CCbinning.h"
@@ -158,6 +158,8 @@ private:
   const TString ntupleVersion_ = "V15";
 #elif  VERSION == 16
   const TString ntupleVersion_ = "V16";
+#elif  VERSION == 17
+  const TString ntupleVersion_ = "V17";
 #endif
 #ifdef ISMC
   const bool isMC_ = true;
@@ -205,6 +207,8 @@ private:
     #include "LeafDeclaration_MC_V12.h"
   #elif VERSION == 16
     #include "LeafDeclaration_MC_V16.h"
+  #elif VERSION == 17
+    #include "LeafDeclaration_MC_V17.h"
   #endif
 
 #else  // ISMC
@@ -219,6 +223,8 @@ private:
     #endif
   #elif VERSION == 16
     #include "LeafDeclaration_data_V16.h"
+  #elif VERSION == 17
+    #include "LeafDeclaration_data_V17.h"
 
   #endif  // VERSION
 
@@ -233,6 +239,12 @@ private:
   vector<int>     *GenParticles_Status;
 
 #endif  // !ISMC
+
+#if VERSION != 16
+  #ifdef ISMC
+    Double_t        NonPrefiringProb;
+  #endif
+#endif
 
 #ifndef ISSKIM
   UInt_t          RA2bin;
@@ -286,11 +298,20 @@ private:
     return w;
   };
 
+  bool testHEM() {
+    // HEM veto for data depending on RunNum; for MC weight by lumi unless
+    // forced by a substring of runBlock_ (HE Present or Missing)
+    if (!isMC_ && RunNum < StartHEM) return false;
+    if (isMC_ && runBlock_.find("HEP") != std::string::npos) return false;
+    if (isMC_ && runBlock_.find("HEM") == std::string::npos
+	&& EvtNum % 1000 < 1000*21.0/59.6) return false;
+    return true;
+  }
+
   bool passHEMobjVeto(TLorentzVector& obj, double ptThresh = 0) {
-    if (!isMC_ && RunNum < StartHEM) return true;
-    if (isMC_ && runBlock_.find("HEM") == std::string::npos) return true;
-    // Original HEM cut η[-3.0, -1.4] φ[-1.57, -0.87] 
-    // Extended HEM cut η[-3.2, -1.2] φ[-1.77, -0.67] 
+    if (!testHEM()) return true;
+    // Original HEM cut [-3.0, -1.4] [-1.57, -0.87] 
+    // Extended HEM cut [-3.2, -1.2] [-1.77, -0.67] 
     if (-3.2 <= obj.Eta() && obj.Eta() <= -1.2 &&
 	-1.77 <= obj.Phi() && obj.Phi() <= -0.67 &&
 	obj.Pt() > ptThresh)
@@ -299,8 +320,7 @@ private:
   };
 
   bool passHEMjetVeto(double ptThresh = 30, double dPhiThresh = 0.5, TH1D* hg = nullptr, double wt = 1) {
-    if (!isMC_ && RunNum < StartHEM) return true;
-    if (isMC_ && runBlock_.find("HEM") == std::string::npos) return true;
+    if (!testHEM()) return true;
     for (auto & jet : *Jets) {
       if (!passHEMobjVeto(jet, ptThresh)) {
 	Double_t dPhi = TVector2::Phi_mpi_pi(jet.Phi() - MHTPhi);

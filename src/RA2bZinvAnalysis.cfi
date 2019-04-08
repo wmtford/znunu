@@ -14,6 +14,7 @@ runBlock =
 # tree path = root://cmseos.fnal.gov//store/user/lpcsusyhad/SusyRA2Analysis2015/Run2ProductionV15/  # ntuples, xrootd
 # tree path = root://cmseos.fnal.gov//store/user/lpcsusyhad/SusyRA2Analysis2015/Skims/Run2ProductionV15/  # xrootd
 # tree path = root://cmseos.fnal.gov//store/user/lpcsusyhad/SusyRA2Analysis2015/Skims/Run2ProductionV16/  # xrootd
+# tree path = root://cmseos.fnal.gov//store/user/lpcsusyhad/SusyRA2Analysis2015/Skims/Run2ProductionV17/  # xrootd
 # tree path = /eos/uscms/store/user/lpcsusyhad/SusyRA2Analysis2015/Skims/Run2ProductionV16/  # from cmslpc
 # tree path = /mnt/hadoop/store/user/wtford/SusyRA2Analysis2015/Skims/Run2ProductionV16/  # local store
 tree path = /mnt/hadoop/store/user/aperloff/SusyRA2Analysis2015/Skims/Run2ProductionV16/  # local store
