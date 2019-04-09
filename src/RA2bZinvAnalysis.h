@@ -302,6 +302,7 @@ private:
     // HEM veto for data depending on RunNum; for MC weight by lumi unless
     // forced by a substring of runBlock_ (HE Present or Missing)
     if (!isMC_ && RunNum < StartHEM) return false;
+    if (isMC_ && runBlock_.find("2018") == std::string::npos) return false;
     if (isMC_ && runBlock_.find("HEP") != std::string::npos) return false;
     if (isMC_ && runBlock_.find("HEM") == std::string::npos
 	&& EvtNum % 1000 < 1000*21.0/59.6) return false;
