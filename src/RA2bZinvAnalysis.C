@@ -700,7 +700,8 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 
       if (CCbin == -2) {
 	CCbin = CCbins_->jbk(CCbins_->jbin(NJets), CCbins_->bbin(NJets, BTags), CCbins_->kinBin(HT, MHT));
-	if ((UInt_t) CCbin != RA2bin && !(CCbin == -1 && RA2bin == 0)) cout << "CCbin = " << CCbin << ", != " << RA2bin << endl;
+	if ((UInt_t) CCbin != RA2bin && !(CCbin == -1 && RA2bin == 0))
+	  cout << "CCbin = " << CCbin << ", != RA2bin = " << RA2bin << endl;
       }
       hg->NminusOneFormula->GetNdata();
       double selWt = hg->NminusOneFormula->EvalInstance(0);
@@ -1904,21 +1905,23 @@ RA2bZinvAnalysis::efficiencyAndPurity::getHistos(const char* sample, int current
     //These change based on year
     if (currentYear == Year2016) {
       hSFeff_.push_back((TH2F*) muonIDSFFile_.at(currentYear)->Get("NUM_MediumID_DEN_genTracks_eta_pt"));
-      if (hSFeff_.back() == nullptr) cout << "***** Histogram for muon ID SFs not found *****" << endl;
+      if (hSFeff_.back() == nullptr) cout << "***** Histogram for 2016 muon ID SFs not found *****"
+					  << " file " << muonIDSFFile_.at(currentYear)->GetName() << endl;
       hSFeff_.push_back((TH2F*) muonIsoSFFile_.at(currentYear)->Get("NUM_TightRelIso_DEN_MediumID_eta_pt"));
-      if (hSFeff_.back() == nullptr) cout << "***** Histogram for muon iso SFs not found *****" << endl;
-    }
-    if (currentYear == Year2017) {
+      if (hSFeff_.back() == nullptr) cout << "***** Histogram for 2016 muon iso SFs not found *****" << endl;
+    } else if (currentYear == Year2017) {
       hSFeff_.push_back((TH2F*) muonIDSFFile_.at(currentYear)->Get("NUM_MediumID_DEN_genTracks_pt_abseta"));
-      if (hSFeff_.back() == nullptr) cout << "***** Histogram for muon ID SFs not found *****" << endl;
+      if (hSFeff_.back() == nullptr) cout << "***** Histogram for 2017 muon ID SFs not found *****"
+					  << " file " << muonIDSFFile_.at(currentYear)->GetName() << endl;
       hSFeff_.push_back((TH2F*) muonIsoSFFile_.at(currentYear)->Get("NUM_TightRelIso_DEN_MediumID_pt_abseta"));
-      if (hSFeff_.back() == nullptr) cout << "***** Histogram for muon iso SFs not found *****" << endl;
+      if (hSFeff_.back() == nullptr) cout << "***** Histogram for 2017 muon iso SFs not found *****" << endl;
     }
     else {
       hSFeff_.push_back((TH2F*) muonIDSFFile_.at(currentYear)->Get("NUM_MediumID_DEN_TrackerMuons_pt_abseta"));
-      if (hSFeff_.back() == nullptr) cout << "***** Histogram for muon ID SFs not found *****" << endl;
+      if (hSFeff_.back() == nullptr) cout << "***** Histogram for 2018 muon ID SFs not found *****"
+					  << " file " << muonIDSFFile_.at(currentYear)->GetName() << endl;
       hSFeff_.push_back((TH2F*) muonIsoSFFile_.at(currentYear)->Get("NUM_TightRelIso_DEN_MediumID_pt_abseta"));
-      if (hSFeff_.back() == nullptr) cout << "***** Histogram for muon iso SFs not found *****" << endl;
+      if (hSFeff_.back() == nullptr) cout << "***** Histogram for 2018 muon iso SFs not found *****" << endl;
     }
 
   } else if (theSample_.Contains("dyee") || theSample_.Contains("ttee") ||

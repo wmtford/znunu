@@ -67,7 +67,7 @@ public:
 
   enum yearFirstRun {Start2016 = 271036, Start2017 = 294645, Start2018 = 315252, StartHEM = 319077, Start2018C = 319313};
   // First HEM run 319077
-  enum runYear{Year2016 = 0, Year2017 = 1, Year2018 = 2, Year2018preHEM = 3, Year2018HEM = 4};
+  enum runYear{Year2016 = 0, Year2017 = 1, Year2018 = 2, Year2018HEP = 3, Year2018HEM = 4};
 
   struct histConfig {
     // 1D or 2D histogram; select by value of NbinsY, = 0 for 1D.
