@@ -22,11 +22,11 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
   ofstream latexFile("DY_signal.tex");
   TFile* openFile(const char* fileName);
   TH1D* getHist(TFile* tFile, const char* histName);
-  enum runBlock {Y2016, Y2017, Y2018AB, Y2018CD, Run2};
+  enum runBlock {Y2016, Y2017, Y2018AB, Y2018CD, Y2018, Run2};
 
   int doRun = Run2;
-  bool doClosure = false;
-  bool useDYMC = false;
+  bool doClosure = true;
+  bool useDYMC = true;
   bool useZllData = false;
   bool usePhotonData = false;
   bool useMCJfactors = false;
@@ -89,6 +89,17 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
     ZllXMC = openFile("../outputs//histsDYMC_2018HEMv16_HT17wt_ZptWt.root");  if (ZllXMC == nullptr) return;
     break;
 
+  case Y2018:
+    if (doClosure) {
+      zinvMC = openFile("../outputs/histsZjets_2018v17.root");  if (zinvMC == nullptr) return;
+    }
+    else {
+      ZllData = openFile("../outputs/histsDY_2018CDv16.root");  if (ZllData == nullptr) return;
+      photonData = openFile("../outputs/histsPhoton_2018CDv16.root");  if (photonData == nullptr) return;
+    }
+    ZllXMC = openFile("../outputs//histsDYMC_2018v17.root");  if (ZllXMC == nullptr) return;
+    break;
+
   case Run2:
     if (doClosure) {
       if (useZllData) {
@@ -97,13 +108,13 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
 	photonData = openFile("../outputs/histsPhoton_Run2v16.root");  if (photonData == nullptr) return;
 	// photonMC = openFile("../outputs/histsGjets_Run2v16_noPU.root");  if (photonMC == nullptr) return;
       } else {
-	zinvMC = openFile("../outputs/histsZjets_Run2v16_HT17wt_ZptWt_noPU.root");  if (zinvMC == nullptr) return;
+	zinvMC = openFile("../outputs/histsZjets_Run2v161617.root");  if (zinvMC == nullptr) return;
       }
     } else {
-      ZllData = openFile("../outputs/histsDY_Run2v16.root");  if (ZllData == nullptr) return;
-      photonData = openFile("../outputs/histsPhoton_Run2v16.root");  if (photonData == nullptr) return;
+      ZllData = openFile("../outputs/histsDY_Run2v161617.root");  if (ZllData == nullptr) return;
+      photonData = openFile("../outputs/histsPhoton_Run2v161617.root");  if (photonData == nullptr) return;
     }
-    ZllXMC = openFile("../outputs/histsDYMC_Run2v16_HT17wt_ZptWt_noPU.root");  if (ZllXMC == nullptr) return;
+    ZllXMC = openFile("../outputs/histsDYMC_Run2v161617.root");  if (ZllXMC == nullptr) return;
     break;
     
   default:

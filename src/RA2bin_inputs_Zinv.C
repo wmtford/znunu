@@ -34,7 +34,7 @@ typedef std::vector <std::vector<Float_t> > V2F;
 // void RA2bin_inputs_Zinv(Int_t doSample = Signal,
 void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
 			std::vector< std::pair<TString, float> > gJetsFnRoot = {std::make_pair("gJets_2016", 35.9),
-			    std::make_pair("gJets_2017", 41.5), std::make_pair("gJets_2018", 59.4)},
+			    std::make_pair("gJets_2017", 41.5), std::make_pair("gJets_2018", 59.6)},
 			const TString DRfnRoot = TString("DR"),
 			const TString DYfnRoot = TString("DY"),
 			const TString MCfileName = TString("ZinvMCttzMC174bin.root"),
@@ -1023,7 +1023,8 @@ Int_t getData_gJets(std::vector<TString> fileNames, std::vector<float> lumi,
 	  NgobsEB[ijet][ikin] += NgobsEBt[ijet][ikin][i];
 	  NgobsEE[ijet][ikin] += NgobsEEt[ijet][ikin][i];
 	}
-	comb(2, lumi, ZgRt[ijet][ikin], ZgRerrt[ijet][ikin], ZgR[ijet][ikin], ZgRerr[ijet][ikin]);
+	// comb(2, lumi, ZgRt[ijet][ikin], ZgRerrt[ijet][ikin], ZgR[ijet][ikin], ZgRerr[ijet][ikin]);
+	comb(0, lumi, ZgRt[ijet][ikin], ZgRerrt[ijet][ikin], ZgR[ijet][ikin], ZgRerr[ijet][ikin]);
 	comb(0, lumi, gEtrgt[ijet][ikin], gEtrgErrt[ijet][ikin], gEtrg[ijet][ikin], gEtrgErr[ijet][ikin]);
 	comb(1, lumi, gEtrgt[ijet][ikin], gEtrgSyst[ijet][ikin], dummy, gEtrgSys[ijet][ikin]);
 	comb(1, lumi, gSFt[ijet][ikin], gSFerrt[ijet][ikin], gSF[ijet][ikin], gSFerr[ijet][ikin]);
