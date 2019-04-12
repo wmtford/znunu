@@ -96,9 +96,9 @@ for sample in doSample:
                 mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2018v16_DR2017wt.root')
             else:
                  mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2018v16.root')
-            mcLumiRatio_mm = 21.0/59.2
-            mcLumiRatio_ee =  21.0/59.2
-            mcLumiRatio_photon =  21.0/59.2
+            mcLumiRatio_mm = 21.0/59.6
+            mcLumiRatio_ee =  21.0/59.6
+            mcLumiRatio_photon =  21.0/59.6
         elif (runYear is "2018CD"):
             iPeriod = 8
             dataZllFile = ROOT.TFile('../outputs/histsDY_2018CDv16.root')
@@ -108,18 +108,18 @@ for sample in doSample:
                 mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2018HEMv16_DR2017wt.root')
             else:
                 mcPhotonFile = ROOT.TFile('../outputs/histsGjets_2018HEMv16.root')
-            mcLumiRatio_mm = 38.2/59.2
-            mcLumiRatio_ee =  38.2/59.2
-            mcLumiRatio_photon =  38.2/59.2
+            mcLumiRatio_mm = 38.6/59.6
+            mcLumiRatio_ee =  38.6/59.6
+            mcLumiRatio_photon =  38.6/59.6
         elif (runYear is "Run2"):
             iPeriod = 9
-            dataZllFile = ROOT.TFile('../outputs/histsDY_Run2v16.root')
-            dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_Run2v16.root')
-            mcZllFile = ROOT.TFile('../outputs/histsDYMC_Run2v16_HT17wt_ZptWt_noPU.root')
+            dataZllFile = ROOT.TFile('../outputs/histsDY_Run2v161617.root')
+            dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_Run2v161617.root')
+            mcZllFile = ROOT.TFile('../outputs/histsDYMC_Run2v161617.root')
             if (postDRfit):
-                mcPhotonFile = ROOT.TFile('../outputs/histsGjets_Run2v16_noPU_DRRun2wt.root')
+                mcPhotonFile = ROOT.TFile('../outputs/histsGjets_Run2v161617_DRr2wt.root')
             else:
-                mcPhotonFile = ROOT.TFile('../outputs/histsGjets_Run2v16_noPU.root')
+                mcPhotonFile = ROOT.TFile('../outputs/histsGjets_Run2v161617.root')
         histoNJets['pho_da'] = dataPhotonFile.Get("hNJets_DR_photon")
         histoNJets['pho_cg'] = histoNJets['pho_da'].Clone()
         for i in range(1, histoNJets['pho_cg'].GetNbinsX()+1):
