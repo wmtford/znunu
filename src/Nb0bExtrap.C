@@ -31,8 +31,10 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
   bool usePhotonData = false;
   bool useMCJfactors = false;
   bool doJfromData = false;
+  bool useRMS_mean = false;
   cout << "case " << doRun << ", doClosure = " << doClosure << ", useDYMC = " << useDYMC
-       << ", useZllData = " << useZllData << ", usePhotonData = " << usePhotonData << endl;
+       << ", useZllData = " << useZllData << ", usePhotonData = " << usePhotonData
+       << ", useRMS_mean = " << useRMS_mean << endl;
 
   CCbinning CCbins(era, deltaPhi);
   int kinSize = CCbins.kinSize();
@@ -457,13 +459,16 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
 				     {0, 0.15, 0.15, 0.30}};
 
   TFile* histoOutFile = nullptr;
-  TH1D *ZinvBGpred = nullptr, *ZinvBGsysUp = nullptr, *ZinvBGsysLow = nullptr, *hMCexp = nullptr;
+  TH1D *ZinvBGpred = nullptr, *ZinvBGsysUp = nullptr, *ZinvBGsysLow = nullptr, *hMCexp = nullptr, *hExtrap = nullptr;
   if (doClosure) {
     histoOutFile = TFile::Open("hClosure.root", "RECREATE");
     ZinvBGpred = (TH1D*) hCC_zll->Clone();  ZinvBGpred->SetNameTitle("ZinvBGpred", "Predicted Zinv yield");
     ZinvBGsysUp = (TH1D*) hCC_zll->Clone();  ZinvBGsysUp->SetNameTitle("ZinvBGsysUp", "Predicted Zinv upper error");
     ZinvBGsysLow = (TH1D*) hCC_zll->Clone();  ZinvBGsysLow->SetNameTitle("ZinvBGsysLow", "Predicted Zinv lower error");
     hMCexp = (TH1D*) hCC_photon->Clone();  hMCexp->SetNameTitle("hMCexp", "Expected Zinv yield");
+  } else {
+    histoOutFile = TFile::Open("hExtrap.root", "RECREATE");
+    hExtrap = (TH1D*) hCCjb_zll->Clone();  hExtrap->SetNameTitle("hExtrap", "Extrapolation factor");
   }
   // Write the output dat file
   // string datFileName("DY_");
@@ -532,6 +537,10 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
 		  100*systKin[j][b]
 		  );
 	  latexFile << linebuf;
+	  if (!doClosure) {
+	    hExtrap->SetBinContent(binCCjb, Fextrapjb.at(binCCjb - 1));
+	    hExtrap->SetBinError(binCCjb, DYstat.at(binCCjb - 1));
+	  }
 	  usedkbin = true;
 	}
 	if (doClosure) {
@@ -565,8 +574,12 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
 	Double_t rmsm = 0;
 	Double_t sys = 0;
 	if (ksum > 0) {
-	  chisq -= Power(schi, 2) / ksum;
-	  rmsm = sdevs/ksum - Power(sdev/ksum, 2);
+	  if (useRMS_mean) {
+	    chisq -= Power(schi, 2) / ksum;
+	    rmsm = sdevs/ksum - Power(sdev/ksum, 2);
+	  } else {
+	    rmsm = sdevs/ksum;
+	  }
 	  sys = chisq > ksum ? rmsm*(1 - ksum/chisq) : 0;
 	  // cout << "ksum = " << ksum << ", sdevs = " << sdevs << ", chisq = " << chisq << ", sys^2 = " << sys << endl;
 	  rmsm = Sqrt(rmsm);
@@ -584,8 +597,10 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
   if (doClosure) {
     ZinvBGpred->Draw();
     hMCexp->Draw();
-    histoOutFile->Write();
+  } else {
+    hExtrap->Draw();
   }
+  histoOutFile->Write();
 
   gApplication->Terminate(0);
 

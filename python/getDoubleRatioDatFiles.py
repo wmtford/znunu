@@ -27,6 +27,7 @@ else:
 haveHistograms = True
 runYear = "Run2"
 postDRfit = True
+plotRefLine = False
 
 DYkfactor = 1.23
 
@@ -189,7 +190,8 @@ for sample in doSample:
         binMeans['HT'] = binMeanHT
 
         ## get the double ratio plots with values and uncertainties
-        dr_out = RA2b.getDoubleRatioPlot([nj_dr, mht_dr, ht_dr], binMeans = binMeans, iPeriod = iPeriod)
+        dr_out = RA2b.getDoubleRatioPlot([nj_dr, mht_dr, ht_dr], binMeans = binMeans,
+                                         iPeriod = iPeriod, plotRefLine = plotRefLine)
 
     # raw_input("Press the <ENTER> key to continue...")
     if (sample == "sig"):
@@ -205,6 +207,7 @@ for sample in doSample:
         if (type(c3)==ROOT.TCanvas):
             fn = "DR_HT_"+sample+".pdf"
             c3.SaveAs(fn)
+            # c3.SaveAs("DR_HT_"+sample+".root")
 
     ## define kinematic range ##
     kinRange = [] 

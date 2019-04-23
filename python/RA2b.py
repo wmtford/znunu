@@ -4531,7 +4531,7 @@ def getDoubleRatioFit(hist, func, returnDiff=False):
     else:
         return (graph_mid, graph_lo, graph_hi)
 
-def getDoubleRatioPlot(dr_graphs, binMeans=None, Title=None, xTitle=None, yTitle=None, doCMSlumi=None, iPos=None, iPeriod=None, extraText=None, fitFunc=None, returnDiff=None, drawText=None, text=None, textCoords=None, addDeviationInQuad=None):
+def getDoubleRatioPlot(dr_graphs, binMeans=None, Title=None, xTitle=None, yTitle=None, doCMSlumi=None, iPos=None, iPeriod=None, extraText=None, fitFunc=None, returnDiff=None, drawText=None, text=None, textCoords=None, addDeviationInQuad=None, plotRefLine=None):
     """takes as input a TGraph (or list of TGraphs) returns canvas with fit and error
     default is linear fit"""
     
@@ -4565,6 +4565,8 @@ def getDoubleRatioPlot(dr_graphs, binMeans=None, Title=None, xTitle=None, yTitle
         textCoords = [0.65,0.85,.85,.90]
     if(addDeviationInQuad==None):
         addDeviationInQuad=True
+    if(plotRefLine is None):
+        plotRefLine = False
     ###############################################################################        
     # end set default parameters
     ###############################################################################        
@@ -4592,6 +4594,7 @@ def getDoubleRatioPlot(dr_graphs, binMeans=None, Title=None, xTitle=None, yTitle
         graph.Fit(line[it],"QN")
 
         #line.append(ROOT.TLine(xlow,meanDR,xhigh,meanDR))
+        refLine = ROOT.TF1("refLine", 'pol1(0)', xlow, xhigh)
 
         fitGraph = getDoubleRatioFit(graph, func_mid, returnDiff)
 
@@ -4604,12 +4607,20 @@ def getDoubleRatioPlot(dr_graphs, binMeans=None, Title=None, xTitle=None, yTitle
         fitGraph[1].Draw('l same')
         fitGraph[2].Draw('l same')
         line[it].Draw('l same')
+        if (plotRefLine and 'HT' in graph.GetTitle() and not 'MHT' in graph.GetTitle()):
+            refLine.SetParameters(0.8477, 0.0001906)
+            refLine.Draw('l same')
+            refLine.SetLineWidth(2)
+            refLine.SetLineStyle(4)
+            refLine.SetLineColor(8)
         graph.Draw('e0p same')
 
         graph.SetMarkerStyle(20)
         graph.SetMarkerSize(1)  # wtf
         graph.SetLineColor(1)
 
+        # fitGraph[0].SetMaximum(1.5)
+        # fitGraph[0].SetMinimum(0.5)
         fitGraph[0].SetMaximum(2.)
         fitGraph[0].SetMinimum(0.)
         fitGraph[0].GetXaxis().SetLimits(xlow,xhigh)
@@ -4813,7 +4824,7 @@ def getDoubleRatioPlot(dr_graphs, binMeans=None, Title=None, xTitle=None, yTitle
     for l in line:
         ROOT.SetOwnership(l, 0)
 
-    
+    ROOT.SetOwnership(refLine, 0)
 
     return [(drVal,drErr),errorDict]
 
