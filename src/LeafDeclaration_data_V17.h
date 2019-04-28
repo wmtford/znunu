@@ -180,6 +180,9 @@
    Int_t           NElectrons;
    Int_t           NJets;
    Int_t           NMuons;
+   Double_t        NonPrefiringProb;
+   Double_t        NonPrefiringProbDown;
+   Double_t        NonPrefiringProbUp;
    Int_t           NVtx;
    Double_t        PFCaloMETRatio;
    vector<TLorentzVector> *Photons;
@@ -411,6 +414,9 @@
    TBranch        *b_NElectrons;   //!
    TBranch        *b_NJets;   //!
    TBranch        *b_NMuons;   //!
+   TBranch        *b_NonPrefiringProb;   //!
+   TBranch        *b_NonPrefiringProbDown;   //!
+   TBranch        *b_NonPrefiringProbUp;   //!
    TBranch        *b_NVtx;   //!
    TBranch        *b_PFCaloMETRatio;   //!
    TBranch        *b_Photons;   //!
@@ -805,6 +811,9 @@
    fChain->SetBranchAddress("NElectrons", &NElectrons, &b_NElectrons);
    fChain->SetBranchAddress("NJets", &NJets, &b_NJets);
    fChain->SetBranchAddress("NMuons", &NMuons, &b_NMuons);
+   fChain->SetBranchAddress("NonPrefiringProb", &NonPrefiringProb, &b_NonPrefiringProb);
+   fChain->SetBranchAddress("NonPrefiringProbDown", &NonPrefiringProbDown, &b_NonPrefiringProbDown);
+   fChain->SetBranchAddress("NonPrefiringProbUp", &NonPrefiringProbUp, &b_NonPrefiringProbUp);
    fChain->SetBranchAddress("NVtx", &NVtx, &b_NVtx);
    fChain->SetBranchAddress("PFCaloMETRatio", &PFCaloMETRatio, &b_PFCaloMETRatio);
    fChain->SetBranchAddress("Photons", &Photons, &b_Photons);

@@ -88,7 +88,7 @@ era_(era), deltaPhi_(deltaPhi) {
 	binjb++;
 	toCCbinjb_[jb] = binjb;
       }
-      unsigned mmax = deltaPhi_ == TString("nominal") ? kinThresholds_.size()-1 : kinThresholds_.size();
+      unsigned mmax = deltaPhi_.find("nominal") != std::string::npos ? kinThresholds_.size()-1 : kinThresholds_.size();
       int k = -1;
       for (unsigned m = 0; m < mmax; ++m) {
 	for (unsigned h = 1; h < kinThresholds_[m].size(); ++h) {
@@ -116,7 +116,8 @@ era_(era), deltaPhi_(deltaPhi) {
 
   kinSize_ = 0;  kinSizeNominal_ = 0;
   int mmaxNominal = kinThresholds_.size() - 1;
-  int mmax = (deltaPhi_ == TString("nominal")) ? kinThresholds_.size() - 1 : kinThresholds_.size(); // No. of MHT bands
+  int mmax = deltaPhi_.find("nominal") != std::string::npos ? kinThresholds_.size() - 1 :
+    kinThresholds_.size(); // No. of MHT bands
   for (int i = 0; i < mmax; ++i) {
     kinSize_ += kinThresholds_[i].size() - 1;  // First component is MHT value
     if (i < mmaxNominal) kinSizeNominal_ += kinThresholds_[i].size() - 1;
@@ -129,7 +130,7 @@ CCbinning::kinBin(double& ht, double& mht) {
   int theBin = -1;
   if (era_ == "Run2" && mht > ht) return theBin;
   int NmhtBins = kinThresholds_.size() - 1;
-  if (deltaPhi_ != TString("nominal")) {
+  if (deltaPhi_.find("nominal") == std::string::npos) {
     // ldp or hdp
     if (mht < kinThresholds_[NmhtBins][0] || ht < kinThresholds_[NmhtBins][1]) return theBin;
     if (mht < kinThresholds_[0][0]) {

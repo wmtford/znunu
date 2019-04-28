@@ -8,7 +8,7 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
-#define VERSION 16
+#define VERSION 17
 #define ISMC
 #define ISSKIM
 
@@ -30,6 +30,7 @@
 using namespace TMath;
 
 // members needed by nested classes
+static std::string deltaPhi_;  // "nominal", "hdp", "ldp", "ldpnominal"
 static TString HTcut_;
 static TString MHTcut_;
 static TString NJetscut_;
@@ -178,7 +179,6 @@ private:
   std::string runBlock_;
   std::string era_;  // "2016", "Run2"
   double intLumi_;
-  std::string deltaPhi_;  // "nominal", "hdp", "ldp"
   bool applyMassCut_;
   bool applyPtCut_;
   bool useTreeCCbin_;
@@ -233,14 +233,13 @@ private:
   Double_t        puWeight;
   Double_t        Weight;
   Double_t        TrueNumInteractions;
-  Double_t        NonPrefiringProb;
   vector<TLorentzVector> *GenParticles;
   vector<int>     *GenParticles_PdgId;
   vector<int>     *GenParticles_Status;
 
 #endif  // !ISMC
 
-#if VERSION != 16
+#if VERSION < 16
   #ifdef ISMC
     Double_t        NonPrefiringProb;
   #endif

@@ -27,6 +27,8 @@
   const char* zJets18CD = "../plots/histograms/ZinvMCttzMC174bin_2018HEMv16_HT17_ZptWt.root";
   const char* zJetsRun2 = "../plots/histograms/ZinvMCttzMC174bin_Run2v161617.root";
 
+  const char* zJetsRun2ldpnominal = "../plots/histograms/ZinvMCttzMC174binldp_Run2v161617.root";
+
   if (do2016) {
     std::vector< std::pair<TString, float> > gJetsInputs = {std::make_pair(gJets16, 35.9)};
     RA2bin_inputs_Zinv(Signal, gJetsInputs, DR, DY16, zJets16, 35.9/35.9, true);
@@ -58,7 +60,8 @@
       std::make_pair(gJets18AB, 21.0),
       std::make_pair(gJets18CD, 38.6)
     };
-    RA2bin_inputs_Zinv(Signal, gJetsInputs, DR, DYRun2, zJetsRun2, 137/137, true);
+    RA2bin_inputs_Zinv(LDPnominal, gJetsInputs, DR, DYRun2, zJetsRun2ldpnominal, 137/137, true);
+    // RA2bin_inputs_Zinv(Signal, gJetsInputs, DR, DYRun2, zJetsRun2, 137/137, true);
   }
 
 

@@ -25,7 +25,7 @@ else:
 #################################################
 
 haveHistograms = True
-runYear = "Run2"
+runYear = "Run2ldpnominal"
 postDRfit = True
 plotRefLine = False
 
@@ -121,6 +121,15 @@ for sample in doSample:
                 mcPhotonFile = ROOT.TFile('../outputs/histsGjets_Run2v161617_DRr2wt.root')
             else:
                 mcPhotonFile = ROOT.TFile('../outputs/histsGjets_Run2v161617.root')
+        elif (runYear is "Run2ldpnominal"):
+            iPeriod = 9
+            dataZllFile = ROOT.TFile('../outputs/histsDYldpnominal_Run2v161617.root')
+            dataPhotonFile = ROOT.TFile('../outputs/histsPhotonldpnominal_Run2v161617.root')
+            mcZllFile = ROOT.TFile('../outputs/histsDYMCldpnominal_Run2v161617.root')
+            if (postDRfit):
+                mcPhotonFile = ROOT.TFile('../outputs/histsGjetsldpnominal_Run2v161617_DRr2wt.root')
+            else:
+                mcPhotonFile = ROOT.TFile('../outputs/histsGjetsldpnominal_Run2v161617.root')
         histoNJets['pho_da'] = dataPhotonFile.Get("hNJets_DR_photon")
         histoNJets['pho_cg'] = histoNJets['pho_da'].Clone()
         for i in range(1, histoNJets['pho_cg'].GetNbinsX()+1):
@@ -273,6 +282,8 @@ for sample in doSample:
     eLepSF = (mcy_m*h_SFerr_m.GetMean() + mcy_e*h_SFerr_e.GetMean()) / (mcy_m + mcy_e)
     
     ## purity as function of Njets bin
+    #  (Actually, we don't use the central values, and the errors should be
+    #  zeroed out here and accounted for in the extraplation file.)
     #  This assumes Run2 era binning
     #  First get mumu, ee yields for each NJets bin
     hNJetsCC_zmm_da = dataZllFile.Get("hNJets_DRCC_zmm")
@@ -345,7 +356,7 @@ for sample in doSample:
                 purav = (pur_m[indpur] + pur_e[indpur]) / 2
                 purErrav = (purError_m[indpur] + purError_e[indpur]) / (2*purav)
             print ("%7.4f |%7.4f |%7.4f |%7.4f |%7.4f |%7.4f |%7.4f |%7.4f |%7.4f |%7.4f |%7.4f |%7.4f |" %
-                   (dr, edr, EdrUp, EdrDown, purav, purErrav, trig, trigError/trig, lepSF, eLepSF, btagSF, btagSFerror)
+                   (dr, edr, EdrUp, EdrDown, purav, 0*purErrav, trig, trigError/trig, lepSF, eLepSF, btagSF, btagSFerror)
                    )
             Bin+=1
 

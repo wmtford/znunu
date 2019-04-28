@@ -20,6 +20,7 @@ ROOT.gROOT.SetBatch(1)
 
 doPurityFits = True
 doRA2bFits = False
+doLDP = True
 
 ########## trigger effs from manuel ##############
 ########## from Nov 29th RA2b talk  ##############
@@ -58,7 +59,13 @@ if (doPurityFits):
         fits = [fit_2j,fit_3to4j,fit_5jplus,fit_5jplus,fit_5jplus]
     else:
         # use Z mass histograms from RA2bZinvAnalysis
-        fitjb = histoZmassFits.purityFits('../outputs/histsDY_Run2v16.root', '../outputs/histsDYMC_Run2v16_ZptWt.root')
+        if (doLDP):
+            sourceData = '../outputs/histsDYldpnominal_Run2v161617.root'
+            sourceMC = '../outputs/histsDYMCldpnominal_Run2v161617.root'
+        else:
+            sourceData = '../outputs/histsDY_Run2v161617.root'
+            sourceMC = '../outputs/histsDYMC_Run2v161617.root'
+        fitjb = histoZmassFits.purityFits(sourceData, sourceMC)
         fits = [fitjb[0], fitjb[1], fitjb[2], fitjb[2], fitjb[2]]
 
 ########## get the scale factors files and extract histograms ################
@@ -71,18 +78,24 @@ if (doPurityFits):
 # h_SF_e.SetName("h_SFe_MHT")
 
 ########## get the efficiency file ################
-effFile = ROOT.TFile("../plots/histograms/effHists.root","UPDATE")
-# effFile = ROOT.TFile("effHists.root","UPDATE")  # wtf
+# effFile = ROOT.TFile("../plots/histograms/effHists.root","UPDATE")
+effFile = ROOT.TFile("effHists.root","UPDATE")  # wtf
 
 if (doPurityFits):
     ######### set the purities found above ############
-    h_pur_m = effFile.Get("h_pur_m")
+    if (doLDP):
+        hNameSuffix = '_ldp'
+    else:
+        hNameSuffix = ''
+    hName_pur_m = 'h_pur_m'+hNameSuffix
+    hName_pur_e = 'h_pur_e'+hNameSuffix
+    h_pur_m = effFile.Get(hName_pur_m)
     if (not h_pur_m):
-        h_pur_m = ROOT.TH1F("h_pur_m", "Zmm purities vs (Njet, Nb)", 19, .5, 19.5)
+        h_pur_m = ROOT.TH1F(hName_pur_m, "Zmm purities vs (Njet, Nb)"+hNameSuffix, 19, .5, 19.5)
     h_pur_m.GetXaxis().SetTitle("(NJets, Nb) bin")
-    h_pur_e = effFile.Get("h_pur_e")
+    h_pur_e = effFile.Get(hName_pur_e)
     if (not h_pur_e):
-        h_pur_e = ROOT.TH1F("h_pur_e", "Zee purities vs (Njet, Nb)", 19, .5, 19.5)
+        h_pur_e = ROOT.TH1F(hName_pur_e, "Zee purities vs (Njet, Nb)"+hNameSuffix, 19, .5, 19.5)
     h_pur_e.GetXaxis().SetTitle("(NJets, Nb) bin")
 
     Bin = 1

@@ -55,7 +55,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
     ("runBlock", po::value<std::string>(&runBlock_))  // May be overridden by constructor
     ("tree path", po::value<std::string>(&treeLoc_))
     ("root file index", po::value<std::string>(&fileListsFile_))
-    ("delta phi sample", po::value<std::string>(&deltaPhi_), "nominal, hdp, ldp")
+    ("delta phi sample", po::value<std::string>(&deltaPhi_), "nominal, hdp, ldp, ldpnominal")
     ("integrated luminosity", po::value<double>(&intLumi_))
     ("apply Z mass cut", po::value<bool>(&applyMassCut_))
     ("apply Z/gamma Pt cut", po::value<bool>(&applyPtCut_))
@@ -199,7 +199,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
     activeBranches_.push_back("GenParticles");
     activeBranches_.push_back("GenParticles_PdgId");
     activeBranches_.push_back("GenParticles_Status");
-    if (ntupleVersion_ == "V16") {
+    if (ntupleVersion_ != "V12" && ntupleVersion_ != "V15") {
       activeBranches_.push_back("NonPrefiringProb");
       activeBranches_.push_back("NonPrefiringProbUp");
       activeBranches_.push_back("NonPrefiringProbDn");
@@ -270,7 +270,7 @@ RA2bZinvAnalysis::getChain(const char* sample, Int_t* fCurrent, bool makeClass) 
   else if (theSample.Contains("photon")) key = TString("photon");
   else if (theSample.Contains("gjetsqcd")) key = TString("gjetsqcd");
   else if (theSample.Contains("gjets")) key = TString("gjets");
-  if (deltaPhi_ == "ldp" && isSkim_) key += "ldp";
+  if (deltaPhi_.find("ldp") != std::string::npos && isSkim_) key += "ldp";
   if (!runBlock_.empty()) key += runBlock_;  key("HEM") = "";
 
   TChain* chain = new TChain(treeName_.data());
@@ -1504,10 +1504,12 @@ RA2bZinvAnalysis::fillCutMaps() {
     minDphiCutMap_["nominal"] = "DeltaPhi1>0.5 && DeltaPhi2>0.5 && DeltaPhi3>0.3 && DeltaPhi4>0.3";
     minDphiCutMap_["hdp"] = "DeltaPhi1>0.5 && DeltaPhi2>0.5 && DeltaPhi3>0.3 && DeltaPhi4>0.3";
     minDphiCutMap_["ldp"] = "(DeltaPhi1<0.5 || DeltaPhi2<0.5 || DeltaPhi3<0.3 || DeltaPhi4<0.3)";
+    minDphiCutMap_["ldpnominal"] = "(DeltaPhi1<0.5 || DeltaPhi2<0.5 || DeltaPhi3<0.3 || DeltaPhi4<0.3)";
 
     MHTCutMap_["nominal"] = "MHT>=300";
     MHTCutMap_["hdp"] = "MHT>=250";
     MHTCutMap_["ldp"] = "MHT>=250";
+    MHTCutMap_["ldpnominal"] = "MHT>=300";
 
   } else {  // ntuple
 
@@ -1531,10 +1533,12 @@ RA2bZinvAnalysis::fillCutMaps() {
     minDphiCutMap_["nominal"] = "DeltaPhi1clean>0.5 && DeltaPhi2clean>0.5 && DeltaPhi3clean>0.3 && DeltaPhi4clean>0.3";
     minDphiCutMap_["hdp"] = "DeltaPhi1clean>0.5 && DeltaPhi2clean>0.5 && DeltaPhi3clean>0.3 && DeltaPhi4clean>0.3";
     minDphiCutMap_["ldp"] = "(DeltaPhi1clean<0.5 || DeltaPhi2clean<0.5 || DeltaPhi3clean<0.3 || DeltaPhi4clean<0.3)";
+    minDphiCutMap_["ldpnominal"] = "(DeltaPhi1clean<0.5 || DeltaPhi2clean<0.5 || DeltaPhi3clean<0.3 || DeltaPhi4clean<0.3)";
 
     MHTCutMap_["nominal"] = "MHTclean>=300";
     MHTCutMap_["hdp"] = "MHTclean>=250";
     MHTCutMap_["ldp"] = "MHTclean>=250";
+    MHTCutMap_["ldpnominal"] = "MHTclean>=300";
   }
 
   triggerMapByName_["zmm"] = {
@@ -1789,9 +1793,9 @@ RA2bZinvAnalysis::efficiencyAndPurity::openFiles() {
   purityTrigEffFile_.push_back(new TFile((plotDir+"effHists.root").Data(), "read"));
   purityTrigEffFile_.push_back(new TFile((plotDir+"effHists.root").Data(), "read"));
 
-  photonTrigEffFile_.push_back(new TFile((plotDir+"triggersRa2bRun2_v3_withTEffs.root").Data(), "read"));
-  photonTrigEffFile_.push_back(new TFile((plotDir+"triggersRa2bRun2_v3_withTEffs.root").Data(), "read"));
-  photonTrigEffFile_.push_back(new TFile((plotDir+"triggersRa2bRun2_v3_withTEffs.root").Data(), "read"));
+  photonTrigEffFile_.push_back(new TFile((plotDir+"triggersRa2bRun2_v4_withTEffs.root").Data(), "read"));
+  photonTrigEffFile_.push_back(new TFile((plotDir+"triggersRa2bRun2_v4_withTEffs.root").Data(), "read"));
+  photonTrigEffFile_.push_back(new TFile((plotDir+"triggersRa2bRun2_v4_withTEffs.root").Data(), "read"));
 
   photonSFFile_.push_back(new TFile((plotDir+"Photons2016_SF_all.root").Data(), "read"));
   photonSFFile_.push_back(new TFile((plotDir+"Photons2017_SF_all.root").Data(), "read"));
@@ -1879,22 +1883,31 @@ RA2bZinvAnalysis::efficiencyAndPurity::getHistos(const char* sample, int current
   hPurity_.clear();
   hTrigEff_.clear();
   if (theSample_.Contains("zmm") && !theSample_.Contains("tt")) {
-    hPurity_.push_back((TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_pur_m"));
-    if (hPurity_.back() == nullptr) cout << "***** Histogram h_pur_m not found *****" << endl;
+    TString hn("h_pur_m");
+    if (deltaPhi_.find("ldp") != std::string::npos) hn += "_ldp";
+    hPurity_.push_back((TH1F*) purityTrigEffFile_.at(currentYear)->Get(hn));
+    if (hPurity_.back() == nullptr) cout << "***** Histogram " << hn << " not found *****" << endl;
   } else if (theSample_.Contains("zee") && !theSample_.Contains("tt")) {
-    hPurity_.push_back((TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_pur_e"));
-    if (hPurity_.back() == nullptr) cout << "***** Histogram h_pur_e not found *****" << endl;
+    TString hn("h_pur_e");
+    if (deltaPhi_.find("ldp") != std::string::npos) hn += "_ldp";
+    hPurity_.push_back((TH1F*) purityTrigEffFile_.at(currentYear)->Get(hn));
+    if (hPurity_.back() == nullptr) cout << "***** Histogram " << hn << " not found *****" << endl;
   } else if (theSample_.Contains("photon")) {
-    TString hn("h_pur_eb_"); hn += year.at(currentYear);
+    TString hn("h_pur_eb_");
+    if (deltaPhi_.find("ldp") != std::string::npos) hn += "ldp_";
+    hn += year.at(currentYear);
     hPurity_.push_back((TH1F*) purityTrigEffFile_.at(currentYear)->Get(hn));
     if (hPurity_.back() == nullptr) cout << "***** Histogram " << hn << " not found *****" << endl;
     hn("eb") = "ec";
     hPurity_.push_back((TH1F*) purityTrigEffFile_.at(currentYear)->Get(hn));
     if (hPurity_.back() == nullptr) cout << "***** Histogram " << hn << " not found *****" << endl;
-    // FdirHist_ = (TH1D*) purityTrigEffFile_.at(currentYear)->Get("h_bin46_NJets8910");
-    // if (FdirHist_ == nullptr) cout << "***** Histogram h_bin46_NJets8910 not found *****" << endl;
-    FdirGraph_ = (TGraphErrors*) purityTrigEffFile_.at(currentYear)->Get("h_bin46_NJets8910");
-    if (FdirGraph_ == nullptr) cout << "***** Histogram h_bin46_NJets8910 not found *****" << endl;
+    TString gFdirName;
+    if (deltaPhi_.find("ldpnominal") != std::string::npos) gFdirName = "h_bin46_NJets8910_ldpnominal";
+    else if (deltaPhi_.find("ldp") != std::string::npos &&
+	     deltaPhi_.find("nominal") == std::string::npos) gFdirName = "h_bin59_NJets8910_ldp";
+    else gFdirName = "h_bin46_NJets8910";
+    FdirGraph_ = (TGraphErrors*) purityTrigEffFile_.at(currentYear)->Get(gFdirName);
+    if (FdirGraph_ == nullptr) cout << "***** Histogram " << gFdirName << " not found *****" << endl;
   } else if (theSample_.Contains("dymm") || theSample_.Contains("ttmm") ||
 	     theSample_.Contains("ttzmm") || theSample_.Contains("VVmm")) {
     hTrigEff_.push_back((TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_trig_m"));
@@ -1983,9 +1996,10 @@ RA2bZinvAnalysis::efficiencyAndPurity::getHistos(const char* sample, int current
     // }
     // Sam-style trigger efficiency TEfficiency's
     TString te("teff_SinglePhotonBarrelLooseHdp_hists_Run");  te += year.at(currentYear);  te += "_JetHT";
+    if (deltaPhi_.find("ldp") != std::string::npos) te("Hdp") = "Ldp";
     eTrigEff_.push_back((TEfficiency*) photonTrigEffFile_.at(currentYear)->Get(te.Data()));
     if (eTrigEff_.back() == nullptr)  cout << "***** Histogram " << te << " not found *****" << endl;
-    te("Barrel") = "Endcap";  if (theSample_.Contains("ldp")) te("Hdp") = "Ldp";
+    te("Barrel") = "Endcap";
     eTrigEff_.push_back((TEfficiency*) photonTrigEffFile_.at(currentYear)->Get(te.Data()));
     if (eTrigEff_.back() == nullptr)  cout << "***** Histogram " << te << " not found *****" << endl;
     // hSFeff_ = (TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_SFg_MHT");  // Maybe this should be h_NJets

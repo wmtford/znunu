@@ -112,7 +112,7 @@ public:
 
 private:
   std::string era_;  // "2016", ...
-  std::string deltaPhi_;  // "nominal", "hdp", "ldp"
+  std::string deltaPhi_;  // "nominal", "hdp", "ldp", "ldpnominal"
   std::vector< std::vector<double> > kinThresholds_;
   std::vector< std::vector<int> > jbThresholds_;
   std::vector< std::vector<int> > JbThresholds_;

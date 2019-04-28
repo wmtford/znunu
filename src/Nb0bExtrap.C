@@ -22,11 +22,11 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
   ofstream latexFile("DY_signal.tex");
   TFile* openFile(const char* fileName);
   TH1D* getHist(TFile* tFile, const char* histName);
-  enum runBlock {Y2016, Y2017, Y2018AB, Y2018CD, Y2018, Run2};
+  enum runBlock {Y2016, Y2017, Y2018AB, Y2018CD, Y2018, Run2, Run2ldpnominal};
 
-  int doRun = Run2;
-  bool doClosure = true;
-  bool useDYMC = true;
+  int doRun = Run2ldpnominal;
+  bool doClosure = false;
+  bool useDYMC = false;
   bool useZllData = false;
   bool usePhotonData = false;
   bool useMCJfactors = false;
@@ -117,6 +117,23 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
       photonData = openFile("../outputs/histsPhoton_Run2v161617.root");  if (photonData == nullptr) return;
     }
     ZllXMC = openFile("../outputs/histsDYMC_Run2v161617.root");  if (ZllXMC == nullptr) return;
+    break;
+
+  case Run2ldpnominal:
+    if (doClosure) {
+      if (useZllData) {
+	ZllData = openFile("../outputs/histsDYldpnominal_Run2v161617.root");	if (ZllData == nullptr) return;
+      } else if (usePhotonData) {
+	photonData = openFile("../outputs/histsPhotonldpnominal_Run2v16.root");  if (photonData == nullptr) return;
+	// photonMC = openFile("../outputs/histsGjetsldpnominal_Run2v16_noPU.root");  if (photonMC == nullptr) return;
+      } else {
+	zinvMC = openFile("../outputs/histsZjetsldpnominal_Run2v161617.root");  if (zinvMC == nullptr) return;
+      }
+    } else {
+      ZllData = openFile("../outputs/histsDYldpnominal_Run2v161617.root");  if (ZllData == nullptr) return;
+      photonData = openFile("../outputs/histsPhotonldpnominal_Run2v161617.root");  if (photonData == nullptr) return;
+    }
+    ZllXMC = openFile("../outputs/histsDYMCldpnominal_Run2v161617.root");  if (ZllXMC == nullptr) return;
     break;
     
   default:
@@ -248,7 +265,8 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
 	  if (doClosure && !(useZllData || usePhotonData))  // Use sqrt(bin wt) as error
 	    DYstat.push_back(Sqrt(1/b0 + 1/bb));
 	  else
-	    DYstat.push_back(Sqrt(Power((b0err/b0), 2) + Power((bberr/bb), 2)));
+	    // DYstat.push_back(Sqrt(Power(b0err/b0, 2) + Power(bberr/bb, 2)));
+	    DYstat.push_back(bberr/bb);  // b0 stat already counted in DR
 	else
 	  DYstat.push_back(1);
       }

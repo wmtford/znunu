@@ -24,7 +24,7 @@ using std::ifstream;
 #include <cstring>
 
 namespace Sample {
-  enum sampleChoice {Signal, HDP, LDP};
+  enum sampleChoice {Signal, HDP, LDP, LDPnominal};
 }
 using namespace Sample;
 
@@ -43,8 +43,9 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
   //
   // Supply input flat files with names
   //  <gJetsFnRoot>_signal.dat for doSample = Signal
-  //  <gJetsFnRoot>_htp.dat for doSample = HDP
-  //  <gJetsFnRoot>_ltp.dat for doSample = LDP
+  //  <gJetsFnRoot>_hdp.dat for doSample = HDP
+  //  <gJetsFnRoot>_ldp.dat for doSample = LDP
+  //  <gJetsFnRoot>_ldpnominal.dat for doSample = LDPnominal
   // If MC root file has lumi different from that of the data, supply 
   //  MClumiScale = dataLumi / MClumi.
   //
@@ -167,18 +168,24 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
     MaxKin = 10;
     histoXlabelSize = 0.04;
     canvasBottomMargin = 0.35;
+    TString fnSuffix = doSample == Signal ? TString("_signal.dat") : TString("_ldpnominal.dat");
     for (auto fnroot : gJetsFnRoot) {
-      dataFile_gJets.push_back(fnroot.first+"_signal.dat");
+      dataFile_gJets.push_back(fnroot.first+fnSuffix);
       vlumi.push_back(fnroot.second);
     }
-    dataFile_DR = DRfnRoot+TString("_signal.dat");
-    dataFile_DY = DYfnRoot+TString("_signal.dat");
-    output_rootFile = "ZinvHistos.root";
-    output_plotFile = "ZinvBGpred.pdf";
+    dataFile_DR = DRfnRoot+TString(fnSuffix);
+    dataFile_DY = DYfnRoot+TString(fnSuffix);
+    if (doSample == Signal) {
+      output_rootFile = "ZinvHistos.root";
+      output_plotFile = "ZinvBGpred.pdf";
+    } else {
+      output_rootFile = "ZinvHistos_ldpnominal.root";
+      output_plotFile = "ZinvBGpred_ldpnominal.pdf";
+    }
   }
   MaxKinDY = expandDYkin ? MaxKin : 1;
   Int_t MaxBins;
-  if (doSample == Signal) {
+  if (doSample == Signal || doSample == LDPnominal) {
     MaxBins = (MaxNjets*MaxNb-1)*MaxKin-2*2*MaxNb;  // Exclude (Njets0,Nb3) && (Njets3,4;HT0,3)
   } else {
     MaxBins = (MaxNjets*MaxNb-1)*MaxKin-2*3*MaxNb;  // Exclude (Njets0,Nb3) && (Njets3,4;HT0,3,6)
@@ -310,7 +317,7 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
   cout << endl << endl;
 
   TFile *MCfile = 0;
-  if (doSample == Signal) {
+  if (doSample == Signal || doSample == LDPnominal) {
     // Input file for MC histogram
     cout << "Initializing input file " << MCfileName << endl;
     MCfile = TFile::Open(MCfileName, "READ");
@@ -733,7 +740,7 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
   }
 
   TH1F *hZinvMCbin = 0;
-  if (doSample == Signal) {
+  if (doSample == Signal || doSample == LDPnominal) {
     // Zinv MC 
     TH1F* hZinvMC = 0;
     TString MChistoname("plot_zinv_nj5_nb4_kin10_1");
@@ -770,7 +777,7 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
   Cvalue->Update();
 
   TLegend* Zinvlegend;
-  if (doSample == Signal)
+  if (doSample == Signal || doSample == LDPnominal)
     Zinvlegend = new TLegend(.72, .78, .92, .9, "");
   else
     Zinvlegend = new TLegend(.72, .80, .92, .9, "");
@@ -807,7 +814,7 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
   hzvvDYsysKin->SetLineColor(42);  hzvvDYsysKin->Draw("same");
   hzvvDYsysPur->SetLineColor(46);  hzvvDYsysPur->Draw("same");
   TLegend* ErrorsLegend;
-  if (doSample == Signal)
+  if (doSample == Signal || doSample == LDPnominal)
     ErrorsLegend = new TLegend(.12, .60, .30, .97, "");
   else
     ErrorsLegend = new TLegend(.12, .60, .30, .97, "");

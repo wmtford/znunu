@@ -494,6 +494,48 @@ tree_GJet_CleanVars/tree_QCD_HT-2000toInf_MC2017.root
 ##
 
 # Monte Carlo LDP
+zinvldp2016 10   # Z->vv MC LDP
+tree_LDP/tree_ZJetsToNuNu_HT-100to200_MC2016.root
+tree_LDP/tree_ZJetsToNuNu_HT-200to400_MC2016.root
+tree_LDP/tree_ZJetsToNuNu_HT-400to600_MC2016.root
+tree_LDP/tree_ZJetsToNuNu_HT-600to800_MC2016.root
+tree_LDP/tree_ZJetsToNuNu_HT-800to1200_MC2016.root
+tree_LDP/tree_ZJetsToNuNu_HT-1200to2500_MC2016.root
+tree_LDP/tree_ZJetsToNuNu_HT-2500toInf_MC2016.root
+##
+
+zinvldp2017 10   # Z->vv MC LDP
+tree_LDP/tree_ZJetsToNuNu_HT-100to200_MC2017.root
+tree_LDP/tree_ZJetsToNuNu_HT-200to400_MC2017.root
+tree_LDP/tree_ZJetsToNuNu_HT-400to600_MC2017.root
+tree_LDP/tree_ZJetsToNuNu_HT-600to800_MC2017.root
+tree_LDP/tree_ZJetsToNuNu_HT-800to1200_MC2017.root
+tree_LDP/tree_ZJetsToNuNu_HT-1200to2500_MC2017.root
+tree_LDP/tree_ZJetsToNuNu_HT-2500toInf_MC2017.root
+##
+
+zinvldp2018 10   # Z->vv MC LDP
+tree_LDP/tree_ZJetsToNuNu_HT-100to200_MC2017.root
+tree_LDP/tree_ZJetsToNuNu_HT-200to400_MC2017.root
+tree_LDP/tree_ZJetsToNuNu_HT-400to600_MC2017.root
+tree_LDP/tree_ZJetsToNuNu_HT-600to800_MC2017.root
+tree_LDP/tree_ZJetsToNuNu_HT-800to1200_MC2017.root
+tree_LDP/tree_ZJetsToNuNu_HT-1200to2500_MC2017.root
+tree_LDP/tree_ZJetsToNuNu_HT-2500toInf_MC2017.root
+##
+
+ttzvvldp2016    # Z->ttzvv MC LDP
+tree_LDP/tree_TTZToLLNuNu_MC2016.root
+##
+
+ttzvvldp2017    # Z->ttzvv MC LDP
+tree_LDP/tree_TTZToLLNuNu_MC2017.root
+##
+
+ttzvvldp2018    # Z->ttzvv MC LDP
+tree_LDP/tree_TTZToLLNuNu_MC2017.root
+##
+
 dymmldp2016 10   # DY->mumu MC LDP
 tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-100to200_MC2016.root
 tree_DYmLDP_CleanVars/tree_DYJetsToLL_M-50_HT-200to400_MC2016.root

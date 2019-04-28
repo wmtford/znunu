@@ -304,6 +304,9 @@
    Int_t           NJetsJERdown;
    Int_t           NJetsJERup;
    Int_t           NMuons;
+   Double_t        NonPrefiringProb;
+   Double_t        NonPrefiringProbDown;
+   Double_t        NonPrefiringProbUp;
    Double_t        NumEvents;
    Int_t           NumInteractions;
    Int_t           NVtx;
@@ -672,6 +675,9 @@
    TBranch        *b_NJetsJERdown;   //!
    TBranch        *b_NJetsJERup;   //!
    TBranch        *b_NMuons;   //!
+   TBranch        *b_NonPrefiringProb;   //!
+   TBranch        *b_NonPrefiringProbDown;   //!
+   TBranch        *b_NonPrefiringProbUp;   //!
    TBranch        *b_NumEvents;   //!
    TBranch        *b_NumInteractions;   //!
    TBranch        *b_NVtx;   //!
@@ -1267,6 +1273,9 @@
    fChain->SetBranchAddress("NJetsJERdown", &NJetsJERdown, &b_NJetsJERdown);
    fChain->SetBranchAddress("NJetsJERup", &NJetsJERup, &b_NJetsJERup);
    fChain->SetBranchAddress("NMuons", &NMuons, &b_NMuons);
+   fChain->SetBranchAddress("NonPrefiringProb", &NonPrefiringProb, &b_NonPrefiringProb);
+   fChain->SetBranchAddress("NonPrefiringProbDown", &NonPrefiringProbDown, &b_NonPrefiringProbDown);
+   fChain->SetBranchAddress("NonPrefiringProbUp", &NonPrefiringProbUp, &b_NonPrefiringProbUp);
    fChain->SetBranchAddress("NumEvents", &NumEvents, &b_NumEvents);
    fChain->SetBranchAddress("NumInteractions", &NumInteractions, &b_NumInteractions);
    fChain->SetBranchAddress("NVtx", &NVtx, &b_NVtx);
