@@ -5,7 +5,7 @@
 # #define ISMC
 #
 verbosity = 2
-era = 2016
+era = Run2
 runBlock = 
 # tree path = /nfs/data38/cms/mulholland/lpcTrees/Skims/Run2ProductionV12/ # Colorado, owned by mulholland
 # tree path = /nfs/data38/cms/wtford/lpcTrees/Skims/Run2ProductionV12/  # Colorado, owned by wtford (Zjets only)
@@ -17,16 +17,16 @@ runBlock =
 # tree path = root://cmseos.fnal.gov//store/user/lpcsusyhad/SusyRA2Analysis2015/Skims/Run2ProductionV17/  # xrootd
 # tree path = /eos/uscms/store/user/lpcsusyhad/SusyRA2Analysis2015/Skims/Run2ProductionV16/  # from cmslpc
 # tree path = /mnt/hadoop/store/user/wtford/SusyRA2Analysis2015/Skims/Run2ProductionV16/  # local store
-tree path = /mnt/hadoop/store/user/aperloff/SusyRA2Analysis2015/Skims/Run2ProductionV16/  # local store
-root file index = ../datFiles/skimFilesV12.dat
-delta phi sample = nominal  # ldp, hdp
+tree path = /mnt/hadoop/store/user/aperloff/SusyRA2Analysis2015/Skims/Run2ProductionV17/  # local store
+root file index = ../datFiles/skimFilesV17.dat
+delta phi sample = nominal  # nominal, ldp, hdp, ldpnominal
 integrated luminosity = 35.9
 apply Z/gamma Pt cut = true
 apply Z mass cut = true
 use analysis bin from tree = false
 use DeepCSV = true
 apply b-tag SF = false
-apply pileup weight = true
+apply pileup weight = false
 use custom pileup weight = true
 apply HEM jet veto = true
 apply Z Pt weight = true

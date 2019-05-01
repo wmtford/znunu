@@ -25,8 +25,8 @@ else:
 #################################################
 
 haveHistograms = True
-runYear = "Run2ldpnominal"
-postDRfit = True
+runYear = "Run2"
+postDRfit = False
 plotRefLine = False
 
 DYkfactor = 1.23
@@ -114,13 +114,13 @@ for sample in doSample:
             mcLumiRatio_photon =  38.6/59.6
         elif (runYear is "Run2"):
             iPeriod = 9
-            dataZllFile = ROOT.TFile('../outputs/histsDY_Run2v161617.root')
-            dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_Run2v161617.root')
-            mcZllFile = ROOT.TFile('../outputs/histsDYMC_Run2v161617.root')
+            dataZllFile = ROOT.TFile('../outputs/histsDY_Run2v17.root')
+            dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_Run2v17.root')
+            mcZllFile = ROOT.TFile('../outputs/histsDYMC_Run2v17.root')
             if (postDRfit):
                 mcPhotonFile = ROOT.TFile('../outputs/histsGjets_Run2v161617_DRr2wt.root')
             else:
-                mcPhotonFile = ROOT.TFile('../outputs/histsGjets_Run2v161617.root')
+                mcPhotonFile = ROOT.TFile('../outputs/histsGjets_Run2v17.root')
         elif (runYear is "Run2ldpnominal"):
             iPeriod = 9
             dataZllFile = ROOT.TFile('../outputs/histsDYldpnominal_Run2v161617.root')

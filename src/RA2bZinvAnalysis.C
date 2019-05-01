@@ -201,8 +201,8 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
     activeBranches_.push_back("GenParticles_Status");
     if (ntupleVersion_ != "V12" && ntupleVersion_ != "V15") {
       activeBranches_.push_back("NonPrefiringProb");
-      activeBranches_.push_back("NonPrefiringProbUp");
-      activeBranches_.push_back("NonPrefiringProbDn");
+      // activeBranches_.push_back("NonPrefiringProbUp");
+      // activeBranches_.push_back("NonPrefiringProbDown");
     }
   }
 
@@ -1827,10 +1827,14 @@ RA2bZinvAnalysis::efficiencyAndPurity::openFiles() {
 
   DRfun_ = new TF1("DRfun", "[0] + [1]*min([3], x)");
   // DRfun_ = new TF1("DRfun", "[2] + (1/3)*[1]*(min([3], x) - ([2] - [0]) / [1])");
+  DRpars_.push_back({0.8477, 0.0001906, 0.9419, 900});  // ARC freeze
   DRpars_.push_back({0.8477, 0.0001906, 0.9419, 900});
   DRpars_.push_back({0.8477, 0.0001906, 0.9419, 900});
-  DRpars_.push_back({0.8477, 0.0001906, 0.9419, 900});
-  // Graph_from_hHT_DR_zmm
+  // Graph_from_hHT_DR_zmm  with v17 for 2016, 17 also
+  // Function parameter 0:  0.856149980752 +/- 0.0198086577617
+  // Function parameter 1:  0.000196256628916 +/- 3.78814752971e-05
+  // Average y0 = 0.9531 +/- 0.0069;  x0 = (y0 -p0) / p1
+  // Graph_from_hHT_DR_zmm  for ARC freeze
   // Function parameter 0:  0.847711708842 +/- 0.0195782643702
   // Function parameter 1:  0.00019064466223 +/- 3.74122384363e-05
   // Average y0 = 0.9419;  x0 = (y0 -p0) / p1

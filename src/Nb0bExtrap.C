@@ -265,8 +265,7 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
 	  if (doClosure && !(useZllData || usePhotonData))  // Use sqrt(bin wt) as error
 	    DYstat.push_back(Sqrt(1/b0 + 1/bb));
 	  else
-	    // DYstat.push_back(Sqrt(Power(b0err/b0, 2) + Power(bberr/bb, 2)));
-	    DYstat.push_back(bberr/bb);  // b0 stat already counted in DR
+	    DYstat.push_back(Sqrt(Power(b0err/b0, 2) + Power(bberr/bb, 2)));
 	else
 	  DYstat.push_back(1);
       }
