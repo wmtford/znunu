@@ -204,6 +204,7 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
   V2F gEtrgSys(MaxNjets, V1F(MaxKin, 0));
   V2F gSF(MaxNjets, V1F(MaxKin, 0));
   V2F gSFerr(MaxNjets, V1F(MaxKin, 0));
+  V2F gSFerrEff(MaxNjets, V1F(MaxKin, 0));
   V2F gFdir(MaxNjets, V1F(MaxKin, 0));
   V2F gFdirErrUp(MaxNjets, V1F(MaxKin, 0));
   V2F gFdirErrUpEff(MaxNjets, V1F(MaxKin, 0));
@@ -253,7 +254,7 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
     return;
   }
 
-  Float_t NobsSum = 0, gEtrgAv = 0, gEtrgErrAv = 0, gFdirAv = 0, gFdirErrUpAv = 0, gFdirErrLowAv = 0, gPurAv = 0, gPurErrAv = 0;
+  Float_t NobsSum = 0, gEtrgAv = 0, gEtrgErrAv = 0, gSFAv = 0, gSFerrAv = 0, gFdirAv = 0, gFdirErrUpAv = 0, gFdirErrLowAv = 0, gPurAv = 0, gPurErrAv = 0;
   cout << "DRscaleErr = " << DRscaleErr << ", DY0bPurErr = " << DY0bPurErr << ", DYtrigEffErr = " << DYtrigEffErr << ", LeptonSFerr = " <<LeptonSFerr  << ", btagSFerr = " << btagSFerr << endl;
   bin = 0;
   for (Int_t ijet=0; ijet<MaxNjets; ++ijet) {
@@ -281,6 +282,8 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
       NobsSum += Ngobs[ijet][ikin];
       gEtrgAv += Ngobs[ijet][ikin]*gEtrg[ijet][ikin];
       gEtrgErrAv += Ngobs[ijet][ikin]*gEtrgErr[ijet][ikin]*gEtrg[ijet][ikin];  // Absolute error on gEtrg
+      gSFAv += Ngobs[ijet][ikin]*gSF[ijet][ikin];
+      gSFerrAv += Ngobs[ijet][ikin]*gSFerr[ijet][ikin]*gSF[ijet][ikin];  // Absolute error on gSF
       gFdirAv += Ngobs[ijet][ikin]*gFdir[ijet][ikin];
       gFdirErrUpAv += Ngobs[ijet][ikin]*gFdirErrUp[ijet][ikin]*gFdir[ijet][ikin];  // Absolute +error on gFdir
       gFdirErrLowAv += Ngobs[ijet][ikin]*gFdirErrLow[ijet][ikin]*gFdir[ijet][ikin];  // Absolute -error on gFdir
@@ -291,6 +294,8 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
   cout << endl;
   gEtrgAv /= NobsSum;  // Average ZgR
   gEtrgErrAv /= NobsSum;  // Average gEtrg absolute uncertainty
+  gSFAv /= NobsSum;  // Average ZgR
+  gSFerrAv /= NobsSum;  // Average gSF absolute uncertainty
   gFdirAv /= NobsSum;  // Average gFdir
   gFdirErrUpAv /= NobsSum;  // Average gFdir absolute uncertainty
   gFdirErrLowAv /= NobsSum;  // Average gFdir absolute uncertainty
@@ -574,6 +579,7 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
         // Partial cancellation of photon trigger eff., fragmentation, and purity syst errors in the prediction
         //
 	gEtrgErrEff[ijet][ikin] = fabs( gEtrgErr[ijet][ikin] - gEtrgErrAv / gEtrgAv );  // Frac. error on gEtrg/<gEtrg>
+	gSFerrEff[ijet][ikin] = fabs( gSFerr[ijet][ikin] - gSFerrAv / gSFAv );  // Frac. error on gSF/<gSF>
 	gFdirErrUpEff[ijet][ikin] = fabs( gFdirErrUp[ijet][ikin] - gFdirErrUpAv / gFdirAv );  // Frac. +error on gFdir/<gFdir>
 	gFdirErrLowEff[ijet][ikin] = fabs( gFdirErrLow[ijet][ikin] - gFdirErrLowAv / gFdirAv );  // Frac. -error on gFdir/<gFdir>
 	gPurErrEff[ijet][ikin] = fabs( gPurErr[ijet][ikin] - gPurErrAv / gPurAv );  // Frac. error on gPur/<gPur>
@@ -583,6 +589,7 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
 	  hgJZgR0b->SetBinError(binzb, ZgRerr[ijet][ikin]);
           cout << "iJet " << ijet << " Var (err nominal, eff): "
                << " gEtrg (" << gEtrgErr[ijet][ikin] << ", " << gEtrgErrEff[ijet][ikin] << ") "
+               << " gSF (" << gSFerr[ijet][ikin] << ", " << gSFerrEff[ijet][ikin] << ") "
 	       << " gFdir (" << gFdirErrUp[ijet][ikin] << ", " << gFdirErrUpEff[ijet][ikin] << ") "
 	       << " gFdir (" << gFdirErrLow[ijet][ikin] << ", " << gFdirErrLowEff[ijet][ikin] << ") "
                << " gPur (" << gPurErr[ijet][ikin] << ", " << gPurErrEff[ijet][ikin] << ") "
@@ -595,7 +602,8 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
 	hZgDR->SetBinContent(bin, ZgDR[ijet][ikin]);
 	hgJZgRerr->SetBinContent(bin, 1+ZgRerr[ijet][ikin]);  // uncorrelated, combined into ZgDRErrUp,Low
 	hgJEtrg->SetBinContent(bin, gEtrg[ijet][ikin]);
-	hzvvgJEtrgErr->SetBinContent(bin, 1+gEtrgErrEff[ijet][ikin]);
+	// Following combines gJets trigger and scale factor effective errors:
+	hzvvgJEtrgErr->SetBinContent(bin, 1+Sqrt(Power(gEtrgErrEff[ijet][ikin],2) + Power(gSFerrEff[ijet][ikin],2)));
 	hgJSF->SetBinContent(bin, gSF[ijet][ikin]);
 	hgJSFerr->SetBinContent(bin, 1+gSFerr[ijet][ikin]);  // correlated (but Eff error = 0 since error is bin-independent)
 	hgJFdir->SetBinContent(bin, gFdir[ijet][ikin]);
@@ -644,7 +652,7 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
 	statErr[bin-1] = ZinvValue*Sqrt(wtStat);
 	sysUp[bin-1] = ZinvValue*Sqrt(Power(ZgRerr[ijet][ikin], 2)
 				      + Power(gEtrgErrEff[ijet][ikin], 2)
-				      + 0*Power(gSFerr[ijet][ikin], 2)  // This one cancels
+				      + Power(gSFerrEff[ijet][ikin], 2)
 				      + Power(gFdirErrUpEff[ijet][ikin], 2)
 				      + Power(gPurErrEff[ijet][ikin], 2)
 				      + Power(ZgDRerrUp[ijet][ikin], 2)
@@ -660,7 +668,7 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
 				      + Power(DYsysPur[ijet][ib][ikinDY], 2));
 	sysLow[bin-1] = ZinvValue*Sqrt(Power(ZgRerr[ijet][ikin], 2)
 				       + Power(gEtrgErrEff[ijet][ikin], 2)
-                  		       + 0*Power(gSFerr[ijet][ikin], 2)  // This one cancels
+                  		       + Power(gSFerrEff[ijet][ikin], 2)
 				       + Power(gFdirErrLowEff[ijet][ikin], 2)
 				       + Power(gPurErrEff[ijet][ikin], 2)
 				       + Power(ZgDRerrLow[ijet][ikin], 2)
