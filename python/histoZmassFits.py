@@ -36,17 +36,17 @@ def purityFits(dataFileName, MCFileName):
   
   elif("2018" in dataFileName):
     period = 8  # 2018
-    lumimm = 59.5
-    lumiee = 59.2
+    lumimm = 59.7
+    lumiee = 59.6
     MCscaleM = lumimm/41.5
     MCscaleE = lumiee/41.5
   
   elif("Run2" in dataFileName):
     period = 9  # Run2
-    lumimm = 35.9 + 41.5 + 59.5
-    lumiee = 35.9 + 41.5 + 59.2
-    MCscaleM = lumimm/136.6
-    MCscaleE = lumiee/136.6
+    lumimm = 35.9 + 41.5 + 59.7
+    lumiee = 35.9 + 41.5 + 59.6
+    MCscaleM = lumimm/137.0
+    MCscaleE = lumiee/137.0
   
   reactions = ["tt", "ttz", "VV", "dy"]
   
@@ -144,7 +144,8 @@ def purityFits(dataFileName, MCFileName):
 def main():
   ROOT.gROOT.Reset()
   ROOT.gROOT.SetBatch(1)
-  purities = purityFits('../outputs/histsDYldpnominal_Run2v161617.root', '../outputs/histsDYMCldpnominal_Run2v161617.root')
+  purities = purityFits('../outputs/histsDY_Run2v17.root', '../outputs/histsDYMC_Run2v17.root')
+  # purities = purityFits('../outputs/histsDYldpnominal_Run2v161617.root', '../outputs/histsDYMCldpnominal_Run2v161617.root')
   
 if __name__ == "__main__":
   main()

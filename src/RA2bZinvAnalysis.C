@@ -1827,13 +1827,20 @@ RA2bZinvAnalysis::efficiencyAndPurity::openFiles() {
 
   DRfun_ = new TF1("DRfun", "[0] + [1]*min([3], x)");
   // DRfun_ = new TF1("DRfun", "[2] + (1/3)*[1]*(min([3], x) - ([2] - [0]) / [1])");
-  DRpars_.push_back({0.8477, 0.0001906, 0.9419, 900});  // ARC freeze
-  DRpars_.push_back({0.8477, 0.0001906, 0.9419, 900});
-  DRpars_.push_back({0.8477, 0.0001906, 0.9419, 900});
-  // Graph_from_hHT_DR_zmm  with v17 for 2016, 17 also
-  // Function parameter 0:  0.856149980752 +/- 0.0198086577617
-  // Function parameter 1:  0.000196256628916 +/- 3.78814752971e-05
-  // Average y0 = 0.9531 +/- 0.0069;  x0 = (y0 -p0) / p1
+  DRpars_.push_back({0.8566, 0.0001950, 0.9530, 900});  // v17 fragmentation and Zll purity
+  DRpars_.push_back({0.8566, 0.0001950, 0.9530, 900});
+  DRpars_.push_back({0.8566, 0.0001950, 0.9530, 900});
+  // Graph_from_hHT_DR_zmm  -- v17 fragmentation and Zll purity
+  // Function parameter 0:  0.856646880781 +/- 0.0197955271053  // 0.857 +/- 0.020
+  // Function parameter 1:  0.000194995307077 +/- 3.78488782632e-05  // (0.195 +/- 0.038) e-3
+  // Average y0 = 0.9530 +/- 0.0069;  x0 = (y0 -p0) / p1  // 0.953 +/- 0.007
+  // DRpars_.push_back({0.8547, 0.0001983, 0.9526, 900});  // v17
+  // DRpars_.push_back({0.8547, 0.0001983, 0.9526, 900});
+  // DRpars_.push_back({0.8547, 0.0001983, 0.9526, 900});
+  // Graph_from_hHT_DR_zmm  -- with v17 for 2016, 17 also
+  // Function parameter 0:  0.854716822646 +/- 0.0198007015338
+  // Function parameter 1:  0.000198285579166 +/- 3.78772029776e-05
+  // Average y0 = 0.9526 +/- 0.0069;  x0 = (y0 -p0) / p1
   // Graph_from_hHT_DR_zmm  for ARC freeze
   // Function parameter 0:  0.847711708842 +/- 0.0195782643702
   // Function parameter 1:  0.00019064466223 +/- 3.74122384363e-05
@@ -2117,6 +2124,7 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
       }
 
       else if (theSample_.Contains("mm")) {
+	double muIDISOsys = 0.003;  //  Hard-wired based on _syst histo for 2017 from POG
 	int numMuons = Muons.size();
 	for (int i=0; i<numMuons; i++){
 	  pt = Muons.at(i).Pt(); if (pt>120) pt=119.9;
@@ -2132,7 +2140,8 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
 	  double effISO = hSFeff_[1]->GetBinContent(globalbin_ISO);
 	  effWt *= effSF * effISO;
 	  sysCorr += quadSum(effSF > 0 ? hSFeff_[0]->GetBinError(globalbin_ID)/effSF : 0,
-			     effISO > 0 ? hSFeff_[1]->GetBinError(globalbin_ISO)/effISO : 0);
+			     effISO > 0 ? hSFeff_[1]->GetBinError(globalbin_ISO)/effISO : 0,
+			     muIDISOsys);
 	}
       }
       effSys = quadSum(effSys, sysCorr);

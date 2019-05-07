@@ -20,7 +20,7 @@ ROOT.gROOT.SetBatch(1)
 
 doPurityFits = True
 doRA2bFits = False
-doLDP = True
+doLDP = False
 
 ########## trigger effs from manuel ##############
 ########## from Nov 29th RA2b talk  ##############

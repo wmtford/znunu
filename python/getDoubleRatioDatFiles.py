@@ -26,7 +26,7 @@ else:
 
 haveHistograms = True
 runYear = "Run2"
-postDRfit = False
+postDRfit = True
 plotRefLine = False
 
 DYkfactor = 1.23
@@ -118,7 +118,7 @@ for sample in doSample:
             dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_Run2v17.root')
             mcZllFile = ROOT.TFile('../outputs/histsDYMC_Run2v17.root')
             if (postDRfit):
-                mcPhotonFile = ROOT.TFile('../outputs/histsGjets_Run2v161617_DRr2wt.root')
+                mcPhotonFile = ROOT.TFile('../outputs/histsGjets_Run2v17_DRr2wt.root')
             else:
                 mcPhotonFile = ROOT.TFile('../outputs/histsGjets_Run2v17.root')
         elif (runYear is "Run2ldpnominal"):

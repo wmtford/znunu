@@ -9,10 +9,10 @@ ROOT.gROOT.Reset()
 ROOT.gROOT.SetBatch(1)
 
 singleOutFile = True
-doDatavMC = True
+doDatavMC = False
 doDatavData = False
-doMCvMC = False
-runYear = "Run2"
+doMCvMC = True
+runYear = "2017"
 doMumu = True
 doEe = True
 doLl = True
@@ -97,15 +97,28 @@ elif (doDatavData):
   sampleSuffixN = ['zmm', 'zee', 'zll', 'photon']
   sampleSuffixD = [['zmm'], ['zee'], ['zll'], ['photon']]
   # sampleSuffixD = sampleSuffixN
-  if (runYear is "2017"):
-    iPeriod = 6
-    NfileZll = ROOT.TFile('../outputs/histsDY_2017v16.root')
-    NfilePhoton = ROOT.TFile('../outputs/histsPhoton_2017v16.root')
+  if (runYear is "2016"):
+    iPeriod = 5
+    NfileZll = ROOT.TFile('../outputs/histsDY_2016v17.root')
+    NfilePhoton = ROOT.TFile('../outputs/histsPhoton_2016v17.root')
     DfileZll = ROOT.TFile('../outputs/histsDY_2016v16.root')
     DfilePhoton = ROOT.TFile('../outputs/histsPhoton_2016v16.root')
+    legendsN = ['Z#mu#mu 2016 data', 'Zee 2016 data', 'Zll 2016 data', 'photon 2016 data']
+    legendsD = [[' V16'], [' V16'], [' V16'], [' V16']]
+    ratioMin = [0.5, 0.5, 0.5, None]
+    ratioMax = [1.5, 1.5, 1.5, None]
+  if (runYear is "2017"):
+    iPeriod = 6
+    NfileZll = ROOT.TFile('../outputs/histsDY_2017v17.root')
+    NfilePhoton = ROOT.TFile('../outputs/histsPhoton_2017v17.root')
+    DfileZll = ROOT.TFile('../outputs/histsDY_2017v16.root')
+    DfilePhoton = ROOT.TFile('../outputs/histsPhoton_2017v16.root')
     legendsN = ['Z#mu#mu 2017 data', 'Zee 2017 data', 'Zll 2017 data', 'photon 2017 data']
-    legendsD = [[' 2016 scaled'], [' 2016 scaled'], [' 2016 scaled'], [' 2016 scaled']]
-    dScale = [41.5/35.9, 41.5/35.9, 41.5/35.9, 41.5/35.9]
+    legendsD = [[' V16'], [' V16'], [' V16'], [' V16']]
+    # legendsD = [[' 2016 scaled'], [' 2016 scaled'], [' 2016 scaled'], [' 2016 scaled']]
+    # dScale = [41.5/35.9, 41.5/35.9, 41.5/35.9, 41.5/35.9]
+    ratioMin = [0.5, 0.5, 0.5, 0.5]
+    ratioMax = [1.5, 1.5, 1.5, 1.5]
   elif (runYear is "2018"):
     iPeriod = 8
     NfileZll = ROOT.TFile('../outputs/histsDY_2018v16.root')
@@ -127,17 +140,26 @@ elif (doMCvMC):
               ['hCC', 'hCCjk', 'hCCjb'],
               ['hHT', 'hMHT', 'hNJets', 'hBTags', 'hPhotonPt', 'hPhotonEta', 'hVertices', 'hCC', 'hCCjk', 'hCCjb']]
 
-  if (runYear is "2017"):
+  if (runYear is "2016"):
+    iPeriod = 5
+    NfileZll = ROOT.TFile('../outputs/histsDYMC_2016v17.root')
+    NfilePhoton = ROOT.TFile('../outputs/histsGjets_2016v17.root')
+    legendsN = ['DY#mu#mu 2016 MC', 'DYee 2016 MC', 'DYll 2016 MC', '#gamma+jets incl. 2016']
+    ratioMin = [0.5, 0.5, 0.5, 0.5]
+    ratioMax = [1.5, 1.5, 1.5, 1.5]
+  elif (runYear is "2017"):
     iPeriod = 6
     # NfileZll = ROOT.TFile('../outputs/histsZjets_2017v16.root')
     # NfilePhoton = ROOT.TFile('../outputs/histsZjets_2017v16.root')
     # sampleSuffixN = ['zinv', 'zinv', 'zinv', 'zinv']
     # legendsN = ['Z#nu#nu 2017 MC', 'Z#nu#nu 2017 MC', 'Z#nu#nu 2017 MC','Z#nu#nu 2017 MC']
     # NfileZll = ROOT.TFile('../outputs/histsDYMC_2017v16_noZptWt.root')
-    NfileZll = ROOT.TFile('../outputs/histsDYMC_2017v16_HT17wt_ZptWt.root')
-    NfilePhoton = ROOT.TFile('../outputs/histsGjets_2017v16.root')
+    NfileZll = ROOT.TFile('../outputs/histsDYMC_2017v17.root')
+    NfilePhoton = ROOT.TFile('../outputs/histsGjets_2017v17.root')
     legendsN = ['DY#mu#mu 2017 MC', 'DYee 2017 MC', 'DYll 2017 MC', '#gamma+jets incl. 2017']
-    dScale = [41.5/35.9, 41.5/35.9, 41.5/35.9, 41.5/35.9]
+    # dScale = [41.5/35.9, 41.5/35.9, 41.5/35.9, 41.5/35.9]
+    ratioMin = [0.5, 0.5, 0.5, 0.5]
+    ratioMax = [1.5, 1.5, 1.5, 1.5]
   elif (runYear is "2018"):
     iPeriod = 8
     NfileZll = ROOT.TFile('../outputs/histsDYMC_2018v17.root')
@@ -146,14 +168,17 @@ elif (doMCvMC):
     dScale = [59.6/35.9, 59.6/35.9, 59.6/35.9, 59.6/35.9]
 
   sampleSuffixN = ["dymm", "dyee", 'dyll', "gjets"]
-  DfileZll = ROOT.TFile('../outputs/histsDYMC_2016v16_noPU.root')
-  DfilePhoton = ROOT.TFile('../outputs/histsGjets_2016v16_noPU.root')
+  # DfileZll = ROOT.TFile('../outputs/histsDYMC_2016v16_noPU.root')
+  # DfilePhoton = ROOT.TFile('../outputs/histsGjets_2016v16_noPU.root')
+  DfileZll = ROOT.TFile('../outputs/histsDYMC_2017v16_HT17wt_ZptWt.root')
+  DfilePhoton = ROOT.TFile('../outputs/histsGjets_2017v16.root')
   sampleSuffixD = [["dymm"], ["dyee"], ['dyll'], ["gjets"]]
   # legendsD = [['DY#mu#mu 2018 MC'], ['DYee 2018 MC'], ['DYll 2018 MC'], ['#gamma+jets incl. 2018']] 
   # ratioMin = [6, 6, 6, 0]
   # ratioMax = [13, 13, 13, 1.1]
   # sampleSuffixD = sampleSuffixN
-  legendsD = [['2016 MC scaled'], ['2016 MC scaled'], ['2016 MC scaled'], ['2016 MC scaled']]
+  legendsD = [[' V16'], [' V16'], [' V16'], [' V16']]
+  # legendsD = [['2016 MC scaled'], ['2016 MC scaled'], ['2016 MC scaled'], ['2016 MC scaled']]
   # ratioMin = [0.8, 0.8, 0.8, 0]
   # ratioMax = [1.2, 1.2, 1.2, 2]
 

@@ -41,7 +41,7 @@ def writeEffHists():
     # h_SF_g = SFfile.Get("h_MHT")
     # h_SF_g.SetName("h_SFg_MHT")
     
-    FdirFile = ROOT.TFile("../plots/histograms/fragmentation.root", "READ")
+    FdirFile = ROOT.TFile("../plots/histograms/fragmentation_hdp_sp0p4_V17.root", "READ")
     h_Fdir = FdirFile.Get("bin46_NJets8910")
     h_Fdir.SetName("h_bin46_NJets8910")
     FdirldpFile = ROOT.TFile("../plots/histograms/fragmentation_ldp.root", "READ")

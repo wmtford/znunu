@@ -128,6 +128,7 @@ public:
 				bool applyDRfitWt,
 				int currentYear);
     double quadSum(double x, double y) {return Sqrt(Power(x,2) + Power(y,2));};
+    double quadSum(double x, double y, double z) {return Sqrt(Power(x,2) + Power(y,2) + Power(z,2));};
   private:
     std::vector<TFile*> purityTrigEffFile_;
     std::vector<TFile*> photonTrigEffFile_;

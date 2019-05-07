@@ -24,7 +24,7 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
   TH1D* getHist(TFile* tFile, const char* histName);
   enum runBlock {Y2016, Y2017, Y2018AB, Y2018CD, Y2018, Run2, Run2ldpnominal};
 
-  int doRun = Run2ldpnominal;
+  int doRun = Run2;
   bool doClosure = false;
   bool useDYMC = false;
   bool useZllData = false;
@@ -105,18 +105,17 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
   case Run2:
     if (doClosure) {
       if (useZllData) {
-	ZllData = openFile("../outputs/histsDY_Run2v16.root");	if (ZllData == nullptr) return;
+	ZllData = openFile("../outputs/histsDY_Run2v17.root");	if (ZllData == nullptr) return;
       } else if (usePhotonData) {
-	photonData = openFile("../outputs/histsPhoton_Run2v16.root");  if (photonData == nullptr) return;
-	// photonMC = openFile("../outputs/histsGjets_Run2v16_noPU.root");  if (photonMC == nullptr) return;
+	photonData = openFile("../outputs/histsPhoton_Run2v17.root");  if (photonData == nullptr) return;
       } else {
-	zinvMC = openFile("../outputs/histsZjets_Run2v161617.root");  if (zinvMC == nullptr) return;
+	zinvMC = openFile("../outputs/histsZjets_Run2v17.root");  if (zinvMC == nullptr) return;
       }
     } else {
-      ZllData = openFile("../outputs/histsDY_Run2v161617.root");  if (ZllData == nullptr) return;
-      photonData = openFile("../outputs/histsPhoton_Run2v161617.root");  if (photonData == nullptr) return;
+      ZllData = openFile("../outputs/histsDY_Run2v17.root");  if (ZllData == nullptr) return;
+      photonData = openFile("../outputs/histsPhoton_Run2v17.root");  if (photonData == nullptr) return;
     }
-    ZllXMC = openFile("../outputs/histsDYMC_Run2v161617.root");  if (ZllXMC == nullptr) return;
+    ZllXMC = openFile("../outputs/histsDYMC_Run2v17.root");  if (ZllXMC == nullptr) return;
     break;
 
   case Run2ldpnominal:
@@ -252,7 +251,7 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
   for (int j = 0; j < NbinsNJet; ++j) {
     float b0 = 0, b0err = 0, bb = 0, bberr = 0;
     for (int b = 0; b < CCbins.binsb(j); ++b) {
-      int jj = j < extrapByMCthreshold || !useMCJfactors ? j : j-1;
+      int jj = (j < extrapByMCthreshold) || !useMCJfactors ? j : j-1;
       int  binCCjb = CCbins.jb(jj, b);  if (binCCjb <= 0) continue;
       if (b == 0) {
 	b0 = hCCjb_zll->GetBinContent(binCCjb);
