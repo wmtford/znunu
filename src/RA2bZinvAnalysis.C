@@ -696,7 +696,9 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       }
       if (!passTrg) break;
       if (!passHEM) break;
-      // bool keep = false; for (auto & theE : *Electrons) {if (!passHEMobjVeto(theE)) keep = true;}  if (!keep) break;
+      // (For a test) select events with electron (photon) in HEM region
+      // bool keep = false; for (auto & theE : *Electrons) {if (!passHEMobjVeto(theE, 30, false)) keep = true;}  if (!keep) break;
+      // bool keep = false; for (auto & theG : *Photons) {if (!passHEMobjVeto(theG, 30, false)) keep = true;}  if (!keep) break;
 
       if (CCbin == -2) {
 	CCbin = CCbins_->jbk(CCbins_->jbin(NJets), CCbins_->bbin(NJets, BTags), CCbins_->kinBin(HT, MHT));

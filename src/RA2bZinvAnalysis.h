@@ -9,7 +9,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #define VERSION 17
-#define ISMC
+/* #define ISMC */
 #define ISSKIM
 
 #include "CCbinning.h"
@@ -309,12 +309,13 @@ private:
     return true;
   }
 
-  bool passHEMobjVeto(TLorentzVector& obj, double ptThresh = 0) {
+  bool passHEMobjVeto(TLorentzVector& obj, double ptThresh = 0, bool extendedHEM = true) {
     if (!testHEM()) return true;
-    // Original HEM cut [-3.0, -1.4] [-1.57, -0.87] 
-    // Extended HEM cut [-3.2, -1.2] [-1.77, -0.67] 
-    if (-3.2 <= obj.Eta() && obj.Eta() <= -1.2 &&
-	-1.77 <= obj.Phi() && obj.Phi() <= -0.67 &&
+    double etalo, etahi, philo, phihi;
+    if (extendedHEM) {etalo = -3.2; etahi = -1.2; philo = -1.77; phihi = -0.67;}
+    else {etalo = -3.0; etahi = -1.4; philo = -1.57; phihi = -0.87;}
+    if (etalo <= obj.Eta() && obj.Eta() <= etahi &&
+	philo <= obj.Phi() && obj.Phi() <= phihi &&
 	obj.Pt() > ptThresh)
       return false;
     else return true;
