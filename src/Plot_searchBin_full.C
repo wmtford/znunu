@@ -48,10 +48,11 @@ void Plot_searchBin_full(string sample="signal",
   bool Y2018 = false;
   bool Run2 = true;
 
-  TString CMSlabel, predLegend, expectLegend, ratioOrdinateTitle;
+  TString CMSlabel, legendHeader, predLegend, expectLegend, ratioOrdinateTitle;
   char tempname[200], MCtempname[200];
 
   if (ZnnMCvsData) {
+    legendHeader = "Z#rightarrow#nu#bar{#nu} background";
     MChistname="plot_zinv_nj5_nb4_kin10_1";
     CMSlabel = "#bf{CMS} #scale[0.76]{#it{Preliminary}}";
     ratioOrdinateTitle = "#scale[0.75]{#frac{Expectation}{Prediction}} ";
@@ -62,15 +63,19 @@ void Plot_searchBin_full(string sample="signal",
     CMSlabel = "#bf{CMS} #scale[0.76]{#it{Simulation Preliminary}}";
     ratioOrdinateTitle = "#frac{Direct}{Prediction} ";
     if (ZnnMCvsZllMC) {
+      legendHeader = "Z#rightarrow#nu#bar{#nu} background";
       expectLegend = "Z#rightarrow#nu#bar{#nu} from simulation";
       predLegend = "Treat Z#rightarrow ll simulation as data";
     } else if (ZllMCvsZllMC) {
+      legendHeader = "Z#rightarrow ll control sample";
       expectLegend = "Z#rightarrow ll from simulation";
       predLegend = "Treat Z#rightarrow ll simulation as data";
     } else if (ZllDataVsZllMC) {
+      legendHeader = "Z#rightarrow ll control sample";
       expectLegend = "Direct from Z#rightarrow ll data";
       predLegend = "Predict from Z#rightarrow ll data";
     } else if (PhoDataVsPhoMC) {
+      legendHeader = "Photon control sample";
       expectLegend = "Direct from photon data";
       predLegend = "Predict from photon data";
     }
@@ -117,7 +122,7 @@ void Plot_searchBin_full(string sample="signal",
       if (ZnnMCvsZllMC)
 	sprintf(tempname, "/usr/users/wtford/cms/znunu/outputs/hClosure_Zinv_Run2v161617.root");
       else if (ZllMCvsZllMC)
-	sprintf(tempname, "/usr/users/wtford/cms/znunu/outputs/hClosure_Zll_Run2v161617.root");
+	sprintf(tempname, "/usr/users/wtford/cms/znunu/outputs/hClosure_Zll_Run2v17.root");
       sprintf(MCtempname, "%s", tempname);  // (same as prediction file for closure)
     }
     lumi = 137;
@@ -697,7 +702,7 @@ void Plot_searchBin_full(string sample="signal",
   }
 
   // Legend & texts
-  sprintf(tempname,"Z#rightarrow#nu#bar{#nu} background");
+  sprintf(tempname, "%s", legendHeader.Data());
   catLeg1->SetHeader(tempname);
   sprintf(tempname, "%s", expectLegend.Data());
   catLeg1->AddEntry(GenHist,tempname,"ep");

@@ -25,8 +25,8 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
   enum runBlock {Y2016, Y2017, Y2018AB, Y2018CD, Y2018, Run2, Run2ldpnominal};
 
   int doRun = Run2;
-  bool doClosure = false;
-  bool useDYMC = false;
+  bool doClosure = true;
+  bool useDYMC = true;
   bool useZllData = false;
   bool usePhotonData = false;
   bool useMCJfactors = false;
@@ -173,7 +173,7 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
     } else {
       hCC_zmm = getHist(ZllXMC, "hCC_dymm");
       hCC_zee = getHist(ZllXMC, "hCC_dyee");
-      hCC_zll = getHist(ZllXMC, "hCC_dyee");
+      hCC_zll = getHist(ZllXMC, "hCC_dyll");
       hCCjb_zmm = getHist(ZllXMC, "hCCjb_dymm");
       hCCjb_zee = getHist(ZllXMC, "hCCjb_dyee");
       hCCjb_zll = getHist(ZllXMC, "hCCjb_dyll");
@@ -188,7 +188,7 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
 	hCC_photon = getHist(zinvMC, "hCC_zinv");
       }
     }
-    hCC_photon->Print("all");
+    // hCC_photon->Print("all");
   } else {  // Not closure
     hCC_zmm = getHist(ZllData, "hCC_zmm");
     hCC_zee = getHist(ZllData, "hCC_zee");
@@ -475,13 +475,18 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
 				     {0, 0.15, 0.15, 0.30}};
 
   TFile* histoOutFile = nullptr;
-  TH1D *ZinvBGpred = nullptr, *ZinvBGsysUp = nullptr, *ZinvBGsysLow = nullptr, *hMCexp = nullptr, *hExtrap = nullptr;
+  TH1D *ZinvBGpred = nullptr, *ZinvBGsysUp = nullptr, *ZinvBGsysLow = nullptr, *hMCexp = nullptr,
+    *hExtrap = nullptr, *hPulls = nullptr, *hPullsNoSys = nullptr;
   if (doClosure) {
     histoOutFile = TFile::Open("hClosure.root", "RECREATE");
     ZinvBGpred = (TH1D*) hCC_zll->Clone();  ZinvBGpred->SetNameTitle("ZinvBGpred", "Predicted Zinv yield");
     ZinvBGsysUp = (TH1D*) hCC_zll->Clone();  ZinvBGsysUp->SetNameTitle("ZinvBGsysUp", "Predicted Zinv upper error");
     ZinvBGsysLow = (TH1D*) hCC_zll->Clone();  ZinvBGsysLow->SetNameTitle("ZinvBGsysLow", "Predicted Zinv lower error");
     hMCexp = (TH1D*) hCC_photon->Clone();  hMCexp->SetNameTitle("hMCexp", "Expected Zinv yield");
+    hPulls = new TH1D("hPulls", "Closure plot pulls", 100, -10, 10);
+    hPulls->GetXaxis()->SetTitle("(Ratio - 1) / #sigma");
+    hPulls->GetYaxis()->SetTitle("Bins / 0.2");
+    hPullsNoSys = new TH1D("hPullsNoSys", "Fit pulls without kin systematic", 100, -10, 10); 
   } else {
     histoOutFile = TFile::Open("hExtrap.root", "RECREATE");
     hExtrap = (TH1D*) hCCjb_zll->Clone();  hExtrap->SetNameTitle("hExtrap", "Extrapolation factor");
@@ -561,18 +566,54 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
 	}
 	if (doClosure) {
 	  // For closure plot
-	  int binCCb0 = CCbins.jbk(j, 0, k);
-	  Double_t binValue = hCC_photon->GetBinContent(binCCb0) * Fextrap.at(binCC - 1);
+	  int binCCj0k = CCbins.jbk(j, 0, k);
+	  Double_t binValue = hCC_photon->GetBinContent(binCCj0k) * Fextrap.at(binCC - 1);
+	  Double_t binError, binErrorNoSys, predError;
 	  ZinvBGpred->SetBinContent(binCC, binValue);
 	  ZinvBGpred->SetBinError(binCC, 0.00001*binValue);
-	  Double_t binError = binValue * Sqrt(Power(DYstat.at(binCCjb - 1), 2) +
-					      Power(systKin[j][b], 2));
-	  ZinvBGsysUp->SetBinContent(binCC, binError);
-	  ZinvBGsysLow->SetBinContent(binCC, binError);
+	  predError = binValue * Sqrt(Power(DYstat.at(binCCjb - 1), 2) +
+				      Power(systKin[j][b], 2));
+	  if (useDYMC && b > 0) {  // Find binomial error on bin k given Sum_k
+	    int binCCj0 = CCbins.jb(j, 0);
+	    double Yjbk =  hCC_zll->GetBinContent(binCC);
+	    double Yj0k =  hCC_zll->GetBinContent(binCCj0k);
+	    double Yjb =  hCCjb_zll->GetBinContent(binCCjb);
+	    double Yj0 =  hCCjb_zll->GetBinContent(binCCj0);
+	    double Pjbk = Yjb > 0 ? Yjbk/Yjb : 0;
+	    double Pj0k = Yj0 > 0 ? Yj0k/Yj0 : 0;
+	    double dev = Pjbk/Pj0k - 1;
+	    double devspl = binValue > 0 ? hMCexp->GetBinContent(binCC) / binValue - 1 : 0;
+	    // predError = 1/Yjb + (1-Pj0k)/Yj0k;  // binomial fractional error squared
+	    // // predError -= 1/Yjbk;  // minus error on expectation
+	    // predError += Power(systKin[j][b], 2);  // plus systematic for kinematics variation
+	    // predError = binValue * Sqrt(predError);
+	    // binError = (1-Pjbk)/Yjbk + (1-Pj0k)/Yj0k;  // binomial fractional error squared
+	    // binError = (1-Pjbk)/Power(hCC_zll->GetBinError(binCC), 2) + 
+	    //   (1-Pj0k)/Power(hCC_zll->GetBinError(binCCj0k), 2);  // binomial fractional error squared
+	    binError = Power(hCC_zll->GetBinError(binCC) / hCC_zll->GetBinContent(binCC), 2)  // binomial fractional error squared
+	      - Power(hCCjb_zll->GetBinError(binCCjb) / hCCjb_zll->GetBinContent(binCCjb), 2)
+	      + Power(hCC_zll->GetBinError(binCCj0k) / hCC_zll->GetBinContent(binCCj0k), 2)
+	      - Power(hCCjb_zll->GetBinError(binCCj0) / hCCjb_zll->GetBinContent(binCCj0), 2);
+	    // cout << "Yjbk = " << Yjbk << ", Yj0k = " << Yj0k << ", Yjb = " << Yjb << ", Yj0 = " << Yj0
+	    // 	 << ", Pjbk = " << Pjbk << ", Pj0k = " << Pj0k << ", err = " << binError << endl;
+	    binError *= Power(devspl + 1, 2);
+	    binErrorNoSys = binError > 0 ? Sqrt(binError) : 0;  // error on deviation w/o syst
+	    binError += Power(systKin[j][b], 2);  // plus systematic for kinematics variation
+	    binError = binError > 0 ? Sqrt(binError) : 0;  // fractional error on prediction
+	    // cout << "devspl = " << devspl << ", dev = " << dev << ", err = " << binErrorNoSys
+	    // 	 << ", errWsys = " << binError
+	    // 	 << ", pull = " << devspl / binError
+	    // 	 << ", expErr = " << hMCexp->GetBinError(binCC) << endl;
+	    if (Yjbk > 0) {
+	      hPulls->Fill(devspl / binError);
+	      hPullsNoSys->Fill(devspl / binErrorNoSys);
+	    }
+	  }
+	  ZinvBGsysUp->SetBinContent(binCC, predError);
+	  ZinvBGsysLow->SetBinContent(binCC, predError);
 	  // For chisq-derived systematic
 	  Double_t expErr = hMCexp->GetBinError(binCC);
 	  if (binValue > 0 && expErr > 0) {
-	    // Double_t binErrSq = Power(binValue*DYstat.at(binCCjb - 1), 2);
 	    Double_t expValue = hMCexp->GetBinContent(binCC);
 	    Double_t dev = expValue - binValue;
 	    chisq += Power(dev/expErr, 2);
@@ -613,6 +654,7 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
   if (doClosure) {
     ZinvBGpred->Draw();
     hMCexp->Draw();
+    hPulls->Draw();
   } else {
     hExtrap->Draw();
   }
