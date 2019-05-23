@@ -3926,6 +3926,7 @@ def getPlotAndRatio(numHists, denomHists=None, bottomPlots=None, doStack=None, T
             order = range(len(legList))
         leg.Delete()
         leg = ROOT.TLegend(legCoords[0],legCoords[1],legCoords[2],legCoords[3], "","brNDC")
+        leg.SetTextFont(42)  # wtf
         for i in order:
             if('skip' in legList[i] or 'Skip' in legList[i] or 'SKIP' in legList[i]):
                 continue

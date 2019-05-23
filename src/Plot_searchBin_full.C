@@ -37,9 +37,9 @@ void Plot_searchBin_full(string sample="signal",
 			 // string MChistname="plot_zinv_nj5_nb4_kin10_1",
 			 string elog="",string elogExp="", int pull=0) {
 
-  bool ZnnMCvsData = false;
+  bool ZnnMCvsData = true;
   bool ZnnMCvsZllMC = false;
-  bool ZllMCvsZllMC = true;
+  bool ZllMCvsZllMC = false;
   bool ZllDataVsZllMC = false;
   bool PhoDataVsPhoMC = false;
 
@@ -50,6 +50,7 @@ void Plot_searchBin_full(string sample="signal",
 
   TString CMSlabel, legendHeader, predLegend, expectLegend, ratioOrdinateTitle;
   char tempname[200], MCtempname[200];
+  std::vector<Float_t> legCoord = {0.62, 0.55, 0.95, 0.77};  // (x1, y1, x2, y2)
 
   if (ZnnMCvsData) {
     legendHeader = "Z#rightarrow#nu#bar{#nu} background";
@@ -60,16 +61,18 @@ void Plot_searchBin_full(string sample="signal",
     predLegend = "Prediction from data";
   } else {
     MChistname="hMCexp";
-    CMSlabel = "#bf{CMS} #scale[0.76]{#it{Simulation Preliminary}}";
+    // CMSlabel = "#bf{CMS} #scale[0.76]{#it{Simulation Preliminary}}";
+    CMSlabel = "#bf{CMS} #scale[0.76]{#it{Simulation}}";
     ratioOrdinateTitle = "#frac{Direct}{Prediction} ";
     if (ZnnMCvsZllMC) {
       legendHeader = "Z#rightarrow#nu#bar{#nu} background";
       expectLegend = "Z#rightarrow#nu#bar{#nu} from simulation";
       predLegend = "Treat Z#rightarrow ll simulation as data";
     } else if (ZllMCvsZllMC) {
-      legendHeader = "Z#rightarrow ll control sample";
-      expectLegend = "Z#rightarrow ll from simulation";
-      predLegend = "Treat Z#rightarrow ll simulation as data";
+      legCoord[0] = 0.67;
+      legendHeader = "Z#rightarrow l^{+}l^{-} + jets yield";
+      expectLegend = "Direct from simulation";
+      predLegend = "Treat simulation as data";
     } else if (ZllDataVsZllMC) {
       legendHeader = "Z#rightarrow ll control sample";
       expectLegend = "Direct from Z#rightarrow ll data";
@@ -116,8 +119,8 @@ void Plot_searchBin_full(string sample="signal",
   }
   else if (Run2) {
     if (ZnnMCvsData) {
-      sprintf(tempname, "/usr/users/wtford/cms/znunu/zinvData_2019Apr9_Run2/ZinvHistos.root");
-      sprintf(MCtempname, "/usr/users/wtford/cms/znunu/zinvData_2019Apr9_Run2/ZinvMCttzMC174bin_Run2v161617.root");
+      sprintf(tempname, "/usr/users/wtford/cms/znunu/zinvData_2019May7_Run2/ZinvHistos.root");
+      sprintf(MCtempname, "/usr/users/wtford/cms/znunu/zinvData_2019May7_Run2/ZinvMCttzMC174bin_Run2v17.root");
     } else {
       if (ZnnMCvsZllMC)
 	sprintf(tempname, "/usr/users/wtford/cms/znunu/outputs/hClosure_Zinv_Run2v161617.root");
@@ -189,12 +192,8 @@ void Plot_searchBin_full(string sample="signal",
   //
   // Define legend
   //
-  Float_t legendX1 = .62; //.50;
-  Float_t legendX2 = .95; //.70;
-  Float_t legendY1 = .55; //.50; //.65;
-  Float_t legendY2 = .77; //.75;
 
-  TLegend* catLeg1 = new TLegend(legendX1,legendY1,legendX2,legendY2);
+  TLegend* catLeg1 = new TLegend(legCoord[0], legCoord[1], legCoord[2], legCoord[3]);
   catLeg1->SetTextSize(0.04);
   catLeg1->SetTextFont(42);
   catLeg1->SetFillColor(0);

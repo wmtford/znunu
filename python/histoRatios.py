@@ -9,10 +9,10 @@ ROOT.gROOT.Reset()
 ROOT.gROOT.SetBatch(1)
 
 singleOutFile = True
-doDatavMC = False
+doDatavMC = True
 doDatavData = False
-doMCvMC = True
-runYear = "2017"
+doMCvMC = False
+runYear = "Run2"
 doMumu = True
 doEe = True
 doLl = True
@@ -25,6 +25,7 @@ setMin = None
 setMax = None
 ratioMin = [None, None, None, None]
 ratioMax = [None, None, None, None]
+extraText = None  # Default is "Preliminary"
 
 legList = []
 # legCoordsDefault = [0.6,0.6,0.89,0.89]
@@ -82,10 +83,10 @@ if (doDatavMC):
     legendsN = ['Z#mu#mu'' 2017 data', 'Zee 2017 data', 'Zll 2017 data', 'photon 2017 data']
   elif (runYear is "Run2"):
     iPeriod = 9
-    NfileZll = ROOT.TFile('../outputs/histsDY_Run2v161617.root')
-    NfilePhoton = ROOT.TFile('../outputs/histsPhoton_Run2v161617.root')
-    DfileZll = ROOT.TFile('../outputs/histsDYMC_Run2v161617.root')
-    DfilePhoton = ROOT.TFile('../outputs/histsGjets_Run2v161617_DRr2wt.root')
+    NfileZll = ROOT.TFile('../outputs/histsDY_Run2v17.root')
+    NfilePhoton = ROOT.TFile('../outputs/histsPhoton_Run2v17.root')
+    DfileZll = ROOT.TFile('../outputs/histsDYMC_Run2v17.root')
+    DfilePhoton = ROOT.TFile('../outputs/histsGjets_Run2v17_DRr2wt.root')
     legendsN = ['Z#mu#mu'+' Run2 data', 'Zee Run2 data', 'Zll Run2 data', 'photon Run2 data']
 
 elif (doDatavData):
@@ -313,7 +314,7 @@ for samples in hists:
       ratioMin=ratioMin[reaction], ratioMax=ratioMax[reaction], setMin=setMin, setMax=setMax,
       legList = legList[reaction],
       # legCoords = legCoords,
-      drawText = drawText, textCoords = textCoords,
+      drawText = drawText, textCoords = textCoords, extraText = extraText,
       doClosureStyle = doClosureStyle, markerSize=0.8
       )
     # For 174-bin plot
