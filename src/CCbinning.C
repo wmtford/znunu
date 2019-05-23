@@ -10,14 +10,27 @@ ClassImp(CCbinning)
 CCbinning::CCbinning(const std::string& era, const std::string& deltaPhi) :
 era_(era), deltaPhi_(deltaPhi) {
 
+  bool doJbins = false;  // Expand NJet analysis bins to single NJet values
   // Exclude some bins with high NJets, low HT
   std::vector< std::vector<unsigned> > exclBins;
-  exclBins.push_back(std::vector<unsigned>({3, 0, 0}));  // j, m, h
-  exclBins.push_back(std::vector<unsigned>({3, 1, 0}));
-  exclBins.push_back(std::vector<unsigned>({3, 4, 0}));
-  exclBins.push_back(std::vector<unsigned>({4, 0, 0}));
-  exclBins.push_back(std::vector<unsigned>({4, 1, 0}));
-  exclBins.push_back(std::vector<unsigned>({4, 4, 0}));
+  if (!doJbins) {
+    exclBins.push_back(std::vector<unsigned>({3, 0, 0}));  // j, m, h
+    exclBins.push_back(std::vector<unsigned>({3, 1, 0}));
+    exclBins.push_back(std::vector<unsigned>({3, 4, 0}));
+    exclBins.push_back(std::vector<unsigned>({4, 0, 0}));
+    exclBins.push_back(std::vector<unsigned>({4, 1, 0}));
+    exclBins.push_back(std::vector<unsigned>({4, 4, 0}));
+  } else {
+    exclBins.push_back(std::vector<unsigned>({6, 0, 0}));  // j=J, m, h
+    exclBins.push_back(std::vector<unsigned>({6, 1, 0}));
+    exclBins.push_back(std::vector<unsigned>({6, 4, 0}));
+    exclBins.push_back(std::vector<unsigned>({7, 0, 0}));
+    exclBins.push_back(std::vector<unsigned>({7, 1, 0}));
+    exclBins.push_back(std::vector<unsigned>({7, 4, 0}));
+    exclBins.push_back(std::vector<unsigned>({8, 0, 0}));
+    exclBins.push_back(std::vector<unsigned>({8, 1, 0}));
+    exclBins.push_back(std::vector<unsigned>({8, 4, 0}));
+  }
 
   if (era_ == TString("2016")) {
 
@@ -50,12 +63,6 @@ era_(era), deltaPhi_(deltaPhi) {
     kinThresholds_.push_back({850, 850, 1700});
     kinThresholds_.push_back({250, 300, 600, 1200}); // QCD control bins
 
-    jbThresholds_.push_back({2, 0, 1, 2});  // NJets threshold, {Nb thresholds}
-    jbThresholds_.push_back({4, 0, 1, 2, 3});
-    jbThresholds_.push_back({6, 0, 1, 2, 3});
-    jbThresholds_.push_back({8, 0, 1, 2, 3});
-    jbThresholds_.push_back({10, 0, 1, 2, 3});
-
     JbThresholds_.push_back({2, 0, 1, 2});  // for Nb/0b extrapolation
     JbThresholds_.push_back({3, 0, 1, 2});
     JbThresholds_.push_back({4, 0, 1, 2, 3});
@@ -65,6 +72,16 @@ era_(era), deltaPhi_(deltaPhi) {
     JbThresholds_.push_back({8, 0, 1, 2, 3});
     JbThresholds_.push_back({9, 0, 1, 2, 3});
     JbThresholds_.push_back({10, 0, 1, 2, 3});
+
+    if (!doJbins) {
+      jbThresholds_.push_back({2, 0, 1, 2});  // NJets threshold, {Nb thresholds}
+      jbThresholds_.push_back({4, 0, 1, 2, 3});
+      jbThresholds_.push_back({6, 0, 1, 2, 3});
+      jbThresholds_.push_back({8, 0, 1, 2, 3});
+      jbThresholds_.push_back({10, 0, 1, 2, 3});
+    } else {
+      jbThresholds_ = JbThresholds_;
+    }
 
   } // era
 

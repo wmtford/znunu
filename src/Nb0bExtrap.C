@@ -9,6 +9,7 @@
 #include <iostream>
 #include "TROOT.h"
 #include "TH1D.h"
+#include "TGraphAsymmErrors.h"
 #include "TFile.h"
 #include "TApplication.h"
 #include "TMath.h"
@@ -25,15 +26,18 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
   enum runBlock {Y2016, Y2017, Y2018AB, Y2018CD, Y2018, Run2, Run2ldpnominal};
 
   int doRun = Run2;
-  bool doClosure = true;
-  bool useDYMC = true;
+  bool doClosure = false;
+  bool useDYMC = false;
   bool useZllData = false;
   bool usePhotonData = false;
+  bool doFfromMCll = false;
+  bool doFfromMCvv = false;
   bool useMCJfactors = false;
   bool doJfromData = false;
   bool useRMS_mean = false;
   cout << "case " << doRun << ", doClosure = " << doClosure << ", useDYMC = " << useDYMC
        << ", useZllData = " << useZllData << ", usePhotonData = " << usePhotonData
+       << ", doFfromMCll = " << doFfromMCll << ", doFfromMCvv = " << doFfromMCvv
        << ", useRMS_mean = " << useRMS_mean << endl;
 
   CCbinning CCbins(era, deltaPhi);
@@ -111,11 +115,18 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
       } else {
 	zinvMC = openFile("../outputs/histsZjets_Run2v17.root");  if (zinvMC == nullptr) return;
       }
+    } else if (doFfromMCll) {
+      ZllData = openFile("../outputs/histsDYMC_Run2v17.root");  if (ZllData == nullptr) return;
+      photonData = openFile("../outputs/histsPhoton_Run2v17.root");  if (photonData == nullptr) return;
+    } else if (doFfromMCvv) {
+      ZllData = openFile("../outputs/histsZjets_Run2v17.root");  if (ZllData == nullptr) return;
+      photonData = openFile("../outputs/histsPhoton_Run2v17.root");  if (photonData == nullptr) return;
     } else {
       ZllData = openFile("../outputs/histsDY_Run2v17.root");  if (ZllData == nullptr) return;
       photonData = openFile("../outputs/histsPhoton_Run2v17.root");  if (photonData == nullptr) return;
     }
     ZllXMC = openFile("../outputs/histsDYMC_Run2v17.root");  if (ZllXMC == nullptr) return;
+    // ZllXMC = openFile("../outputs/histsDYMC_Run2v17_Jbins.root");  if (ZllXMC == nullptr) return;
     break;
 
   case Run2ldpnominal:
@@ -190,14 +201,34 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
     }
     // hCC_photon->Print("all");
   } else {  // Not closure
-    hCC_zmm = getHist(ZllData, "hCC_zmm");
-    hCC_zee = getHist(ZllData, "hCC_zee");
-    hCCjb_zmm = getHist(ZllData, "hCCjb_zmm");
-    hCCjb_zee = getHist(ZllData, "hCCjb_zee");
-    hCCjb_zll = getHist(ZllData, "hCCjb_zll");
-    hCCJb_zmm = getHist(ZllData, "hCCJb_zmm");
-    hCCJb_zee = getHist(ZllData, "hCCJb_zee");
-    hCCJb_zll = getHist(ZllData, "hCCJb_zll");
+    if (doFfromMCll) {
+      hCC_zmm = getHist(ZllData, "hCC_dymm");
+      hCC_zee = getHist(ZllData, "hCC_dyee");
+      hCCjb_zmm = getHist(ZllData, "hCCjb_dymm");
+      hCCjb_zee = getHist(ZllData, "hCCjb_dyee");
+      hCCjb_zll = getHist(ZllData, "hCCjb_dyll");
+      hCCJb_zmm = getHist(ZllData, "hCCJb_dymm");
+      hCCJb_zee = getHist(ZllData, "hCCJb_dyee");
+      hCCJb_zll = getHist(ZllData, "hCCJb_dyll");
+    } else if (doFfromMCvv) {
+      hCC_zmm = getHist(ZllData, "hCC_zinv");
+      hCC_zee = getHist(ZllData, "hCC_zinv");
+      hCCjb_zmm = getHist(ZllData, "hCCjb_zinv");
+      hCCjb_zee = getHist(ZllData, "hCCjb_zinv");
+      hCCjb_zll = getHist(ZllData, "hCCjb_zinv");
+      hCCJb_zmm = getHist(ZllData, "hCCJb_zinv");
+      hCCJb_zee = getHist(ZllData, "hCCJb_zinv");
+      hCCJb_zll = getHist(ZllData, "hCCJb_zinv");
+    } else {
+      hCC_zmm = getHist(ZllData, "hCC_zmm");
+      hCC_zee = getHist(ZllData, "hCC_zee");
+      hCCjb_zmm = getHist(ZllData, "hCCjb_zmm");
+      hCCjb_zee = getHist(ZllData, "hCCjb_zee");
+      hCCjb_zll = getHist(ZllData, "hCCjb_zll");
+      hCCJb_zmm = getHist(ZllData, "hCCJb_zmm");
+      hCCJb_zee = getHist(ZllData, "hCCJb_zee");
+      hCCJb_zll = getHist(ZllData, "hCCJb_zll");
+    }
     hCCspl_photon = getHist(photonData, "hCCspl_photon");
     hCC_photon = getHist(photonData, "hCC_photon");
   }
@@ -252,7 +283,7 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
     float b0 = 0, b0err = 0, bb = 0, bberr = 0;
     for (int b = 0; b < CCbins.binsb(j); ++b) {
       int jj = (j < extrapByMCthreshold) || !useMCJfactors ? j : j-1;
-      int  binCCjb = CCbins.jb(jj, b);  if (binCCjb <= 0) continue;
+      int binCCjb = CCbins.jb(jj, b);  if (binCCjb <= 0) continue;
       if (b == 0) {
 	b0 = hCCjb_zll->GetBinContent(binCCjb);
 	b0err = hCCjb_zll->GetBinError(binCCjb);
@@ -309,6 +340,20 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
        	   + hCCjb_zee->GetBinContent(bin)*h_pur_e->GetBinError(bin)/h_pur_e->GetBinContent(bin);
     }
     DYpurSys.push_back(ype/y);
+  }
+  // Purity systematic on F (quadrature sum of pur(b) and pur(0))
+  vector<float> DYpurFsys;
+  for (int j = 0; j < NbinsNJet; ++j) {
+    float purE0 = 0;
+    for (int b = 0; b < CCbins.binsb(j); ++b) {
+      int binCCjb = CCbins.jb(j, b);  if (binCCjb <= 0) continue;
+      if (b == 0) {
+	purE0 = DYpurSys[binCCjb - 1];
+	DYpurFsys.push_back(0);
+      } else {
+	DYpurFsys.push_back(Sqrt(Power(DYpurSys[binCCjb-1], 2) + Power(purE0, 2)));
+      }
+    }
   }
 
   vector<float> systJ = {0, 0, 0, 0};
@@ -447,7 +492,7 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
 	int binCCjb = CCbins.jb(j, b);  if (binCCjb <= 0) continue;
 	if (j < extrapByMCthreshold || !useMCJfactors) {
 	  float yjb = 0;
-	  if (doClosure)
+	  if (doClosure || doFfromMCll || doFfromMCvv)
 	    yjb = hCCjb_zll->GetBinContent(binCCjb);
 	  else
 	    yjb = hCCjb_zmm->GetBinContent(binCCjb) * h_pur_m->GetBinContent(binCCjb)
@@ -469,14 +514,25 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
   // kin systematics derived from analysis of the closure plot
   // vector<float> systKin = {0, 0.07, 0.10, 0.20};
   vector< vector<float> > systKin = {{0, 0.15, 0.30, 0.30},
-				     {0, 0.15, 0.15, 0.30},
-				     {0, 0.15, 0.15, 0.30},
-				     {0, 0.15, 0.15, 0.30},
-				     {0, 0.15, 0.15, 0.30}};
+  				     {0, 0.15, 0.15, 0.30},
+  				     {0, 0.15, 0.15, 0.30},
+  				     {0, 0.15, 0.15, 0.30},
+  				     {0, 0.15, 0.15, 0.30}};
+  // vector< vector<float> > systKin = {{0, 0.15, 0.30, 0.30},  // (for test with j binning -> J binning)
+  // 				     {0, 0.15, 0.30, 0.30},
+  // 				     {0, 0.15, 0.15, 0.30},
+  // 				     {0, 0.15, 0.15, 0.30},
+  // 				     {0, 0.15, 0.15, 0.30},
+  // 				     {0, 0.15, 0.15, 0.30},
+  // 				     {0, 0.15, 0.15, 0.30},
+  // 				     {0, 0.15, 0.15, 0.30},
+  // 				     {0, 0.15, 0.15, 0.30}};
 
   TFile* histoOutFile = nullptr;
   TH1D *ZinvBGpred = nullptr, *ZinvBGsysUp = nullptr, *ZinvBGsysLow = nullptr, *hMCexp = nullptr,
     *hExtrap = nullptr, *hPulls = nullptr, *hPullsNoSys = nullptr;
+  TGraphAsymmErrors* gSysRelErrors;
+  char linebuf[2048];
   if (doClosure) {
     histoOutFile = TFile::Open("hClosure.root", "RECREATE");
     ZinvBGpred = (TH1D*) hCC_zll->Clone();  ZinvBGpred->SetNameTitle("ZinvBGpred", "Predicted Zinv yield");
@@ -490,21 +546,22 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
   } else {
     histoOutFile = TFile::Open("hExtrap.root", "RECREATE");
     hExtrap = (TH1D*) hCCjb_zll->Clone();  hExtrap->SetNameTitle("hExtrap", "Extrapolation factor");
-  }
-  // Write the output dat file
-  // string datFileName("DY_");
-  // if (deltaPhi == "nominal") datFileName += "signal";
-  // else datFileName += deltaPhi;
-  // datFileName += ".dat";
-  // if (!datFile.is_open()) datFile.open(datFileName);
+    gSysRelErrors = new TGraphAsymmErrors(hCCjb_zll);
+    gSysRelErrors->SetName("gSysRelErrors");
+    // Write the output dat file
+    // string datFileName("DY_");
+    // if (deltaPhi == "nominal") datFileName += "signal";
+    // else datFileName += deltaPhi;
+    // datFileName += ".dat";
+    // if (!datFile.is_open()) datFile.open(datFileName);
 
-  // File* datFile = fopen(datFileName.c_str(), "w");
-  // fprintf(datFile, "%s\n",
-  char linebuf[2048];
-  sprintf(linebuf, "%s\n",
-  	  " j b k| | Nmumu |  Nee  | Nb/0b | stat  |MC stat| ttz SF| syst+ | syst- | sysKin| sysPur"
-  	  );
-  datFile << linebuf;
+    // File* datFile = fopen(datFileName.c_str(), "w");
+    // fprintf(datFile, "%s\n",
+    sprintf(linebuf, "%s\n",
+	    " j b k| | Nmumu |  Nee  | Nb/0b | stat  |MC stat| ttz SF| syst+ | syst- | sysKin| sysPur"
+	    );
+    datFile << linebuf;
+  }
   for (int j = 0; j < NbinsNJet; ++j) {
     for (int b = 0; b < CCbins.binsb(j); ++b) {
       bool usedkbin = false;
@@ -528,43 +585,49 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
 	  // Deal also with negative MC weights
 	  if (ttzErr < 0) ttzErr = relErrXsec_ttz;
 	}
-  	// fprintf(datFile, " %1d %1d %1d| |%7d|%7d|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f\n", j, b, k,
-  	sprintf(linebuf, " %1d %1d %1d| |%7d|%7d|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f\n", j, b, k,
-		(int) hCC_zmm->GetBinContent(binCC),
-		(int) hCC_zee->GetBinContent(binCC),
-		Fextrap.at(binCC - 1),
-		DYstat.at(binCCjb - 1),
-		JextrapErr,
-		ttzErr,
-		j >= extrapByMCthreshold && useMCJfactors ? systJ.at(b) : 0,
-		j >= extrapByMCthreshold && useMCJfactors ? systJ.at(b) : 0,
-		systKin[j][b],
-		DYpurSys.at(binCCjb - 1)
-		);
-	datFile << linebuf;
-	if (!usedkbin) {
-	  // sprintf(linebuf, "%d & %d & %d & %6.3f & %3.0f & %3.0f & $\\pm%2.0f^{+%2.0f}_{-%2.0f}$ & %2.0f & %2.0f \\\\\n",
-	  sprintf(linebuf, "%d & %d & %d & %6.3f & %3.0f & %3.0f & $\\pm%2.0f\\pm%2.0f$ & %2.0f & %2.0f \\\\\n",
-		  binCCjb,
-		  (int) hCCjb_zmm->GetBinContent(binCCjb),
-		  (int) hCCjb_zee->GetBinContent(binCCjb),
-		  Fextrapjb.at(binCCjb - 1),
-		  100*DYstat.at(binCCjb - 1),
-		  100*DYpurSys.at(binCCjb - 1),
-		  100*JextrapErr,
-		  // j >= extrapByMCthreshold && useMCJfactors ? 100*systJ.at(b) : 0,  // for asymmetric error
-		  j >= extrapByMCthreshold && useMCJfactors ? 100*systJ.at(b) : 0,
-		  100*ttzErr,
-		  100*systKin[j][b]
+	if (!doClosure) {
+	  // fprintf(datFile, " %1d %1d %1d| |%7d|%7d|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f\n", j, b, k,
+	  sprintf(linebuf, " %1d %1d %1d| |%7d|%7d|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f|%7.4f\n", j, b, k,
+		  (int) hCC_zmm->GetBinContent(binCC),
+		  (int) hCC_zee->GetBinContent(binCC),
+		  Fextrap.at(binCC - 1),
+		  DYstat.at(binCCjb - 1),
+		  JextrapErr,
+		  ttzErr,
+		  j >= extrapByMCthreshold && useMCJfactors ? systJ.at(b) : 0,
+		  j >= extrapByMCthreshold && useMCJfactors ? systJ.at(b) : 0,
+		  systKin[j][b]
+		  , DYpurSys.at(binCCjb - 1)  // Purity error on DR * F
 		  );
-	  latexFile << linebuf;
-	  if (!doClosure) {
+	  datFile << linebuf;
+	  if (!usedkbin) {
+	    // sprintf(linebuf, "%d & %d & %d & %6.3f & %3.0f & %3.0f & $\\pm%2.0f^{+%2.0f}_{-%2.0f}$ & %2.0f & %2.0f \\\\\n",
+	    // sprintf(linebuf, "%d & %d & %d & %6.3f & %3.0f & %3.0f & $\\pm%2.0f\\pm%2.0f$ & %2.0f & %2.0f \\\\\n",
+	    sprintf(linebuf, "%d & %d & %d & %6.3f & %3.0f & %3.0f & %2.0f \\\\\n",  // No J factors
+		    binCCjb,
+		    (int) hCCjb_zmm->GetBinContent(binCCjb),
+		    (int) hCCjb_zee->GetBinContent(binCCjb),
+		    Fextrapjb.at(binCCjb - 1),
+		    100*DYstat.at(binCCjb - 1),
+		    100*DYpurFsys.at(binCCjb - 1),
+		    // 100*JextrapErr,
+		    // // j >= extrapByMCthreshold && useMCJfactors ? 100*systJ.at(b) : 0,  // for asymmetric error
+		    // j >= extrapByMCthreshold && useMCJfactors ? 100*systJ.at(b) : 0,
+		    // 100*ttzErr,
+		    100*systKin[j][b]
+		    );
+	    latexFile << linebuf;
 	    hExtrap->SetBinContent(binCCjb, Fextrapjb.at(binCCjb - 1));
-	    hExtrap->SetBinError(binCCjb, DYstat.at(binCCjb - 1));
+	    hExtrap->SetBinError(binCCjb, Fextrapjb.at(binCCjb - 1) * DYstat.at(binCCjb - 1));
+	    Double_t totRelFerr = Sqrt(Power(DYstat.at(binCCjb - 1), 2) +
+				      Power(DYpurFsys.at(binCCjb - 1), 2) +
+				      Power(systKin[j][b], 2));
+	    gSysRelErrors->SetPoint(binCCjb-1, binCCjb, 1);
+	    gSysRelErrors->SetPointError(binCCjb-1, 0.5, 0.5, totRelFerr, totRelFerr);
+
+	    usedkbin = true;
 	  }
-	  usedkbin = true;
-	}
-	if (doClosure) {
+	} else {
 	  // For closure plot
 	  int binCCj0k = CCbins.jbk(j, 0, k);
 	  Double_t binValue = hCC_photon->GetBinContent(binCCj0k) * Fextrap.at(binCC - 1);
@@ -648,15 +711,16 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
       }
     }
   }
-  datFile.close();
-  latexFile.close();
-  // fclose(datFile);
   if (doClosure) {
     ZinvBGpred->Draw();
     hMCexp->Draw();
     hPulls->Draw();
   } else {
+    datFile.close();
+    latexFile.close();
+    // fclose(datFile);
     hExtrap->Draw();
+    gSysRelErrors->Write();
   }
   histoOutFile->Write();
 
