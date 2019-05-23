@@ -8,51 +8,63 @@ void mergeHists() {
   std::vector<Double_t> scale;
   TString matchHname(""), newHname("");
 
-  // Zinv expectation histogram
-  std::vector<const char*> mmFiles = {"../outputs/histsZjets_2017v16_ZptWt.root",
-  				      "../outputs/histsZjets_2018v16_ZptWt.root",
-  				      "../outputs/histsZjets_2018HEMv16_ZptWt.root",
-  				      "../outputs/histsZjets_2016v16.root"};
-  scale = {1, 21.0/59.2, 38.2/59.2, 1};
-  addLinearXlast = true;
-  matchHname = "hCCzinvAll";
-  newHname += "plot_zinv_nj5_nb4_kin10_1";
+  // // Zinv expectation histogram
+  // // std::vector<const char*> mmFiles = {"../outputs/histsZjets_2016v16_noPU.root"};
+  // // std::vector<const char*> mmFiles = {"../outputs/histsZjets_2017v16_HT17wt_ZptWt.root"};
+  // // std::vector<const char*> mmFiles = {"histsZjets2017.root"};
+  // // std::vector<const char*> mmFiles = {"../outputs/histsZjets_2018v16_HT17wt_ZptWt.root"};  scale = {21.0/59.2};
+  // // std::vector<const char*> mmFiles = {"../outputs/histsZjets_2018HEMv16_HT17wt_ZptWt.root"};scale = {38.2/59.2};
+  // std::vector<const char*> mmFiles = {"../outputs/histsZjets_2016v17.root",
+  //                                     "../outputs/histsZjets_2017v17.root",
+  // 				      "../outputs/histsZjets_2018v17.root"};
+  // // scale = {1, 21.0/59.2, 38.2/59.2, 1};
+  // // addLinearXlast = true;
+  // // matchHname = "hCCzinvAll";
+  // // newHname += "plot_zinv_nj5_nb4_kin10_1";
 
-  // gJets MC
+  // // gJets MC
   // std::vector<const char*> mmFiles = {
-  //   "../outputs/histsGjets_2017v16.root",
-  //   "../outputs/histsGjets_2018v16.root",
-  //   "../outputs/histsGjets_2018HEMv16.root",
-  //   "../outputs/histsGjets_2016v16.root"
+  //   "../outputs/histsGjets_2016v17_DRr2wt.root",
+  //   "../outputs/histsGjets_2017v17_DRr2wt.root",
+  //   "../outputs/histsGjets_2018v17_DRr2wt.root"
+  //   // "../outputs/histsGjetsldpnominal_2016v16_DRr2wt.root",
+  //   // "../outputs/histsGjetsldpnominal_2017v16_DRr2wt.root",
+  //   // "../outputs/histsGjetsldpnominal_2018v17_DRr2wt.root"
   // };
-  // scale = {1, 21.0/59.2, 38.2/59.2, 1};
-  // addLinearXlast = true;
+  // // scale = {1, 21.0/59.2, 38.2/59.2, 1};
+  // // addLinearXlast = true;
 
   // // DY MC (mm and ee combined in each file)
   // std::vector<const char*> mmFiles = {
+  //   // "../outputs/histsDYMC_2016v16_noPU.root",
   //   // "../outputs/histsDYMC_2017v16_noZptWt.root",
-  //   // "../outputs/histsDYMC_2018v16_noZptWt.root",
-  //   // "../outputs/histsDYMC_2018HEMv16_noZptWt.root",
-  //   "../outputs/histsDYMC_2017v16_ZptWt.root",
-  //   "../outputs/histsDYMC_2018v16_ZptWt.root",
-  //   "../outputs/histsDYMC_2018HEMv16_ZptWt.root",
-  //   "../outputs/histsDYMC_2016v16.root"
+  //   // "../outputs/histsDYMC_2018v17_noZptWt.root"
+  //   "../outputs/histsDYMC_2016v17_Jbins.root",
+  //   "../outputs/histsDYMC_2017v17_Jbins.root",
+  //   "../outputs/histsDYMC_2018v17_Jbins.root",
+  //   // "../outputs/histsDYMC_2018HEMv16_HT17wt_ZptWt.root",
   // };
-  // scale = {1, 21.0/59.2, 38.2/59.2, 1};
-  // addLinearXlast = true;
+  // // Consider mulitplying DYMC by 2017 k factor instead of old 2016:  scale = 1.165/1.23
+  // // To update 2016, scale = 1.257/1.23
+  // // scale = {1, 21.0/59.2, 38.2/59.2, 1};
+  // // addLinearXlast = true;
 
-  // DY data (mm and ee combined in each file)
+  // // DY data (mm and ee combined in each file)
   // std::vector<const char*> mmFiles = {
-  //   "../outputs/histsDY_2016v16.root",
-  //   "../outputs/histsDY_2017v16.root",
-  //   "../outputs/histsDY_2018v16.root"
+  //   "../outputs/histsDY_2016v17.root",
+  //   "../outputs/histsDY_2017v17.root",
+  //   "../outputs/histsDY_2018v17.root"
+  //   // "../outputs/histsDY_2018ABv16.root",
+  //   // "../outputs/histsDY_2018CDv16.root"
   // };
 
-  // Photon data
+  // // Photon data
   // std::vector<const char*> mmFiles = {
-  //   "../outputs/histsPhoton_2016v16.root",
-  //   "../outputs/histsPhoton_2017v16.root",
-  //   "../outputs/histsPhoton_2018v16.root"
+  //   "../outputs/histsPhoton_2016v17.root",
+  //   "../outputs/histsPhoton_2017v17.root",
+  //   "../outputs/histsPhoton_2018v17.root"
+  //   // "../outputs/histsPhoton_2018ABv16.root",
+  //   // "../outputs/histsPhoton_2018CDv16.root"
   // };
 
   // DY data in separate mm, ee files
@@ -123,4 +135,6 @@ void mergeHists() {
   TFile *histoOutFile = TFile::Open("mergedHists.root", "RECREATE");
   for (auto& theHist : histos) theHist->SetDirectory(gDirectory);
   histoOutFile->Write();
+
+  gApplication->Terminate(0);
 }
