@@ -7,22 +7,22 @@ import ROOT
 import RA2b
 
 def textCMS(margin):
-  CMStxt = ROOT.TPaveText(margin, 0.91, 0.23, 1.0, "NDC")
+  CMStxt = ROOT.TPaveText(margin, 0.98, 0.23, 1.0, "NDC")
   CMStxt.SetBorderSize(0)
   CMStxt.SetFillColor(0)
   CMStxt.SetTextFont(42)
-  CMStxt.SetTextAlign(12)
+  CMStxt.SetTextAlign(13)
   CMStxt.SetTextSize(0.11)
   CMStxt.SetMargin(0.)
   CMStxt.AddText("#bf{CMS}")
   return CMStxt
 
 def textLumi(margin):
-  Lumitxt = ROOT.TPaveText(0.80, 0.90, 1-margin, 1.0, "NDC")
+  Lumitxt = ROOT.TPaveText(0.80, 0.98, 1-margin, 1.0, "NDC")
   Lumitxt.SetBorderSize(0)
   Lumitxt.SetFillColor(0)
   Lumitxt.SetTextFont(42)
-  Lumitxt.SetTextAlign(32)
+  Lumitxt.SetTextAlign(33)
   Lumitxt.SetTextSize(0.09)
   Lumitxt.SetMargin(0.)
   Lumitxt.AddText("137 fb^{-1} (13 TeV)")

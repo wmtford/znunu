@@ -4522,8 +4522,11 @@ def getDoubleRatioFit(hist, func, returnDiff=False):
     # Convert arrays to TGraphs
     #    print "len(binCenterArray), binCenterArray, array_mid = ", len(binCenterArray), binCenterArray, array_mid
     graph_mid = ROOT.TGraph(len(binCenterArray), binCenterArray, array_mid)
+    graph_mid.SetName('fitLine')
     graph_hi  = ROOT.TGraph(len(binCenterArray), binCenterArray, array_hi)
+    graph_hi.SetName('fitLineUp')
     graph_lo  = ROOT.TGraph(len(binCenterArray), binCenterArray, array_lo)
+    graph_lo.SetName('fitLineLow')
     if returnRMS:
         graph_rms = ROOT.TGraphErrors(len(binCenterArray), binCenterArray, array_y, array_ex, array_rms)
 
@@ -4595,7 +4598,7 @@ def getDoubleRatioPlot(dr_graphs, binMeans=None, Title=None, xTitle=None, yTitle
         graph.Fit(line[it],"QN")
 
         #line.append(ROOT.TLine(xlow,meanDR,xhigh,meanDR))
-        refLine = ROOT.TF1("refLine", 'pol1(0)', xlow, xhigh)
+        refLine = None
 
         fitGraph = getDoubleRatioFit(graph, func_mid, returnDiff)
 
@@ -4609,7 +4612,8 @@ def getDoubleRatioPlot(dr_graphs, binMeans=None, Title=None, xTitle=None, yTitle
         fitGraph[2].Draw('l same')
         line[it].Draw('l same')
         if (plotRefLine and 'HT' in graph.GetTitle() and not 'MHT' in graph.GetTitle()):
-            refLine.SetParameters(0.8477, 0.0001906)
+            refLine = ROOT.TF1("refLine", 'pol1(0)', xlow, xhigh)
+            refLine.SetParameters(0.8566, 0.0001950)
             refLine.Draw('l same')
             refLine.SetLineWidth(2)
             refLine.SetLineStyle(4)
@@ -4825,7 +4829,8 @@ def getDoubleRatioPlot(dr_graphs, binMeans=None, Title=None, xTitle=None, yTitle
     for l in line:
         ROOT.SetOwnership(l, 0)
 
-    ROOT.SetOwnership(refLine, 0)
+    if (type(refLine) == ROOT.TF1):
+        ROOT.SetOwnership(refLine, 0)
 
     return [(drVal,drErr),errorDict]
 
