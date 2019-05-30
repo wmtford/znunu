@@ -28,8 +28,13 @@ haveHistograms = True
 runYear = "Run2"
 postDRfit = True
 plotRefLine = False
+Ymin = None
+Ymax = None
+# Ymin = 0.5
+# Ymax = 1.5
 
 DYkfactor = 1.23
+yTitle = "R^{data}_{Z#rightarrow l^{+}l^{-}/#gamma}/R^{sim}_{Z#rightarrow l^{+}l^{-}/#gamma}"
 
 for sample in doSample:
 
@@ -200,7 +205,8 @@ for sample in doSample:
 
         ## get the double ratio plots with values and uncertainties
         dr_out = RA2b.getDoubleRatioPlot([nj_dr, mht_dr, ht_dr], binMeans = binMeans,
-                                         iPeriod = iPeriod, plotRefLine = plotRefLine)
+                                         iPeriod = iPeriod, Ymin = Ymin, Ymax = Ymax,
+                                         plotRefLine = plotRefLine, yTitle = yTitle)
 
     # raw_input("Press the <ENTER> key to continue...")
     if (sample == "sig"):
@@ -208,11 +214,11 @@ for sample in doSample:
         if (type(c1)==ROOT.TCanvas):
             fn = "DR_NJets_"+sample+".pdf"
             c1.SaveAs(fn)
-            c2 = ROOT.gROOT.FindObject("c2")
+        c2 = ROOT.gROOT.FindObject("c2")
         if (type(c2)==ROOT.TCanvas):
             fn = "DR_MHT_"+sample+".pdf"
             c2.SaveAs(fn)
-            c3 = ROOT.gROOT.FindObject("c3")
+        c3 = ROOT.gROOT.FindObject("c3")
         if (type(c3)==ROOT.TCanvas):
             fn = "DR_HT_"+sample+".pdf"
             c3.SaveAs(fn)

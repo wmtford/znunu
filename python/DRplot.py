@@ -28,8 +28,11 @@ haveHistograms = True
 runYear = "Run2"
 postDRfit = True
 plotRefLine = True
+Ymin = 0.5
+Ymax = 1.5
 
 DYkfactor = 1.23
+yTitle = "R^{data}_{Z#rightarrow l^{+}l^{-}/#gamma}/R^{sim}_{Z#rightarrow l^{+}l^{-}/#gamma}"
 
 for sample in doSample:
 
@@ -200,7 +203,8 @@ for sample in doSample:
 
         ## get the double ratio plots with values and uncertainties
         dr_out = RA2b.getDoubleRatioPlot([nj_dr, mht_dr, ht_dr], binMeans = binMeans,
-                                         iPeriod = iPeriod, plotRefLine = plotRefLine)
+                                         iPeriod = iPeriod, Ymin = Ymin, Ymax = Ymax,
+                                         plotRefLine = plotRefLine, yTitle = yTitle)
 
     axisTitleSize = 0.033
     def drawPad(canv, pad, margins, range, fontScale, Title):  # Put one graph on a multi-graph canvas
@@ -288,7 +292,7 @@ for sample in doSample:
             pad1.Draw()
             pad1.cd()
             drawPad(c3, pad1, [mtpad, 0, 0.15, mlpad1], [300., 1545.], 1,
-                    ["H_{T} [GeV]", "R^{data}_{Z_{ll}/#gamma}/R^{sim}_{Z_{ll}/#gamma}"])
+                    ["H_{T} [GeV]", yTitle])
             CMStxt = textCMS(mlpad1)
             CMStxt.Draw()
         axisTitleSize *= 1.0/(1 - 1*mlpad1)

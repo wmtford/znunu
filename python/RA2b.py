@@ -4535,7 +4535,7 @@ def getDoubleRatioFit(hist, func, returnDiff=False):
     else:
         return (graph_mid, graph_lo, graph_hi)
 
-def getDoubleRatioPlot(dr_graphs, binMeans=None, Title=None, xTitle=None, yTitle=None, doCMSlumi=None, iPos=None, iPeriod=None, extraText=None, fitFunc=None, returnDiff=None, drawText=None, text=None, textCoords=None, addDeviationInQuad=None, plotRefLine=None):
+def getDoubleRatioPlot(dr_graphs, binMeans=None, Title=None, xTitle=None, yTitle=None, doCMSlumi=None, iPos=None, iPeriod=None, extraText=None, fitFunc=None, returnDiff=None, drawText=None, text=None, textCoords=None, addDeviationInQuad=None, Ymin=None, Ymax=None, plotRefLine=None):
     """takes as input a TGraph (or list of TGraphs) returns canvas with fit and error
     default is linear fit"""
     
@@ -4569,6 +4569,10 @@ def getDoubleRatioPlot(dr_graphs, binMeans=None, Title=None, xTitle=None, yTitle
         textCoords = [0.65,0.85,.85,.90]
     if(addDeviationInQuad==None):
         addDeviationInQuad=True
+    if(Ymin is None):
+        Ymin = 0.
+    if(Ymax is None):
+        Ymax = 2.
     if(plotRefLine is None):
         plotRefLine = False
     ###############################################################################        
@@ -4624,10 +4628,8 @@ def getDoubleRatioPlot(dr_graphs, binMeans=None, Title=None, xTitle=None, yTitle
         graph.SetMarkerSize(1)  # wtf
         graph.SetLineColor(1)
 
-        # fitGraph[0].SetMaximum(1.5)
-        # fitGraph[0].SetMinimum(0.5)
-        fitGraph[0].SetMaximum(2.)
-        fitGraph[0].SetMinimum(0.)
+        fitGraph[0].SetMaximum(Ymax)
+        fitGraph[0].SetMinimum(Ymin)
         fitGraph[0].GetXaxis().SetLimits(xlow,xhigh)
         
         fitGraph[1].SetLineStyle(2)
