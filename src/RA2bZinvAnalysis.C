@@ -282,6 +282,13 @@ RA2bZinvAnalysis::getChain(const char* sample, Int_t* fCurrent, bool makeClass) 
   if (fCurrent != nullptr) *fCurrent = -1;
   if (makeClass) return chain;
 
+  if (!activateAllBranches) {
+    chain->SetBranchStatus("*", 0);  // disable all branches
+    for (auto theBranch : activeBranches_) chain->SetBranchStatus(theBranch, 1);
+  }
+  cout << "Status of HT = " << chain->GetBranchStatus("HT")
+       << ", JetIDAK8 = " << chain->GetBranchStatus("JetIDAK8") << endl;
+
   cout << "Initial size of cache for chain = " << chain->GetCacheSize() << endl;
   TTreeCache::SetLearnEntries(1);
   chain->SetCacheSize(200*1024*1024);
@@ -294,12 +301,11 @@ RA2bZinvAnalysis::getChain(const char* sample, Int_t* fCurrent, bool makeClass) 
   chain->StopCacheLearningPhase();
   cout << "Reset size of cache for chain = " << chain->GetCacheSize() << endl;
 
+  cout << "Setting branch addresses" << endl;
   setBranchAddress(chain);
-
-  if (!activateAllBranches) {
-    chain->SetBranchStatus("*", 0);  // disable all branches
-    for (auto theBranch : activeBranches_) chain->SetBranchStatus(theBranch, 1);
-  }
+  cout << "Status of HT = " << chain->GetBranchStatus("HT")
+       << ", JetIDAK8 = " << chain->GetBranchStatus("JetIDAK8") << endl;
+  cout << "Done setting branch addresses" << endl;
 
   return chain;
 
@@ -411,6 +417,9 @@ RA2bZinvAnalysis::getCuts(const TString sample) {
       commonCuts_ += " && HTRatioDPhiFilter";
       // Commoncuts_ += " && HT5/HT <= (DeltaPhi1 - (-0.5875))/1.025";
       // above implements "DeltaPhi1 >= 1.025*HT5/HT - 0.5875", avoiding "+" and "*" for regexp;
+      // Revised version is "(htratio < 1.2 ? true : (looper->DeltaPhi1 >= 
+      //                     (tight ? 5.3*htratio - 4.78 : 1.025*htratio - 0.5875) ) )"
+      // https://github.com/kpedro88/Analysis/blob/SUSY2017/KCode/KCommonSelectors.h
     // commonCuts_ += " && noMuonJet";  // Defined in loop, applied in skimming (xV16), single lepton
   }
   if (!isSkim_) {
@@ -562,6 +571,8 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       TFile* thisFile = chain->GetCurrentFile();
       if (thisFile) {
     	if (btagcorr_) btagcorr_->SetEffs(thisFile);
+	cout << "Status of HT = " << chain->GetBranchStatus("HT")
+	     << ", JetIDAK8 = " << chain->GetBranchStatus("JetIDAK8") << endl;
 	TString path = thisFile->GetName();
 	if (verbosity_ >= 1) cout << "Current file in chain: " << path << endl;
 	// Set MCwtCorr for this file
