@@ -8,76 +8,70 @@
 #include <TROOT.h>
 #include <TCanvas.h>
 #include <TFile.h>
-#include <TRegexp.h>
+// #include <TRegexp.h>
 #include <TCut.h>
 #include <TTreeCache.h>
 
-#include <iostream>
-using std::cout;
-using std::endl;
+// #include <iostream>
+// using std::cout;
+// using std::endl;
 
-#include <fstream>
-using std::ifstream;
+// #include <fstream>
+// using std::ifstream;
 
-#include <sstream>
-using std::stringstream;
+// #include <sstream>
+// using std::stringstream;
 
-#include <stdio.h>
-// using std::sprintf;
+// #include <stdio.h>
+// // using std::sprintf;
 
 #include <string>
 
-#include <boost/program_options.hpp>
-namespace po = boost::program_options;
+// #include <boost/program_options.hpp>
+// namespace po = boost::program_options;
 
 ClassImp(RA2bZinvAnalysis)
 
 // ======================================================================================
 
-RA2bZinvAnalysis::RA2bZinvAnalysis() {
-  Init();
+RA2bZinvAnalysis::RA2bZinvAnalysis() : TreeAnalysisBase(), NtupleClass(0) {
+  Config();
 }
 
-RA2bZinvAnalysis::RA2bZinvAnalysis(const std::string& cfg_filename, const std::string& runBlock) {
-  Init(cfg_filename);
-  if (!runBlock.empty()) runBlock_ = runBlock;
-  cout << "The runBlock is " << runBlock_ << endl;
+RA2bZinvAnalysis::RA2bZinvAnalysis(const char* sample, const std::string& cfg_filename, const std::string& runBlock) :
+  TreeAnalysisBase(sample, cfg_filename, runBlock), NtupleClass(chain_) {
+  Config(cfg_filename);
 }
 
 void
-RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
+RA2bZinvAnalysis::Config(const std::string& cfg_filename) {
 
   // Set up configuration, using boost/program_options.
   po::options_description desc("Config");
   desc.add_options()
-    ("verbosity", po::value<int>(&verbosity_))
-    ("era", po::value<std::string>(&era_))
-    ("runBlock", po::value<std::string>(&runBlock_))  // May be overridden by constructor
-    ("tree path", po::value<std::string>(&treeLoc_))
-    ("root file index", po::value<std::string>(&fileListsFile_))
-    ("delta phi sample", po::value<std::string>(&deltaPhi_), "nominal, hdp, ldp, ldpnominal")
-    ("integrated luminosity", po::value<double>(&intLumi_))
-    ("apply Z mass cut", po::value<bool>(&applyMassCut_))
-    ("apply Z/gamma Pt cut", po::value<bool>(&applyPtCut_))
-    ("use analysis bin from tree", po::value<bool>(&useTreeCCbin_))
-    ("use DeepCSV", po::value<bool>(&useDeepCSV_))
-    ("apply b-tag SF", po::value<bool>(&applyBTagSF_))
-    ("apply pileup weight", po::value<bool>(&applyPuWeight_))
-    ("use custom pileup weight", po::value<bool>(&customPuWeight_))
-    ("apply HEM jet veto", po::value<bool>(&applyHEMjetVeto_))
-    ("apply Z Pt weight", po::value<bool>(&applyZptWt_))
-    ("apply double-ratio fit weight", po::value<bool>(&applyDRfitWt_))
-    ("apply scale factors to MC", po::value<bool>(&applySFwtToMC_))
+    ("Analysis.era", po::value<std::string>(&era_))
+    ("Analysis.integrated luminosity", po::value<double>(&intLumi_))
+    ("Analysis.apply Z mass cut", po::value<bool>(&applyMassCut_))
+    ("Analysis.apply Z/gamma Pt cut", po::value<bool>(&applyPtCut_))
+    ("Analysis.use analysis bin from tree", po::value<bool>(&useTreeCCbin_))
+    ("Analysis.use DeepCSV", po::value<bool>(&useDeepCSV_))
+    ("Analysis.apply b-tag SF", po::value<bool>(&applyBTagSF_))
+    ("Analysis.apply pileup weight", po::value<bool>(&applyPuWeight_))
+    ("Analysis.use custom pileup weight", po::value<bool>(&customPuWeight_))
+    ("Analysis.apply HEM jet veto", po::value<bool>(&applyHEMjetVeto_))
+    ("Analysis.apply Z Pt weight", po::value<bool>(&applyZptWt_))
+    ("Analysis.apply double-ratio fit weight", po::value<bool>(&applyDRfitWt_))
+    ("Analysis.apply scale factors to MC", po::value<bool>(&applySFwtToMC_))
 
     ;
   po::variables_map vm;
   std::ifstream cfi_file("RA2bZinvAnalysis.cfi");
-  po::store(po::parse_config_file(cfi_file , desc), vm);
+  po::store(po::parse_config_file(cfi_file , desc, true), vm);
   po::notify(vm);
   if (!cfg_filename.empty()) {
     std::ifstream cfg_file(cfg_filename);
     vm = po::variables_map();  // Clear the map.
-    po::store(po::parse_config_file(cfg_file , desc), vm);
+    po::store(po::parse_config_file(cfg_file , desc, true), vm);
     po::notify(vm);
   }
 
@@ -98,12 +92,7 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
     applyBTagSF_ = false;
     applyPuWeight_ = false;
   }
-  if (!isSkim_) {
-    useTreeCCbin_ = false;
-    treeName_ = "TreeMaker2/PreSelection";  // For ntuple
-  } else {
-    treeName_ = "tree";  // For skims
-  }
+  if (!isSkim_) useTreeCCbin_ = false;
   if (applyBTagSF_
       || (ntupleVersion_ == "V15" && runBlock_.find("2016")==std::string::npos)
       || useDeepCSV_)
@@ -111,7 +100,53 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
   if (ntupleVersion_ == "V12") useDeepCSV_ = false;
   if (ntupleVersion_ == "V15" && runBlock_.find("2016")==std::string::npos) csvMthreshold_ = 0.8838;
 
+  if (runBlock_.find("2016") != std::string::npos) {
+    // For now we have only 2016 pileup correction files
+    if (applyPuWeight_ && customPuWeight_) {
+      TFile* pufile = TFile::Open("../../Analysis/corrections/PileupHistograms_0121_69p2mb_pm4p6.root", "READ");
+      puHist_ = (TH1*) pufile->Get("pu_weights_down");
+    }
+    BTagSFfile_ = useDeepCSV_ ? "../datFiles/DeepCSV_2016LegacySF_WP_V1.csv" :
+                                "../../Analysis/btag/CSVv2_Moriond17_B_H_mod.csv";
+  } else if (runBlock_.find("2017")!=std::string::npos) {
+    BTagSFfile_ = "../datFiles/DeepCSV_94XSF_WP_V4_B_F.csv";
+  } else if (runBlock_.find("2018")!=std::string::npos) {
+    BTagSFfile_ = "../datFiles/DeepCSV_102XSF_WP_V1.csv";
+  }
+
+  setActiveBranches();  // Argument true to activate all
+  fillCutMaps();
+  CCbins_ = new CCbinning(era_, deltaPhi_);
+  effPurCorr_ = new efficiencyAndPurity(deltaPhi_);
+  effPurCorr_->openFiles();
+
+  cout << "After initialization," << endl;
+  cout << "The verbosity level is " << verbosity_ << endl;
+  cout << "The ntuple version is " << ntupleVersion_ << endl;
+  cout << "The MC flag is " << isMC_ << endl;
+  cout << "The input-files-are-skims flag is " << isSkim_ << endl;
+  cout << "The era is " << era_ << endl;
+  cout << "The integrated luminosity = " << intLumi_ << endl;
+  cout << "The path to input files is " << treeLoc_ << endl;
+  cout << "The minDeltaPhi cuts are " << deltaPhi_ << endl;
+  cout << "Apply Z/gamma Pt cut is " << applyPtCut_ << endl;
+  cout << "Use analysis bin from tree is " << useTreeCCbin_ << endl;
+  cout << "Use DeepCSV is " << useDeepCSV_ << endl;
+  cout << "Apply b-tag scale factors is " << applyBTagSF_ << endl;
+  cout << "Apply pileup weight is " << applyPuWeight_ << endl;
+  cout << "Use custom if pileup weight is " << customPuWeight_ << endl;
+  cout << "Apply HEM jet veto for 2018HEM is " << applyHEMjetVeto_ << endl;
+  cout << "Apply Z Pt weight for 2017, 18 Z MC is " << applyZptWt_ << endl;
+  cout << "Apply double-ratio fit weight is " << applyDRfitWt_ << endl;
+  cout << "Apply scale factors to MC for non-DR histograms is " << applySFwtToMC_ << endl;
+
+}  // ======================================================================================
+
+void
+RA2bZinvAnalysis::setActiveBranches(const bool activateAll) {
+
   // Needed branches
+  std::vector<const char*> activeBranches_;
   activeBranches_.push_back("NJets");
   activeBranches_.push_back("BTags");
   activeBranches_.push_back("HT");
@@ -206,163 +241,29 @@ RA2bZinvAnalysis::Init(const std::string& cfg_filename) {
     }
   }
 
-  if (runBlock_.find("2016")!=std::string::npos) {
-    // For now we have only 2016 pileup correction files
-    if (applyPuWeight_ && customPuWeight_) {
-      TFile* pufile = TFile::Open("../../Analysis/corrections/PileupHistograms_0121_69p2mb_pm4p6.root", "READ");
-      puHist_ = (TH1*) pufile->Get("pu_weights_down");
+  cout << "activateAllBranches = " << activateAll << endl;
+  if (!activateAll) {
+    fChain->SetBranchStatus("*", 0);  // disable all branches
+    // cout << "Active branches:" << endl;
+    for (auto theBranch : activeBranches_) {
+      // cout << theBranch << endl;
+      fChain->SetBranchStatus(theBranch, 1);
     }
-    BTagSFfile_ = useDeepCSV_ ? "../datFiles/DeepCSV_2016LegacySF_WP_V1.csv" :
-                                "../../Analysis/btag/CSVv2_Moriond17_B_H_mod.csv";
-  } else if (runBlock_.find("2017")!=std::string::npos) {
-    BTagSFfile_ = "../datFiles/DeepCSV_94XSF_WP_V4_B_F.csv";
-  } else if (runBlock_.find("2018")!=std::string::npos) {
-    BTagSFfile_ = "../datFiles/DeepCSV_102XSF_WP_V1.csv";
   }
+  // cout << "After SetBranchStatus, status of HT = " << fChain->GetBranchStatus("HT")
+  //      << ", JetIDAK8 = " << fChain->GetBranchStatus("JetIDAK8") << endl;
 
-  CCbins_ = new CCbinning(era_, deltaPhi_);
-
-  cout << "After initialization," << endl;
-  cout << "The verbosity level is " << verbosity_ << endl;
-  cout << "The ntuple version is " << ntupleVersion_ << endl;
-  cout << "The MC flag is " << isMC_ << endl;
-  cout << "The input-files-are-skims flag is " << isSkim_ << endl;
-  cout << "The era is " << era_ << endl;
-  cout << "The integrated luminosity = " << intLumi_ << endl;
-  cout << "The path to input files is " << treeLoc_ << endl;
-  cout << "The minDeltaPhi cuts are " << deltaPhi_ << endl;
-  cout << "Apply Z/gamma Pt cut is " << applyPtCut_ << endl;
-  cout << "Use analysis bin from tree is " << useTreeCCbin_ << endl;
-  cout << "Use DeepCSV is " << useDeepCSV_ << endl;
-  cout << "Apply b-tag scale factors is " << applyBTagSF_ << endl;
-  cout << "Apply pileup weight is " << applyPuWeight_ << endl;
-  cout << "Use custom if pileup weight is " << customPuWeight_ << endl;
-  cout << "Apply HEM jet veto for 2018HEM is " << applyHEMjetVeto_ << endl;
-  cout << "Apply Z Pt weight for 2017, 18 Z MC is " << applyZptWt_ << endl;
-  cout << "Apply double-ratio fit weight is " << applyDRfitWt_ << endl;
-  cout << "Apply scale factors to MC for non-DR histograms is " << applySFwtToMC_ << endl;
-
-  fillCutMaps();
-  effPurCorr_.openFiles();
-
-}  // ======================================================================================
-
-TChain*
-RA2bZinvAnalysis::getChain(const char* sample, Int_t* fCurrent, bool makeClass) {
-
-  bool activateAllBranches = false;  // Can be set true for debugging
-  cout << "activateAllBranches = " << activateAllBranches << endl;
-
-  TString theSample(sample);
-  TString key;
-  if      (theSample.Contains("zinv")) key = TString("zinv");
-  else if (theSample.Contains("ttzvv")) key = TString("ttzvv");
-  else if (theSample.Contains("dymm")) key = TString("dymm");
-  else if (theSample.Contains("dyee")) key = TString("dyee");
-  else if (theSample.Contains("ttzmm")) key = TString("ttzmm");
-  else if (theSample.Contains("ttzee")) key = TString("ttzee");
-  else if (theSample.Contains("VVmm")) key = TString("VVmm");
-  else if (theSample.Contains("VVee")) key = TString("VVee");
-  else if (theSample.Contains("ttmm")) key = TString("ttmm");
-  else if (theSample.Contains("ttee")) key = TString("ttee");
-  else if (theSample.Contains("zmm")) key = TString("zmm");
-  else if (theSample.Contains("zee")) key = TString("zee");
-  else if (theSample.Contains("photon")) key = TString("photon");
-  else if (theSample.Contains("gjetsqcd")) key = TString("gjetsqcd");
-  else if (theSample.Contains("gjets")) key = TString("gjets");
-  if (deltaPhi_.find("ldp") != std::string::npos && isSkim_) key += "ldp";
-  if (!runBlock_.empty()) key += runBlock_;  key("HEM") = "";
-
-  TChain* chain = new TChain(treeName_.data());
-  std::vector<TString> files = fileList(key);
-  for (auto file : files) {
-    if (verbosity_ >= 2) cout << file << endl;
-    chain->Add(file);
-  }
-  if (fCurrent != nullptr) *fCurrent = -1;
-  if (makeClass) return chain;
-
-  if (!activateAllBranches) {
-    chain->SetBranchStatus("*", 0);  // disable all branches
-    for (auto theBranch : activeBranches_) chain->SetBranchStatus(theBranch, 1);
-  }
-
-  cout << "Initial size of cache for chain = " << chain->GetCacheSize() << endl;
+  cout << "Initial size of cache for fChain = " << fChain->GetCacheSize() << endl;
   TTreeCache::SetLearnEntries(1);
-  chain->SetCacheSize(200*1024*1024);
-  chain->SetCacheEntryRange(0, chain->GetEntries());
-  if (activateAllBranches) {
-    chain->AddBranchToCache("*", true);
+  fChain->SetCacheSize(200*1024*1024);
+  fChain->SetCacheEntryRange(0, fChain->GetEntries());
+  if (activateAll) {
+    fChain->AddBranchToCache("*", true);
   } else {
-    for (auto theBranch : activeBranches_) chain->AddBranchToCache(theBranch, true);
+    for (auto theBranch : activeBranches_) fChain->AddBranchToCache(theBranch, true);
   }
-  chain->StopCacheLearningPhase();
-  cout << "Reset size of cache for chain = " << chain->GetCacheSize() << endl;
-
-  setBranchAddress(chain);
-
-  return chain;
-
-}  // ======================================================================================
-
-std::vector<TString>
-RA2bZinvAnalysis::fileList(TString sampleKey) {
-
-  std::vector<TString> files;
-  TString dir(treeLoc_);
-  TString key, toReserve;
-  const char* fileName = fileListsFile_.data();
-  ifstream dataStream;
-  cout << "Getting root file list from " << fileName << endl;
-  dataStream.open(fileName); // open the data file
-  if (!dataStream.good()) {
-    cout << "Open failed for file " << fileName << endl;
-    return files; // exit if file not found
-  }
-
-  TString buf;
-  Ssiz_t from;
-  do {  // Look for matching sample key
-    buf.ReadLine(dataStream);
-    if (dataStream.eof()) {
-      cout << "EOF found prematurely while searching for key " << sampleKey << endl;
-      return files;
-    }
-    Ssiz_t pos = buf.First('#');
-    if (pos <= 0) continue;  // Ignore comment lines
-    buf = buf.Remove(pos, buf.Length()-pos);  // Remove comment following the tokens
-    from = 0;
-    buf.Tokenize(key, from);  // First token is the key
-  }
-  while (key != sampleKey);
-
-  int nReserve = 0;  // Second token is the optional size to reserve in the file list vector
-  bool next = buf.Tokenize(toReserve, from);
-  if (next && toReserve.IsDec()) sscanf(toReserve.Data(), "%d", &nReserve);
-
-  do {  // Read the file names for this sample
-    buf.ReadLine(dataStream);
-    if (dataStream.eof()) {
-      cout << "EOF found prematurely while searching for end of file list" << sampleKey << endl;
-      return files;
-    }
-    if (buf.Contains("#*")) {  // Ignore #* ... *# comment block
-      do {
-	buf.ReadLine(dataStream);
-	if (dataStream.eof()) {
-	  cout << "EOF found prematurely while searching for comment block terminator" << sampleKey << endl;
-	  return files;
-	}
-      }
-      while (!buf.Contains("*#"));
-    }
-    if (buf.Contains("#")) continue;
-    buf = buf.Strip();  // Remove any trailing whitespace
-    files.push_back(dir+buf);
-  }
-  while (!buf.Contains("##"));  // Dataset terminator is ##
-
-  return files;
+  fChain->StopCacheLearningPhase();
+  cout << "Reset size of cache for fChain = " << fChain->GetCacheSize() << endl;
 
 }  // ======================================================================================
 
@@ -488,12 +389,12 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
   //
   TString sampleKey = sampleKeyMap_.count(sample) > 0 ? sampleKeyMap_.at(sample) : TString("none");
   int currentYear = -1;
-  Int_t fCurrent;  // current Tree number in a TChain
-  TChain* chain = getChain(sample, &fCurrent);
+  // Int_t fCurrent;  // current Tree number in a TChain
+  // TChain* chain = getChain(sample, &fCurrent);
   TObjArray* forNotify = new TObjArray;
   forNotify->SetOwner();  // so that TreeFormulas will be deleted
 
-  TTreeFormula* baselineFormula = new TTreeFormula("baselineCuts", baselineCuts, chain);
+  TTreeFormula* baselineFormula = new TTreeFormula("baselineCuts", baselineCuts, fChain);
   forNotify->Add(baselineFormula);
 
   // For B-tagging corrections
@@ -509,7 +410,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
   Double_t ptWgts[297] =
     {0.615, 0.626, 0.649, 0.688, 0.739, 0.796, 0.852, 0.899, 0.936, 0.969, 0.995, 1.015, 1.034, 1.050, 1.065, 1.079, 1.092, 1.103, 1.118, 1.126, 1.139, 1.146, 1.156, 1.160, 1.164, 1.164, 1.165, 1.165, 1.164, 1.164, 1.164, 1.161, 1.158, 1.156, 1.154, 1.146, 1.147, 1.140, 1.135, 1.134, 1.129, 1.128, 1.121, 1.115, 1.110, 1.109, 1.111, 1.103, 1.094, 1.092, 1.093, 1.089, 1.085, 1.084, 1.074, 1.074, 1.067, 1.068, 1.062, 1.066, 1.063, 1.055, 1.050, 1.054, 1.048, 1.044, 1.042, 1.043, 1.034, 1.032, 1.035, 1.033, 1.028, 1.030, 1.029, 1.030, 1.012, 1.012, 1.018, 1.013, 1.011, 1.000, 1.007, 1.015, 0.989, 1.001, 0.994, 0.990, 0.990, 0.986, 0.981, 0.986, 0.972, 0.971, 0.977, 0.974, 0.978, 0.966, 0.985, 0.978, 0.966, 0.972, 0.969, 0.971, 0.964, 0.962, 0.948, 0.952, 0.943, 0.973, 0.936, 0.945, 0.935, 0.944, 0.953, 0.943, 0.935, 0.926, 0.946, 0.940, 0.943, 0.933, 0.920, 0.912, 0.923, 0.904, 0.919, 0.937, 0.941, 0.929, 0.923, 0.902, 0.925, 0.927, 0.896, 0.926, 0.905, 0.920, 0.908, 0.889, 0.910, 0.913, 0.911, 0.889, 0.881, 0.888, 0.904, 0.886, 0.891, 0.915, 0.879, 0.884, 0.900, 0.874, 0.850, 0.874, 0.873, 0.872, 0.894, 0.880, 0.870, 0.871, 0.863, 0.883, 0.863, 0.892, 0.845, 0.863, 0.892, 0.851, 0.878, 0.847, 0.881, 0.809, 0.860, 0.829, 0.851, 0.871, 0.846, 0.825, 0.860, 0.853, 0.894, 0.807, 0.793, 0.863, 0.832, 0.829, 0.870, 0.850, 0.831, 0.820, 0.829, 0.839, 0.880, 0.831, 0.804, 0.836, 0.822, 0.796, 0.812, 0.831, 0.830, 0.827, 0.802, 0.781, 0.855, 0.798, 0.774, 0.790, 0.810, 0.825, 0.799, 0.790, 0.811, 0.778, 0.803, 0.779, 0.795, 0.768, 0.809, 0.762, 0.767, 0.752, 0.822, 0.777, 0.791, 0.799, 0.721, 0.776, 0.718, 0.798, 0.754, 0.749, 0.758, 0.847, 0.766, 0.775, 0.718, 0.756, 0.826, 0.792, 0.792, 0.767, 0.679, 0.694, 0.750, 0.738, 0.707, 0.709, 0.711, 0.754, 0.762, 0.717, 0.722, 0.692, 0.714, 0.726, 0.703, 0.693, 0.704, 0.704, 0.653, 0.718, 0.748, 0.713, 0.733, 0.741, 0.742, 0.652, 0.586, 0.644, 0.656, 0.702, 0.721, 0.682, 0.758, 0.662, 0.578, 0.654, 0.723, 0.634, 0.680, 0.656, 0.602, 0.590, 0.566, 0.623, 0.562, 0.589, 0.604, 0.554, 0.525, 0.552, 0.503, 0.563, 0.476};
 
-  cutHistos cutHistFiller(chain, forNotify);  // for cutFlow histograms
+  cutHistos cutHistFiller((TChain*) fChain, forNotify);  // for cutFlow histograms
 
   // Book histograms
   if (verbosity_ >= 1) cout << endl << "baseline = " << endl << baselineCuts << endl << endl;
@@ -543,35 +444,39 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       cout << "; hg->addCuts = " << hg->addCuts;
       cout << ", cuts = " << endl << hg->NminusOneCuts << endl;
     }
-    hg->NminusOneFormula = new TTreeFormula(hg->name, hg->NminusOneCuts, chain);
+    hg->NminusOneFormula = new TTreeFormula(hg->name, hg->NminusOneCuts, fChain);
     forNotify->Add(hg->NminusOneFormula);
   }
-  chain->SetNotify(forNotify);
+  fChain->SetNotify(forNotify);
 
   // Traverse the tree and fill histograms
   double MCwtCorr = 1.;
-  Long64_t Nentries = chain->GetEntries();
+  Long64_t Nentries = fChain->GetEntries();
   if (verbosity_ >= 1) cout << "Nentries in tree = " << Nentries << endl;
-  cout << "After GetEntries, status of HT = " << chain->GetBranchStatus("HT")
-       << ", JetIDAK8 = " << chain->GetBranchStatus("JetIDAK8") << endl;
+  // cout << "After GetEntries, status of HT = " << fChain->GetBranchStatus("HT")
+  //      << ", JetIDAK8 = " << fChain->GetBranchStatus("JetIDAK8") << endl;
   int count = 0, countInFile = 0, countInSel = 0, countNegWt = 0;
   for (Long64_t entry = 0; entry < Nentries; ++entry) {
     count++;
     if (verbosity_ >= 1 && count % 100000 == 0) cout << "Entry number " << count << endl;
 
-    Long64_t centry = chain->LoadTree(entry);
+    Long64_t centry = LoadTree(entry);
     if (centry < 0) {
-      cout << "LoadEntry returned " << centry;
+      cout << "LoadTree returned " << centry;
       break;
     }
-    if (count == 1) cout << "After first LoadTree, status of HT = " << chain->GetBranchStatus("HT")
-			 << ", JetIDAK8 = " << chain->GetBranchStatus("JetIDAK8") << endl;
-    if (chain->GetTreeNumber() != fCurrent) {
+    // if (count == 1) cout << "After first LoadTree, status of HT = " << fChain->GetBranchStatus("HT")
+    // 			 << ", JetIDAK8 = " << fChain->GetBranchStatus("JetIDAK8") << endl;
+    // if (fChain->GetTreeNumber() != fCurrent) {
+      // fCurrent = fChain->GetTreeNumber();
+    if (newFileInChain_) {
       // New input root file encountered
-      fCurrent = chain->GetTreeNumber();
-      TFile* thisFile = chain->GetCurrentFile();
+      // fCurrent = chain->GetTreeNumber();
+      newFileInChain_ = false;
+      countInFile = 0;
+      TFile* thisFile = fChain->GetCurrentFile();
       if (thisFile) {
-    	if (btagcorr_) btagcorr_->SetEffs(thisFile);
+	if (btagcorr_) btagcorr_->SetEffs(thisFile);
 	TString path = thisFile->GetName();
 	if (verbosity_ >= 1) cout << "Current file in chain: " << path << endl;
 	// Set MCwtCorr for this file
@@ -597,7 +502,8 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 	  }
 	}
       }
-      chain->GetEntry(entry);  // Pull in tree variables for reinitialization
+      GetEntry(entry);  // Pull in tree variables for reinitialization
+      // cout << "First event, new file setup " << endl;  Show();
       setTriggerIndexList(sample);
       if (isMC_ && verbosity_ >= 1) cout << "MC weight for this file is " << Weight << " times correction " << MCwtCorr << endl;
       // Load the year-dependent correction factors.
@@ -614,11 +520,15 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       if (theYear != currentYear) {
 	currentYear = theYear;
 	cout << "currentYear = " << currentYear << endl;
-	effPurCorr_.getHistos(sample, currentYear);  // For purity, Fdir, trigger eff, reco eff
+	effPurCorr_->getHistos(sample, currentYear);  // For purity, Fdir, trigger eff, reco eff
       }
-    }
-    chain->GetEntry(entry);
+    }  // newFileInChain_
+
+    GetEntry(entry);
+    // cout << endl << "First entry for analysis" << endl;  Show();  break;
     countInFile++;
+    if (countInFile == 1) cout << "After get first entry in file, status of HT = " << fChain->GetBranchStatus("HT")
+			       << ", JetIDAK8 = " << fChain->GetBranchStatus("JetIDAK8") << endl;
 
     cleanVars();  // If unskimmed input, copy <var>clean to <var>
     Int_t BTagsOrig = setBTags();
@@ -678,7 +588,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       eventWt *= MCwt;
     }  // isMC_
 
-    pair<double, double> efficiency = effPurCorr_.weight(CCbins_, NJets, BTags, MHT, HT, *ZCandidates, *Photons,
+    pair<double, double> efficiency = effPurCorr_->weight(CCbins_, NJets, BTags, MHT, HT, *ZCandidates, *Photons,
 							 *Electrons, *Muons, *Photons_isEB, applyDRfitWt_, currentYear);
     effWt_ = efficiency.first;  effSys_ = efficiency.second;
 
@@ -689,6 +599,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       for (auto trgIndex : triggerIndexList_)
 	if (TriggerPass->at(trgIndex)) passTrg = true;
     }
+
     // HEM veto for 2018HEM
     bool passHEM = true;
     if (applyHEMjetVeto_ && !passHEMjetVeto()) passHEM = false;
@@ -750,7 +661,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
   cout << "At end, count = " << countInSel << ", with negative weights = " << countNegWt << endl;
 
   delete forNotify;
-  delete chain->GetCurrentFile();
+  delete fChain->GetCurrentFile();
   if (btagcorr_) delete btagcorr_;
 
 }  // ======================================================================================
@@ -2210,29 +2121,22 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
 }  // ======================================================================================
 
 void
-RA2bZinvAnalysis::runMakeClass(const std::string& sample) {
-  TChain* chain = getChain(sample.data(), nullptr, true);
-  TString templateName("TreeMkrTemplate_");
-  if (!isSkim_) templateName += "unskimmed_";
-  templateName += isMC_ ? "MC_" : "data_";
-  templateName += ntupleVersion_;
-  chain->MakeClass(templateName.Data());
-
-}  // ======================================================================================
-
-void
 RA2bZinvAnalysis::checkTrigPrescales(const char* sample) {
-  Int_t fCurrent;  // current Tree number in a TChain
-  TChain* chain = getChain(sample, &fCurrent);
-  Long64_t Nentries = chain->GetEntries();
+  // Int_t fCurrent;  // current Tree number in a TChain
+  // TChain* chain = getChain(sample, &fCurrent);
+  Long64_t Nentries = fChain->GetEntries();
   Int_t countInFile = 0;
   for (Long64_t entry = 0; entry < Nentries; ++entry) {
-    chain->LoadTree(entry);
-    if (chain->GetTreeNumber() != fCurrent) {
-      fCurrent = chain->GetTreeNumber();
-      TFile* thisFile = chain->GetCurrentFile();
+    Long64_t centry = LoadTree(entry);
+    if (centry < 0) {
+      cout << "LoadEntry returned " << centry;
+      break;
+    }
+    if (newFileInChain_) {
+      newFileInChain_ = false;
+      TFile* thisFile = fChain->GetCurrentFile();
       if (thisFile) cout << "Current file in chain: " << thisFile->GetName() << endl;
-      chain->GetEntry(entry);
+      GetEntry(entry);
       for (unsigned int ti=0; ti<TriggerNames->size(); ++ti) {
 	Int_t prescale = TriggerPrescales->at(ti);
 	// if (prescale != 1)
@@ -2251,27 +2155,27 @@ RA2bZinvAnalysis::dumpSelEvIDs(const char* sample, const char* idFileName) {
   FILE* idFile;
   idFile = fopen(idFileName, "w");
 
-  Int_t fCurrent;  // current Tree number in a TChain
-  TChain* chain = getChain(sample, &fCurrent);
+  // Int_t fCurrent;  // current Tree number in a TChain
+  // TChain* chain = getChain(sample, &fCurrent);
 
   TObjArray* forNotify = new TObjArray;
   forNotify->SetOwner();  // so that TreeFormulas will be deleted
 
   TCut baselineCuts = getCuts(sample);
   if (verbosity_ >= 1) cout << endl << "baseline = " << endl << baselineCuts << endl << endl;
-  TTreeFormula* baselineFormula = new TTreeFormula("baselineCuts", baselineCuts, chain);
+  TTreeFormula* baselineFormula = new TTreeFormula("baselineCuts", baselineCuts, fChain);
   forNotify->Add(baselineFormula);
-  TTreeFormula* HTcutf_ = new TTreeFormula("HTcut", HTcut_, chain);  forNotify->Add(HTcutf_);
-  TTreeFormula* MHTcutf_ = new TTreeFormula("MHTcut", MHTcut_, chain);  forNotify->Add(MHTcutf_);
-  TTreeFormula* NJetscutf_ = new TTreeFormula("NJetscut", NJetscut_, chain);  forNotify->Add(NJetscutf_);
-  TTreeFormula* minDphicutf_ = new TTreeFormula("minDphicut", minDphicut_, chain);  forNotify->Add(minDphicutf_);
-  TTreeFormula* objcutf_ = new TTreeFormula("objcut", objcut_, chain);  forNotify->Add(objcutf_);
-  TTreeFormula* ptcutf_ = new TTreeFormula("ptcut", ptCut_, chain);  forNotify->Add(ptcutf_);
-  TTreeFormula* masscutf_ = new TTreeFormula("masscut", massCut_, chain);  forNotify->Add(masscutf_);
-  TTreeFormula* photonDeltaRcutf_ = new TTreeFormula("photonDeltaRcut", photonDeltaRcut_, chain);  forNotify->Add(photonDeltaRcutf_);
-  TTreeFormula* commoncutf_ = new TTreeFormula("commoncut", commonCuts_, chain);  forNotify->Add(commoncutf_);
+  TTreeFormula* HTcutf_ = new TTreeFormula("HTcut", HTcut_, fChain);  forNotify->Add(HTcutf_);
+  TTreeFormula* MHTcutf_ = new TTreeFormula("MHTcut", MHTcut_, fChain);  forNotify->Add(MHTcutf_);
+  TTreeFormula* NJetscutf_ = new TTreeFormula("NJetscut", NJetscut_, fChain);  forNotify->Add(NJetscutf_);
+  TTreeFormula* minDphicutf_ = new TTreeFormula("minDphicut", minDphicut_, fChain);  forNotify->Add(minDphicutf_);
+  TTreeFormula* objcutf_ = new TTreeFormula("objcut", objcut_, fChain);  forNotify->Add(objcutf_);
+  TTreeFormula* ptcutf_ = new TTreeFormula("ptcut", ptCut_, fChain);  forNotify->Add(ptcutf_);
+  TTreeFormula* masscutf_ = new TTreeFormula("masscut", massCut_, fChain);  forNotify->Add(masscutf_);
+  TTreeFormula* photonDeltaRcutf_ = new TTreeFormula("photonDeltaRcut", photonDeltaRcut_, fChain);  forNotify->Add(photonDeltaRcutf_);
+  TTreeFormula* commoncutf_ = new TTreeFormula("commoncut", commonCuts_, fChain);  forNotify->Add(commoncutf_);
 
-  chain->SetNotify(forNotify);
+  fChain->SetNotify(forNotify);
 
   std::vector<ULong64_t> EvtNums = {
     // 721713515,
@@ -2297,22 +2201,28 @@ RA2bZinvAnalysis::dumpSelEvIDs(const char* sample, const char* idFileName) {
       116551966
   };
 
-  Long64_t Nentries = chain->GetEntries();
+  Long64_t Nentries = fChain->GetEntries();
   if (verbosity_ >= 1) cout << "Nentries in tree = " << Nentries << endl;
   int count = 0;
   for (Long64_t entry = 0; entry < Nentries; ++entry) {
     count++;
     if (verbosity_ >= 1 && count % 100000 == 0) cout << "Entry number " << count << endl;
 
-    chain->LoadTree(entry);
-    if (chain->GetTreeNumber() != fCurrent) {
-      fCurrent = chain->GetTreeNumber();
-      TFile* thisFile = chain->GetCurrentFile();
+    Long64_t centry = LoadTree(entry);
+    if (centry < 0) {
+      cout << "LoadEntry returned " << centry;
+      break;
+    }
+    // if (fChain->GetTreeNumber() != fCurrent) {
+    //   fCurrent = fChain->GetTreeNumber();
+    if (newFileInChain_) {
+      newFileInChain_ = false;
+      TFile* thisFile = fChain->GetCurrentFile();
       if (thisFile) {
-	if (verbosity_ >= 1) cout << "Current file in chain: " << thisFile->GetName() << endl;
+	if (verbosity_ >= 1) cout << "Current file in fChain: " << thisFile->GetName() << endl;
       }
     }
-    chain->GetEntry(entry);
+    GetEntry(entry);
 
     if (std::find(EvtNums.begin(), EvtNums.end(), EvtNum) == EvtNums.end()) continue;
     printf("%15u %15u %15llu\n", RunNum, LumiBlockNum, EvtNum);

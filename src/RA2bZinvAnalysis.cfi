@@ -1,11 +1,5 @@
-# The following configuration options are set by compiler directives in
-# RA2bZinvAnalysis.h; modify or comment out to reverse.
-# #define VERSION 12  # (of TreeMaker; so far the alternatives are 15 and 16)
-# #define ISSKIM
-# #define ISMC
-#
+[Tree]
 verbosity = 2
-era = Run2
 runBlock = 
 # tree path = /nfs/data38/cms/mulholland/lpcTrees/Skims/Run2ProductionV12/ # Colorado, owned by mulholland
 # tree path = /nfs/data38/cms/wtford/lpcTrees/Skims/Run2ProductionV12/  # Colorado, owned by wtford (Zjets only)
@@ -20,6 +14,9 @@ runBlock =
 tree path = /mnt/hadoop/store/user/aperloff/SusyRA2Analysis2015/Skims/Run2ProductionV17/  # local store
 root file index = ../datFiles/skimFilesV17.dat
 delta phi sample = nominal  # nominal, ldp, hdp, ldpnominal
+
+[Analysis]
+era = Run2
 integrated luminosity = 35.9
 apply Z/gamma Pt cut = true
 apply Z mass cut = true

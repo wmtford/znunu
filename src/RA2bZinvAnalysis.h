@@ -6,16 +6,17 @@
 #ifndef RA2BZINVANALYSIS_H
 #define RA2BZINVANALYSIS_H
 
+#ifndef NtupleClass_cxx
+#define NtupleClass_cxx
+#endif
+
 #define _CRT_SECURE_NO_WARNINGS
 
-#define VERSION 17
-/* #define ISMC */
-#define ISSKIM
-
+#include "TreeAnalysisBase.h"
+#include "NtupleClass.h"
 #include "CCbinning.h"
-#include <TString.h>
-#include <TChain.h>
-#include <TTreeReaderValue.h>
+/* #include <TString.h> */
+/* #include <TChain.h> */
 #include <TH1F.h>
 #include <TH1D.h>
 #include <TH2F.h>
@@ -23,14 +24,15 @@
 #include <TEfficiency.h>
 #include <TLorentzVector.h>
 #include <TTreeFormula.h>
-#include <TChainElement.h>
+/* #include <TChainElement.h> */
 #include "../../Analysis/btag/BTagCorrector.h"
 
 #include <TMath.h>
 using namespace TMath;
 
+void NtupleClass::Loop() {}
+
 // members needed by nested classes
-static std::string deltaPhi_;  // "nominal", "hdp", "ldp", "ldpnominal"
 static TString HTcut_;
 static TString MHTcut_;
 static TString NJetscut_;
@@ -42,15 +44,15 @@ static TString massCut_;
 static TString photonDeltaRcut_;
 static TH2F *hPrefiring_photon_, *hPrefiring_jet_;
 
-class RA2bZinvAnalysis {
+class RA2bZinvAnalysis : public TreeAnalysisBase, public NtupleClass {
 
 public:
   RA2bZinvAnalysis();
-  RA2bZinvAnalysis(const std::string& cfg_filename, const std::string& runBlock = "");
+  RA2bZinvAnalysis(const char* sample, const std::string& cfg_filename, const std::string& runBlock = "");
   virtual ~RA2bZinvAnalysis() {};
 
-  TChain* getChain(const char* sample, Int_t* fCurrent = nullptr, bool makeClass = false);
-  std::vector<TString> fileList(TString sampleKey);
+  /* TChain* getChain(const char* sample, Int_t* fCurrent = nullptr, bool makeClass = false); */
+  /* std::vector<TString> fileList(TString sampleKey); */
   std::vector<TH1*> makeHistograms(const char* sample);
   void dumpSelEvIDs(const char* sample, const char* idFileName);
   TCut getCuts(const TString sampleKey);
@@ -64,7 +66,6 @@ public:
     return -1;
   };
   void checkTrigPrescales(const char* sample);
-  void runMakeClass(const std::string& sample);
 
   enum yearFirstRun {Start2016 = 271036, Start2017 = 294645, Start2018 = 315252, StartHEM = 319077, Start2018C = 319313};
   // First HEM run 319077
@@ -115,7 +116,8 @@ public:
 
   class efficiencyAndPurity {
   public:
-    efficiencyAndPurity() {};
+    efficiencyAndPurity() : deltaPhi_("nominal") {};
+    efficiencyAndPurity(string deltaPhi) : deltaPhi_(deltaPhi) {};
     ~efficiencyAndPurity() {};
     void openFiles();
     void getHistos(const char* sample, int currentYear);
@@ -141,6 +143,7 @@ public:
     std::vector<TFile*> muonIsoSFFile_;
     TFile* prefiringWeightFile_;
     TString theSample_;
+    string deltaPhi_;
     std::vector<TH1F*> hPurity_, hTrigEff_;
     std::vector<TF1*> fTrigEff_;
     std::vector<TEfficiency*> eTrigEff_;
@@ -154,30 +157,6 @@ public:
   };
 
 private:
-#if VERSION == 12
-  const TString ntupleVersion_ = "V12";
-#elif  VERSION == 15
-  const TString ntupleVersion_ = "V15";
-#elif  VERSION == 16
-  const TString ntupleVersion_ = "V16";
-#elif  VERSION == 17
-  const TString ntupleVersion_ = "V17";
-#endif
-#ifdef ISMC
-  const bool isMC_ = true;
-#else
-  const bool isMC_ = false;
-#endif
-#ifdef ISSKIM
-  const bool isSkim_ = true;
-#else
-  const bool isSkim_ = false;
-#endif
-  int verbosity_;
-  std::string treeName_;
-  std::string treeLoc_;
-  std::string fileListsFile_;
-  std::string runBlock_;
   std::string era_;  // "2016", "Run2"
   double intLumi_;
   bool applyMassCut_;
@@ -202,61 +181,6 @@ private:
   double csvMthreshold_;
   double effWt_, effSys_;
 
-#ifdef ISMC
-
-  #if VERSION == 12
-    #include "LeafDeclaration_MC_V12.h"
-  #elif VERSION == 16
-    #include "LeafDeclaration_MC_V16.h"
-  #elif VERSION == 17
-    #include "LeafDeclaration_MC_V17.h"
-  #endif
-
-#else  // ISMC
-
-  #if VERSION == 12
-    #include "LeafDeclaration_data_V12.h"
-  #elif VERSION == 15
-    #ifdef ISSKIM
-      #include "LeafDeclaration_data_V15.h"
-    #else
-      #include "LeafDeclaration_unskimmed_data_V15.h"
-    #endif
-  #elif VERSION == 16
-    #include "LeafDeclaration_data_V16.h"
-  #elif VERSION == 17
-    #include "LeafDeclaration_data_V17.h"
-
-  #endif  // VERSION
-
-  // Declare dummy tree variables valid only in MC
-
-  Double_t        puWeight;
-  Double_t        Weight;
-  Double_t        TrueNumInteractions;
-  vector<TLorentzVector> *GenParticles;
-  vector<int>     *GenParticles_PdgId;
-  vector<int>     *GenParticles_Status;
-
-#endif  // !ISMC
-
-#if VERSION < 16
-  #ifdef ISMC
-    Double_t        NonPrefiringProb;
-  #endif
-#endif
-
-#ifndef ISSKIM
-  UInt_t          RA2bin;
-#endif
-
-#if VERSION == 12
-  Int_t           NElectrons;
-  Int_t           NMuons;
-  Int_t           BTagsDeepCSV;
-  Int_t           ecalBadCalibFilter;
-#endif
-
   typedef std::map<TString, std::vector<TString> > vstring_map;
   typedef std::map<TString, TString> string_map;
   std::vector<unsigned> triggerIndexList_;
@@ -265,14 +189,14 @@ private:
   string_map minDphiCutMap_;
   string_map MHTCutMap_;
   string_map sampleKeyMap_;
-  std::vector<const char*> activeBranches_;
 
-  void Init(const std::string& cfg_filename="");
+  void Config(const std::string& cfg_filename="");
+  void setActiveBranches(const bool activateAll = false);
   void fillCutMaps();
   void bookAndFillHistograms(const char* sample, std::vector<histConfig*>& histograms, TCut baselineCuts);
   void fillCutFlow(TH1D* hcf, Double_t wt);
   Int_t setBTags();
-  efficiencyAndPurity effPurCorr_;
+  efficiencyAndPurity* effPurCorr_;
 
   double prefiring_weight_photon(unsigned p){
     double w = 1;
@@ -334,7 +258,7 @@ private:
   };
 
   void cleanVars() {
-#ifndef ISSKIM
+    if (isSkim_) return;
     NJets = NJetsclean;
     BTags = BTagsclean;
     BTagsDeepCSV = BTagsDeepCSVclean;
@@ -352,7 +276,6 @@ private:
     DeltaPhi2 = DeltaPhi2clean;
     DeltaPhi3 = DeltaPhi3clean;
     DeltaPhi4 = DeltaPhi4clean;
-#endif
   };
 
   // Functions to fill histograms with non-double, non-int types
@@ -381,7 +304,7 @@ private:
   void fillGLdRnoPixelSeed(TH1D* h, double wt);
   void fillGLdRpixelSeed(TH1D* h, double wt);
 
-  ClassDef(RA2bZinvAnalysis, 1) // 2nd arg is ClassVersionID
+  /* ClassDef(RA2bZinvAnalysis, 1) // 2nd arg is ClassVersionID */
 };
 
 #endif
