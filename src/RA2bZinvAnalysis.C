@@ -8,39 +8,41 @@
 #include <TROOT.h>
 #include <TCanvas.h>
 #include <TFile.h>
-// #include <TRegexp.h>
+#include <TRegexp.h>
 #include <TCut.h>
 #include <TTreeCache.h>
 
-// #include <iostream>
-// using std::cout;
-// using std::endl;
+#include <iostream>
+using std::cout;
+using std::endl;
 
-// #include <fstream>
-// using std::ifstream;
+#include <fstream>
+using std::ifstream;
 
-// #include <sstream>
-// using std::stringstream;
+#include <sstream>
+using std::stringstream;
 
-// #include <stdio.h>
-// // using std::sprintf;
+#include <stdio.h>
+// using std::sprintf;
 
 #include <string>
 
-// #include <boost/program_options.hpp>
-// namespace po = boost::program_options;
+#include <boost/program_options.hpp>
+namespace po = boost::program_options;
 
-ClassImp(RA2bZinvAnalysis)
+// ClassImp(RA2bZinvAnalysis)
 
 // ======================================================================================
 
-RA2bZinvAnalysis::RA2bZinvAnalysis() : TreeAnalysisBase(), NtupleClass(0) {
+RA2bZinvAnalysis::RA2bZinvAnalysis() : NtupleClass(0), isMC_(false) {
   Config();
 }
 
-RA2bZinvAnalysis::RA2bZinvAnalysis(const char* sample, const std::string& cfg_filename, const std::string& runBlock) :
-  TreeAnalysisBase(sample, cfg_filename, runBlock), NtupleClass(chain_) {
+RA2bZinvAnalysis::RA2bZinvAnalysis(const bool isMC, const std::string& cfg_filename, const std::string& runBlock) :
+  NtupleClass(0), isMC_(isMC) {
   Config(cfg_filename);
+    if (!runBlock.empty()) runBlock_ = runBlock;
+    cout << "The runBlock is " << runBlock_ << endl;
 }
 
 void
@@ -49,30 +51,49 @@ RA2bZinvAnalysis::Config(const std::string& cfg_filename) {
   // Set up configuration, using boost/program_options.
   po::options_description desc("Config");
   desc.add_options()
-    ("Analysis.era", po::value<std::string>(&era_))
-    ("Analysis.integrated luminosity", po::value<double>(&intLumi_))
-    ("Analysis.apply Z mass cut", po::value<bool>(&applyMassCut_))
-    ("Analysis.apply Z/gamma Pt cut", po::value<bool>(&applyPtCut_))
-    ("Analysis.use analysis bin from tree", po::value<bool>(&useTreeCCbin_))
-    ("Analysis.use DeepCSV", po::value<bool>(&useDeepCSV_))
-    ("Analysis.apply b-tag SF", po::value<bool>(&applyBTagSF_))
-    ("Analysis.apply pileup weight", po::value<bool>(&applyPuWeight_))
-    ("Analysis.use custom pileup weight", po::value<bool>(&customPuWeight_))
-    ("Analysis.apply HEM jet veto", po::value<bool>(&applyHEMjetVeto_))
-    ("Analysis.apply Z Pt weight", po::value<bool>(&applyZptWt_))
-    ("Analysis.apply double-ratio fit weight", po::value<bool>(&applyDRfitWt_))
-    ("Analysis.apply scale factors to MC", po::value<bool>(&applySFwtToMC_))
+    ("verbosity", po::value<int>(&verbosity_))
+    ("era", po::value<std::string>(&era_))
+    ("runBlock", po::value<std::string>(&runBlock_))  // May be overridden by constructor
+    ("tree path", po::value<std::string>(&treeLoc_))
+    ("root file index", po::value<std::string>(&fileListsFile_))
+    ("delta phi sample", po::value<std::string>(&deltaPhi_), "nominal, hdp, ldp, ldpnominal")
+    ("integrated luminosity", po::value<double>(&intLumi_))
+    ("apply Z mass cut", po::value<bool>(&applyMassCut_))
+    ("apply Z/gamma Pt cut", po::value<bool>(&applyPtCut_))
+    ("use analysis bin from tree", po::value<bool>(&useTreeCCbin_))
+    ("use DeepCSV", po::value<bool>(&useDeepCSV_))
+    ("apply b-tag SF", po::value<bool>(&applyBTagSF_))
+    ("apply pileup weight", po::value<bool>(&applyPuWeight_))
+    ("use custom pileup weight", po::value<bool>(&customPuWeight_))
+    ("apply HEM jet veto", po::value<bool>(&applyHEMjetVeto_))
+    ("apply Z Pt weight", po::value<bool>(&applyZptWt_))
+    ("apply double-ratio fit weight", po::value<bool>(&applyDRfitWt_))
+    ("apply scale factors to MC", po::value<bool>(&applySFwtToMC_))
 
     ;
   po::variables_map vm;
   std::ifstream cfi_file("RA2bZinvAnalysis.cfi");
-  po::store(po::parse_config_file(cfi_file , desc, true), vm);
+  po::store(po::parse_config_file(cfi_file , desc, false), vm);  // false means throw exception for unrecognized option
   po::notify(vm);
   if (!cfg_filename.empty()) {
     std::ifstream cfg_file(cfg_filename);
     vm = po::variables_map();  // Clear the map.
-    po::store(po::parse_config_file(cfg_file , desc, true), vm);
+    po::store(po::parse_config_file(cfg_file , desc, false), vm);
     po::notify(vm);
+  }
+
+  //  Extract tree signature from the path
+  string s = treeLoc_, delimiter = "Run2Production";
+  size_t pos = s.find(delimiter);
+  if (pos == string::npos) cout << "Can't find tree version; " << delimiter << " not in tree path" << endl;
+  pos += delimiter.length();
+  ntupleVersion_ = s.substr(pos, 3);
+
+  isSkim_ = treeLoc_.find("Skim") != string::npos;
+  if (!isSkim_) {
+    treeName_ = "TreeMaker2/PreSelection";  // For ntuple
+  } else {
+    treeName_ = "tree";  // For skims
   }
 
   // useTreeCCbin_  only in skims
@@ -114,7 +135,6 @@ RA2bZinvAnalysis::Config(const std::string& cfg_filename) {
     BTagSFfile_ = "../datFiles/DeepCSV_102XSF_WP_V1.csv";
   }
 
-  setActiveBranches();  // Argument true to activate all
   fillCutMaps();
   CCbins_ = new CCbinning(era_, deltaPhi_);
   effPurCorr_ = new efficiencyAndPurity(deltaPhi_);
@@ -139,6 +159,108 @@ RA2bZinvAnalysis::Config(const std::string& cfg_filename) {
   cout << "Apply Z Pt weight for 2017, 18 Z MC is " << applyZptWt_ << endl;
   cout << "Apply double-ratio fit weight is " << applyDRfitWt_ << endl;
   cout << "Apply scale factors to MC for non-DR histograms is " << applySFwtToMC_ << endl;
+
+}  // ======================================================================================
+
+void
+RA2bZinvAnalysis::getChain(const char* dataSet) {
+
+  TString theSample = dataSet;
+  TString key;
+  if      (theSample.Contains("zinv")) key = TString("zinv");
+  else if (theSample.Contains("ttzvv")) key = TString("ttzvv");
+  else if (theSample.Contains("dymm")) key = TString("dymm");
+  else if (theSample.Contains("dyee")) key = TString("dyee");
+  else if (theSample.Contains("ttzmm")) key = TString("ttzmm");
+  else if (theSample.Contains("ttzee")) key = TString("ttzee");
+  else if (theSample.Contains("VVmm")) key = TString("VVmm");
+  else if (theSample.Contains("VVee")) key = TString("VVee");
+  else if (theSample.Contains("ttmm")) key = TString("ttmm");
+  else if (theSample.Contains("ttee")) key = TString("ttee");
+  else if (theSample.Contains("zmm")) key = TString("zmm");  // ( and not "tt")
+  else if (theSample.Contains("zee")) key = TString("zee");  // ( and not "tt")
+  else if (theSample.Contains("photon")) key = TString("photon");
+  else if (theSample.Contains("gjetsqcd")) key = TString("gjetsqcd");
+  else if (theSample.Contains("gjets")) key = TString("gjets");  // ( and not "qcd")
+  else {
+    cout << "getChain:  unknown dataSet '" << dataSet << "'" << endl;
+    return;
+  }
+  if (deltaPhi_.find("ldp") != string::npos && isSkim_) key += "ldp";
+  if (!runBlock_.empty()) key += runBlock_;  key("HEM") = "";
+
+  TChain* chain = new TChain(treeName_.data());
+  std::vector<TString> files = fileList(key);
+  for (auto file : files) {
+    if (verbosity_ >= 2) cout << file << endl;
+    chain->Add(file);
+  }
+
+  Init(chain);  // NtupleClass::Init; set fChain
+  setActiveBranches();  // Argument true to activate all
+
+  return;
+
+}  // ======================================================================================
+
+std::vector<TString>
+RA2bZinvAnalysis::fileList(TString sampleKey) {
+
+  std::vector<TString> files;
+  TString dir(treeLoc_);
+  TString key, toReserve;
+  const char* fileName = fileListsFile_.data();
+  ifstream dataStream;
+  cout << "Getting root file list from " << fileName << endl;
+  dataStream.open(fileName); // open the data file
+  if (!dataStream.good()) {
+    cout << "Open failed for file " << fileName << endl;
+    return files; // exit if file not found
+  }
+
+  TString buf;
+  Ssiz_t from;
+  do {  // Look for matching sample key
+    buf.ReadLine(dataStream);
+    if (dataStream.eof()) {
+      cout << "EOF found prematurely while searching for key " << sampleKey << endl;
+      return files;
+    }
+    Ssiz_t pos = buf.First('#');
+    if (pos <= 0) continue;  // Ignore comment lines
+    buf = buf.Remove(pos, buf.Length()-pos);  // Remove comment following the tokens
+    from = 0;
+    buf.Tokenize(key, from);  // First token is the key
+  }
+  while (key != sampleKey);
+
+  int nReserve = 0;  // Second token is the optional size to reserve in the file list vector
+  bool next = buf.Tokenize(toReserve, from);
+  if (next && toReserve.IsDec()) sscanf(toReserve.Data(), "%d", &nReserve);
+
+  do {  // Read the file names for this sample
+    buf.ReadLine(dataStream);
+    if (dataStream.eof()) {
+      cout << "EOF found prematurely while searching for end of file list" << sampleKey << endl;
+      return files;
+    }
+    if (buf.Contains("#*")) {  // Ignore #* ... *# comment block
+      do {
+	buf.ReadLine(dataStream);
+	if (dataStream.eof()) {
+	  cout << "EOF found prematurely while searching for comment block terminator" << sampleKey << endl;
+	  return files;
+	}
+      }
+      while (!buf.Contains("*#"));
+    }
+    if (buf.Contains("#")) continue;
+    buf = buf.Strip();  // Remove any trailing whitespace
+    files.push_back(dir+buf);
+  }
+  while (!buf.Contains("##"));  // Dataset terminator is ##
+
+  return files;
 
 }  // ======================================================================================
 
@@ -250,8 +372,6 @@ RA2bZinvAnalysis::setActiveBranches(const bool activateAll) {
       fChain->SetBranchStatus(theBranch, 1);
     }
   }
-  // cout << "After SetBranchStatus, status of HT = " << fChain->GetBranchStatus("HT")
-  //      << ", JetIDAK8 = " << fChain->GetBranchStatus("JetIDAK8") << endl;
 
   cout << "Initial size of cache for fChain = " << fChain->GetCacheSize() << endl;
   TTreeCache::SetLearnEntries(1);
@@ -389,8 +509,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
   //
   TString sampleKey = sampleKeyMap_.count(sample) > 0 ? sampleKeyMap_.at(sample) : TString("none");
   int currentYear = -1;
-  // Int_t fCurrent;  // current Tree number in a TChain
-  // TChain* chain = getChain(sample, &fCurrent);
+  getChain(sample);
   TObjArray* forNotify = new TObjArray;
   forNotify->SetOwner();  // so that TreeFormulas will be deleted
 
@@ -453,8 +572,6 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
   double MCwtCorr = 1.;
   Long64_t Nentries = fChain->GetEntries();
   if (verbosity_ >= 1) cout << "Nentries in tree = " << Nentries << endl;
-  // cout << "After GetEntries, status of HT = " << fChain->GetBranchStatus("HT")
-  //      << ", JetIDAK8 = " << fChain->GetBranchStatus("JetIDAK8") << endl;
   int count = 0, countInFile = 0, countInSel = 0, countNegWt = 0;
   for (Long64_t entry = 0; entry < Nentries; ++entry) {
     count++;
@@ -465,13 +582,8 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       cout << "LoadTree returned " << centry;
       break;
     }
-    // if (count == 1) cout << "After first LoadTree, status of HT = " << fChain->GetBranchStatus("HT")
-    // 			 << ", JetIDAK8 = " << fChain->GetBranchStatus("JetIDAK8") << endl;
-    // if (fChain->GetTreeNumber() != fCurrent) {
-      // fCurrent = fChain->GetTreeNumber();
     if (newFileInChain_) {
       // New input root file encountered
-      // fCurrent = chain->GetTreeNumber();
       newFileInChain_ = false;
       countInFile = 0;
       TFile* thisFile = fChain->GetCurrentFile();
@@ -527,8 +639,8 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
     GetEntry(entry);
     // cout << endl << "First entry for analysis" << endl;  Show();  break;
     countInFile++;
-    if (countInFile == 1) cout << "After get first entry in file, status of HT = " << fChain->GetBranchStatus("HT")
-			       << ", JetIDAK8 = " << fChain->GetBranchStatus("JetIDAK8") << endl;
+    // if (countInFile == 1) cout << "After get first entry in file, status of HT = " << fChain->GetBranchStatus("HT")
+    // 			       << ", JetIDAK8 = " << fChain->GetBranchStatus("JetIDAK8") << endl;
 
     cleanVars();  // If unskimmed input, copy <var>clean to <var>
     Int_t BTagsOrig = setBTags();
@@ -2122,8 +2234,7 @@ RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, In
 
 void
 RA2bZinvAnalysis::checkTrigPrescales(const char* sample) {
-  // Int_t fCurrent;  // current Tree number in a TChain
-  // TChain* chain = getChain(sample, &fCurrent);
+  getChain(sample);
   Long64_t Nentries = fChain->GetEntries();
   Int_t countInFile = 0;
   for (Long64_t entry = 0; entry < Nentries; ++entry) {
@@ -2155,9 +2266,7 @@ RA2bZinvAnalysis::dumpSelEvIDs(const char* sample, const char* idFileName) {
   FILE* idFile;
   idFile = fopen(idFileName, "w");
 
-  // Int_t fCurrent;  // current Tree number in a TChain
-  // TChain* chain = getChain(sample, &fCurrent);
-
+  getChain(sample);
   TObjArray* forNotify = new TObjArray;
   forNotify->SetOwner();  // so that TreeFormulas will be deleted
 
@@ -2213,8 +2322,6 @@ RA2bZinvAnalysis::dumpSelEvIDs(const char* sample, const char* idFileName) {
       cout << "LoadEntry returned " << centry;
       break;
     }
-    // if (fChain->GetTreeNumber() != fCurrent) {
-    //   fCurrent = fChain->GetTreeNumber();
     if (newFileInChain_) {
       newFileInChain_ = false;
       TFile* thisFile = fChain->GetCurrentFile();

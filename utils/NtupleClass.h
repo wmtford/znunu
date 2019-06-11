@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////
 // This class has been automatically generated on
-// Fri Jun  7 11:52:59 2019 by ROOT version 6.12/07
+// Tue Jun 11 10:55:59 2019 by ROOT version 6.12/07
 // from TTree PreSelection/PreSelection
 // from TTree tree/all observables, DYe_CleanVars
 // from TTree tree/all observables, DYm_CleanVars
@@ -57,6 +57,7 @@ public :
    Double_t        DeltaPhi1JECup;
    Double_t        DeltaPhi1JERdown;
    Double_t        DeltaPhi1JERup;
+   Double_t        DeltaPhi1Orig;
    Double_t        DeltaPhi2;
    Double_t        DeltaPhi22p4;
    Double_t        DeltaPhi2_AK8;
@@ -68,6 +69,7 @@ public :
    Double_t        DeltaPhi2JECup;
    Double_t        DeltaPhi2JERdown;
    Double_t        DeltaPhi2JERup;
+   Double_t        DeltaPhi2Orig;
    Double_t        DeltaPhi3;
    Double_t        DeltaPhi32p4;
    Double_t        DeltaPhi3clean;
@@ -78,6 +80,7 @@ public :
    Double_t        DeltaPhi3JECup;
    Double_t        DeltaPhi3JERdown;
    Double_t        DeltaPhi3JERup;
+   Double_t        DeltaPhi3Orig;
    Double_t        DeltaPhi4;
    Double_t        DeltaPhi42p4;
    Double_t        DeltaPhi4clean;
@@ -88,6 +91,7 @@ public :
    Double_t        DeltaPhi4JECup;
    Double_t        DeltaPhi4JERdown;
    Double_t        DeltaPhi4JERup;
+   Double_t        DeltaPhi4Orig;
    Double_t        DeltaPhiMin_AK8;
    Int_t           ecalBadCalibFilter;
    Bool_t          ecalBadCalibReducedExtraFilter;
@@ -381,6 +385,7 @@ public :
    Double_t        MHTOrig;
    Double_t        MHTJERdown;
    Double_t        MHTJERup;
+   Double_t        MHTOrig;
    Double_t        MHTPhi;
    Double_t        MHTPhi2p4;
    Double_t        MHTPhiclean;
@@ -391,6 +396,7 @@ public :
    Double_t        MHTPhiJECup;
    Double_t        MHTPhiJERdown;
    Double_t        MHTPhiJERup;
+   Double_t        MHTPhiOrig;
    Double_t        MJJ_AK8;
    Double_t        Mmc_AK8;
    Double_t        MT2;
@@ -423,6 +429,8 @@ public :
    Double_t        NonPrefiringProbDown;
    Int_t           NumInteractions;
    Double_t        NonPrefiringProbUp;
+   Double_t        NumEvents;
+   Int_t           NumInteractions;
    Int_t           NVtx;
    vector<double>  *PDFweights;
    Double_t        PFCaloMETRatio;
@@ -522,6 +530,7 @@ public :
    TBranch        *b_DeltaPhi1JECup;   //!
    TBranch        *b_DeltaPhi1JERdown;   //!
    TBranch        *b_DeltaPhi1JERup;   //!
+   TBranch        *b_DeltaPhi1Orig;   //!
    TBranch        *b_DeltaPhi2;   //!
    TBranch        *b_DeltaPhi22p4;   //!
    TBranch        *b_DeltaPhi2_AK8;   //!
@@ -533,6 +542,7 @@ public :
    TBranch        *b_DeltaPhi2JECup;   //!
    TBranch        *b_DeltaPhi2JERdown;   //!
    TBranch        *b_DeltaPhi2JERup;   //!
+   TBranch        *b_DeltaPhi2Orig;   //!
    TBranch        *b_DeltaPhi3;   //!
    TBranch        *b_DeltaPhi32p4;   //!
    TBranch        *b_DeltaPhi3clean;   //!
@@ -543,6 +553,7 @@ public :
    TBranch        *b_DeltaPhi3JECup;   //!
    TBranch        *b_DeltaPhi3JERdown;   //!
    TBranch        *b_DeltaPhi3JERup;   //!
+   TBranch        *b_DeltaPhi3Orig;   //!
    TBranch        *b_DeltaPhi4;   //!
    TBranch        *b_DeltaPhi42p4;   //!
    TBranch        *b_DeltaPhi4clean;   //!
@@ -553,6 +564,7 @@ public :
    TBranch        *b_DeltaPhi4JECup;   //!
    TBranch        *b_DeltaPhi4JERdown;   //!
    TBranch        *b_DeltaPhi4JERup;   //!
+   TBranch        *b_DeltaPhi4Orig;   //!
    TBranch        *b_DeltaPhiMin_AK8;   //!
    TBranch        *b_ecalBadCalibFilter;   //!
    TBranch        *b_ecalBadCalibReducedExtraFilter;   //!
@@ -846,6 +858,7 @@ public :
    TBranch        *b_MHTOrig;   //!
    TBranch        *b_MHTJERdown;   //!
    TBranch        *b_MHTJERup;   //!
+   TBranch        *b_MHTOrig;   //!
    TBranch        *b_MHTPhi;   //!
    TBranch        *b_MHTPhi2p4;   //!
    TBranch        *b_MHTPhiclean;   //!
@@ -856,6 +869,7 @@ public :
    TBranch        *b_MHTPhiJECup;   //!
    TBranch        *b_MHTPhiJERdown;   //!
    TBranch        *b_MHTPhiJERup;   //!
+   TBranch        *b_MHTPhiOrig;   //!
    TBranch        *b_MJJ_AK8;   //!
    TBranch        *b_Mmc_AK8;   //!
    TBranch        *b_MT2;   //!
@@ -888,6 +902,8 @@ public :
    TBranch        *b_NonPrefiringProbDown;   //!
    TBranch        *b_NumInteractions;   //!
    TBranch        *b_NonPrefiringProbUp;   //!
+   TBranch        *b_NumEvents;   //!
+   TBranch        *b_NumInteractions;   //!
    TBranch        *b_NVtx;   //!
    TBranch        *b_PDFweights;   //!
    TBranch        *b_PFCaloMETRatio;   //!
@@ -973,7 +989,6 @@ NtupleClass::NtupleClass(TTree *tree) : fChain(0)
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
    if (tree == 0) {
-      return;  // added
       TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("root://cmseos.fnal.gov//store/user/lpcsusyhad/SusyRA2Analysis2015/Run2ProductionV17/Run2017B-31Mar2018-v1.HTMHT_0_RA2AnalysisTree.root");
       if (!f || !f->IsOpen()) {
          f = new TFile("root://cmseos.fnal.gov//store/user/lpcsusyhad/SusyRA2Analysis2015/Run2ProductionV17/Run2017B-31Mar2018-v1.HTMHT_0_RA2AnalysisTree.root");
@@ -1328,6 +1343,7 @@ void NtupleClass::Init(TTree *tree)
    fChain->SetBranchAddress("DeltaPhi1JECup", &DeltaPhi1JECup, &b_DeltaPhi1JECup);
    fChain->SetBranchAddress("DeltaPhi1JERdown", &DeltaPhi1JERdown, &b_DeltaPhi1JERdown);
    fChain->SetBranchAddress("DeltaPhi1JERup", &DeltaPhi1JERup, &b_DeltaPhi1JERup);
+   fChain->SetBranchAddress("DeltaPhi1Orig", &DeltaPhi1Orig, &b_DeltaPhi1Orig);
    fChain->SetBranchAddress("DeltaPhi2", &DeltaPhi2, &b_DeltaPhi2);
    fChain->SetBranchAddress("DeltaPhi22p4", &DeltaPhi22p4, &b_DeltaPhi22p4);
    fChain->SetBranchAddress("DeltaPhi2_AK8", &DeltaPhi2_AK8, &b_DeltaPhi2_AK8);
@@ -1339,6 +1355,7 @@ void NtupleClass::Init(TTree *tree)
    fChain->SetBranchAddress("DeltaPhi2JECup", &DeltaPhi2JECup, &b_DeltaPhi2JECup);
    fChain->SetBranchAddress("DeltaPhi2JERdown", &DeltaPhi2JERdown, &b_DeltaPhi2JERdown);
    fChain->SetBranchAddress("DeltaPhi2JERup", &DeltaPhi2JERup, &b_DeltaPhi2JERup);
+   fChain->SetBranchAddress("DeltaPhi2Orig", &DeltaPhi2Orig, &b_DeltaPhi2Orig);
    fChain->SetBranchAddress("DeltaPhi3", &DeltaPhi3, &b_DeltaPhi3);
    fChain->SetBranchAddress("DeltaPhi32p4", &DeltaPhi32p4, &b_DeltaPhi32p4);
    fChain->SetBranchAddress("DeltaPhi3clean", &DeltaPhi3clean, &b_DeltaPhi3clean);
@@ -1349,6 +1366,7 @@ void NtupleClass::Init(TTree *tree)
    fChain->SetBranchAddress("DeltaPhi3JECup", &DeltaPhi3JECup, &b_DeltaPhi3JECup);
    fChain->SetBranchAddress("DeltaPhi3JERdown", &DeltaPhi3JERdown, &b_DeltaPhi3JERdown);
    fChain->SetBranchAddress("DeltaPhi3JERup", &DeltaPhi3JERup, &b_DeltaPhi3JERup);
+   fChain->SetBranchAddress("DeltaPhi3Orig", &DeltaPhi3Orig, &b_DeltaPhi3Orig);
    fChain->SetBranchAddress("DeltaPhi4", &DeltaPhi4, &b_DeltaPhi4);
    fChain->SetBranchAddress("DeltaPhi42p4", &DeltaPhi42p4, &b_DeltaPhi42p4);
    fChain->SetBranchAddress("DeltaPhi4clean", &DeltaPhi4clean, &b_DeltaPhi4clean);
@@ -1359,6 +1377,7 @@ void NtupleClass::Init(TTree *tree)
    fChain->SetBranchAddress("DeltaPhi4JECup", &DeltaPhi4JECup, &b_DeltaPhi4JECup);
    fChain->SetBranchAddress("DeltaPhi4JERdown", &DeltaPhi4JERdown, &b_DeltaPhi4JERdown);
    fChain->SetBranchAddress("DeltaPhi4JERup", &DeltaPhi4JERup, &b_DeltaPhi4JERup);
+   fChain->SetBranchAddress("DeltaPhi4Orig", &DeltaPhi4Orig, &b_DeltaPhi4Orig);
    fChain->SetBranchAddress("DeltaPhiMin_AK8", &DeltaPhiMin_AK8, &b_DeltaPhiMin_AK8);
    fChain->SetBranchAddress("ecalBadCalibFilter", &ecalBadCalibFilter, &b_ecalBadCalibFilter);
    fChain->SetBranchAddress("ecalBadCalibReducedExtraFilter", &ecalBadCalibReducedExtraFilter, &b_ecalBadCalibReducedExtraFilter);
@@ -1652,6 +1671,7 @@ void NtupleClass::Init(TTree *tree)
    fChain->SetBranchAddress("MHTOrig", &MHTOrig, &b_MHTOrig);
    fChain->SetBranchAddress("MHTJERdown", &MHTJERdown, &b_MHTJERdown);
    fChain->SetBranchAddress("MHTJERup", &MHTJERup, &b_MHTJERup);
+   fChain->SetBranchAddress("MHTOrig", &MHTOrig, &b_MHTOrig);
    fChain->SetBranchAddress("MHTPhi", &MHTPhi, &b_MHTPhi);
    fChain->SetBranchAddress("MHTPhi2p4", &MHTPhi2p4, &b_MHTPhi2p4);
    fChain->SetBranchAddress("MHTPhiclean", &MHTPhiclean, &b_MHTPhiclean);
@@ -1662,6 +1682,7 @@ void NtupleClass::Init(TTree *tree)
    fChain->SetBranchAddress("MHTPhiJECup", &MHTPhiJECup, &b_MHTPhiJECup);
    fChain->SetBranchAddress("MHTPhiJERdown", &MHTPhiJERdown, &b_MHTPhiJERdown);
    fChain->SetBranchAddress("MHTPhiJERup", &MHTPhiJERup, &b_MHTPhiJERup);
+   fChain->SetBranchAddress("MHTPhiOrig", &MHTPhiOrig, &b_MHTPhiOrig);
    fChain->SetBranchAddress("MJJ_AK8", &MJJ_AK8, &b_MJJ_AK8);
    fChain->SetBranchAddress("Mmc_AK8", &Mmc_AK8, &b_Mmc_AK8);
    fChain->SetBranchAddress("MT2", &MT2, &b_MT2);
@@ -1694,6 +1715,8 @@ void NtupleClass::Init(TTree *tree)
    fChain->SetBranchAddress("NonPrefiringProbDown", &NonPrefiringProbDown, &b_NonPrefiringProbDown);
    fChain->SetBranchAddress("NumInteractions", &NumInteractions, &b_NumInteractions);
    fChain->SetBranchAddress("NonPrefiringProbUp", &NonPrefiringProbUp, &b_NonPrefiringProbUp);
+   fChain->SetBranchAddress("NumEvents", &NumEvents, &b_NumEvents);
+   fChain->SetBranchAddress("NumInteractions", &NumInteractions, &b_NumInteractions);
    fChain->SetBranchAddress("NVtx", &NVtx, &b_NVtx);
    fChain->SetBranchAddress("PDFweights", &PDFweights, &b_PDFweights);
    fChain->SetBranchAddress("PFCaloMETRatio", &PFCaloMETRatio, &b_PFCaloMETRatio);

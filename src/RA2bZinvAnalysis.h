@@ -12,11 +12,8 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
-#include "TreeAnalysisBase.h"
 #include "NtupleClass.h"
 #include "CCbinning.h"
-/* #include <TString.h> */
-/* #include <TChain.h> */
 #include <TH1F.h>
 #include <TH1D.h>
 #include <TH2F.h>
@@ -24,7 +21,6 @@
 #include <TEfficiency.h>
 #include <TLorentzVector.h>
 #include <TTreeFormula.h>
-/* #include <TChainElement.h> */
 #include "../../Analysis/btag/BTagCorrector.h"
 
 #include <TMath.h>
@@ -44,15 +40,14 @@ static TString massCut_;
 static TString photonDeltaRcut_;
 static TH2F *hPrefiring_photon_, *hPrefiring_jet_;
 
-class RA2bZinvAnalysis : public TreeAnalysisBase, public NtupleClass {
+class RA2bZinvAnalysis : public NtupleClass {
 
 public:
   RA2bZinvAnalysis();
-  RA2bZinvAnalysis(const char* sample, const std::string& cfg_filename, const std::string& runBlock = "");
+  RA2bZinvAnalysis(const bool isMC, const std::string& cfg_filename, const std::string& runBlock = "");
   virtual ~RA2bZinvAnalysis() {};
 
-  /* TChain* getChain(const char* sample, Int_t* fCurrent = nullptr, bool makeClass = false); */
-  /* std::vector<TString> fileList(TString sampleKey); */
+  Bool_t Notify() override {newFileInChain_ = kTRUE;  return(kTRUE);};
   std::vector<TH1*> makeHistograms(const char* sample);
   void dumpSelEvIDs(const char* sample, const char* idFileName);
   TCut getCuts(const TString sampleKey);
@@ -158,6 +153,15 @@ public:
 
 private:
   std::string era_;  // "2016", "Run2"
+  TString ntupleVersion_;
+  bool isSkim_;
+  bool isMC_;
+  string deltaPhi_;  // "nominal", "hdp", "ldp", "ldpnominal"
+  int verbosity_;
+  string treeName_;
+  string treeLoc_;
+  string fileListsFile_;
+  string runBlock_;
   double intLumi_;
   bool applyMassCut_;
   bool applyPtCut_;
@@ -170,6 +174,7 @@ private:
   bool applyZptWt_;
   bool applyDRfitWt_;
   bool applySFwtToMC_;
+  Bool_t newFileInChain_;
   TH1* puHist_;
   CCbinning* CCbins_;
   BTagCorrector* btagcorr_;
@@ -191,7 +196,9 @@ private:
   string_map sampleKeyMap_;
 
   void Config(const std::string& cfg_filename="");
+  void getChain(const char* dataSet);
   void setActiveBranches(const bool activateAll = false);
+  std::vector<TString> fileList(TString sampleKey);
   void fillCutMaps();
   void bookAndFillHistograms(const char* sample, std::vector<histConfig*>& histograms, TCut baselineCuts);
   void fillCutFlow(TH1D* hcf, Double_t wt);

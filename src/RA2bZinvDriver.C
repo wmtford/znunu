@@ -72,47 +72,41 @@ void RA2bZinvDriver(const std::string& runBlock = "", int toDo = -1) {
   bool doListTrigPrescales = false;
   const std::string dumpSelEvIDsample("");
 
-  // RA2bZinvAnalysis analyzer("", runBlock);  // Default configuration, V12
   std::string cfgName("data");  cfgName += runBlock;  cfgName += ".cfg";
   cfgName = regex_replace(cfgName, regex("HEM"), "");
   cfgName = regex_replace(cfgName, regex("HEP"), "");
   cfgName = regex_replace(cfgName, regex("AB"), "");
   cfgName = regex_replace(cfgName, regex("CD"), "");
-  // RA2bZinvAnalysis analyzer(cfgName, runBlock);
-  // RA2bZinvAnalysis analyzer("data2016.cfg", runBlock);
-  // RA2bZinvAnalysis analyzer("data2017.cfg", runBlock);
-  // RA2bZinvAnalysis analyzer("data2018.cfg", runBlock);
-  // RA2bZinvAnalysis analyzer("dataRun2.cfg", runBlock);
-  // RA2bZinvAnalysis analyzer("lowDphi.cfg", runBlock);
 
   void combine(std::vector<TH1*> hl1, std::vector<TH1*> hl2);
   std::string fnstr;
 
   if (doHzvv || doHttzvv) {
-    RA2bZinvAnalysis analyzer_zinv("zinv", cfgName, runBlock);
-    RA2bZinvAnalysis analyzer_ttzvv("ttzvv", cfgName, runBlock);
+    RA2bZinvAnalysis analyzer(true, cfgName, runBlock);
     fnstr = "histsZjets";  fnstr += runBlock + ".root";
     char* outfn = new char[fnstr.length()+1];  std::strcpy (outfn, fnstr.c_str());
     TFile *histoOutFile = TFile::Open(outfn, "RECREATE");
     TH1F *hCCzvv = nullptr;
     if (doHzvv) {
-      std::vector<TH1*> h_zinv = analyzer_zinv.makeHistograms("zinv");
+      std::vector<TH1*> h_zinv = analyzer.makeHistograms("zinv");
       for (auto& theHist : h_zinv) {
 	theHist->Print();
 	theHist->Draw();
 	TString hName(theHist->GetName());
-	if (hName.Contains("hCC") && !hName.Contains("jb") && !hName.Contains("jk") && !hName.Contains("Jb") && !hName.Contains("spl")) {
+	if (hName.Contains("hCC") && !hName.Contains("jb") && !hName.Contains("jk")
+	    && !hName.Contains("Jb") && !hName.Contains("spl")) {
 	  hCCzvv = (TH1F*) theHist;
 	}
       }
     }
     if (doHttzvv) {
-      std::vector<TH1*> h_ttzvv = analyzer_ttzvv.makeHistograms("ttzvv");
+      std::vector<TH1*> h_ttzvv = analyzer.makeHistograms("ttzvv");
       for (auto& theHist : h_ttzvv) {
 	theHist->Print();
 	theHist->Draw();
 	TString hName(theHist->GetName());
-	if (hName.Contains("hCC") && !hName.Contains("jb") && !hName.Contains("jk") && !hName.Contains("Jb") && !hName.Contains("spl") && hCCzvv != nullptr) {
+	if (hName.Contains("hCC") && !hName.Contains("jb") && !hName.Contains("jk")
+	    && !hName.Contains("Jb") && !hName.Contains("spl") && hCCzvv != nullptr) {
 	  TH1F* hCCzinvAll = (TH1F*) hCCzvv->Clone();  hCCzinvAll->SetName("hCCzinvAll");  hCCzinvAll->Sumw2();
 	  hCCzinvAll->Add(theHist);
 	  hCCzinvAll->SetName("hCCzinvAll");
@@ -125,8 +119,7 @@ void RA2bZinvDriver(const std::string& runBlock = "", int toDo = -1) {
   }
 
   if (doHzmm || doHzee) {
-    RA2bZinvAnalysis analyzer_zmm("zmm", cfgName, runBlock);
-    RA2bZinvAnalysis analyzer_zee("zee", cfgName, runBlock);
+    RA2bZinvAnalysis analyzer(false, cfgName, runBlock);
     std::vector<TH1*> h_zmm, h_zee;
     TFile *histoOutFile;
     fnstr = "histsZ";
@@ -141,7 +134,7 @@ void RA2bZinvDriver(const std::string& runBlock = "", int toDo = -1) {
 	char* outfn = new char[fnstr.length()+1];  std::strcpy (outfn, fnstr.c_str());
 	histoOutFile = TFile::Open(outfn, "RECREATE");
       }
-      h_zmm = analyzer_zmm.makeHistograms("zmm");
+      h_zmm = analyzer.makeHistograms("zmm");
       for (auto& theHist : h_zmm) {
 	theHist->Print();
 	theHist->Draw();
@@ -153,7 +146,7 @@ void RA2bZinvDriver(const std::string& runBlock = "", int toDo = -1) {
 	char* outfn = new char[fnstr.length()+1];  std::strcpy (outfn, fnstr.c_str());
 	histoOutFile = TFile::Open(outfn, "RECREATE");
       }
-      h_zee = analyzer_zee.makeHistograms("zee");
+      h_zee = analyzer.makeHistograms("zee");
       for (auto& theHist : h_zee) {
 	theHist->Print();
 	theHist->Draw();
@@ -164,55 +157,48 @@ void RA2bZinvDriver(const std::string& runBlock = "", int toDo = -1) {
   }
 
   if (doHdymm || doHdyee || doHttzmm || doHttzee || doHVVmm || doHVVee || doHttmm || doHttee) {
-    RA2bZinvAnalysis analyzer_dymm("dymm", cfgName, runBlock);
-    RA2bZinvAnalysis analyzer_dyee("dyee", cfgName, runBlock);
-    RA2bZinvAnalysis analyzer_ttzmm("ttzmm", cfgName, runBlock);
-    RA2bZinvAnalysis analyzer_ttzee("ttzee", cfgName, runBlock);
-    RA2bZinvAnalysis analyzer_VVmm("VVmm", cfgName, runBlock);
-    RA2bZinvAnalysis analyzer_VVee("VVee", cfgName, runBlock);
-    RA2bZinvAnalysis analyzer_ttmm("ttmm", cfgName, runBlock);
-    RA2bZinvAnalysis analyzer_ttee("ttee", cfgName, runBlock);
+    RA2bZinvAnalysis analyzer(true, cfgName, runBlock);
     fnstr = "histsDYMC";  fnstr += runBlock + ".root";
     char* outfn = new char[fnstr.length()+1];  std::strcpy (outfn, fnstr.c_str());
     TFile *histoOutFile = TFile::Open(outfn, "RECREATE");
     std::vector<TH1*> h_dymm, h_dyee, h_ttzmm, h_ttzee, h_VVmm, h_VVee, h_ttmm, h_ttee;
 
     if (doHdymm) {
-      h_dymm = analyzer_dymm.makeHistograms("dymm");
+      h_dymm = analyzer.makeHistograms("dymm");
       for (auto& theHist : h_dymm) {theHist->Print();  theHist->Draw();}
     }
     if (doHdyee) {
-      h_dyee = analyzer_dyee.makeHistograms("dyee");
+      h_dyee = analyzer.makeHistograms("dyee");
       for (auto& theHist : h_dyee) {theHist->Print();  theHist->Draw();}
     }
     if (doHdymm && doHdyee) combine(h_dymm, h_dyee);
 
     if (doHttzmm) {
-      h_ttzmm = analyzer_ttzmm.makeHistograms("ttzmm");
+      h_ttzmm = analyzer.makeHistograms("ttzmm");
       for (auto& theHist : h_ttzmm) {theHist->Print();  theHist->Draw();}
     }
     if (doHttzee) {
-      h_ttzee = analyzer_ttzee.makeHistograms("ttzee");
+      h_ttzee = analyzer.makeHistograms("ttzee");
       for (auto& theHist : h_ttzee) {theHist->Print();  theHist->Draw();}
     }
     if (doHttzmm && doHttzee) combine(h_ttzmm, h_ttzee);
 
     if (doHVVmm) {
-      h_VVmm = analyzer_VVmm.makeHistograms("VVmm");
+      h_VVmm = analyzer.makeHistograms("VVmm");
       for (auto& theHist : h_VVmm) {theHist->Print();  theHist->Draw();}
     }
     if (doHVVee) {
-      h_VVee = analyzer_VVee.makeHistograms("VVee");
+      h_VVee = analyzer.makeHistograms("VVee");
       for (auto& theHist : h_VVee) {theHist->Print();  theHist->Draw();}
     }
     if (doHVVmm && doHVVee) combine(h_VVmm, h_VVee);
 
     if (doHttmm) {
-      h_ttmm = analyzer_ttmm.makeHistograms("ttmm");
+      h_ttmm = analyzer.makeHistograms("ttmm");
       for (auto& theHist : h_ttmm) {theHist->Print();  theHist->Draw();}
     }
     if (doHttee) {
-      h_ttee = analyzer_ttee.makeHistograms("ttee");
+      h_ttee = analyzer.makeHistograms("ttee");
       for (auto& theHist : h_ttee) {theHist->Print();  theHist->Draw();}
     }
     if (doHttmm && doHttee) combine(h_ttmm, h_ttee);
@@ -221,11 +207,11 @@ void RA2bZinvDriver(const std::string& runBlock = "", int toDo = -1) {
   }
 
   if (doHphoton) {
-    RA2bZinvAnalysis analyzer_photon("photon", cfgName, runBlock);
+    RA2bZinvAnalysis analyzer(false, cfgName, runBlock);
     fnstr = "histsPhoton";  fnstr += runBlock + ".root";
     char* outfn = new char[fnstr.length()+1];  std::strcpy (outfn, fnstr.c_str());
     TFile *histoOutFile = TFile::Open(outfn, "RECREATE");
-    std::vector<TH1*> h_photon = analyzer_photon.makeHistograms("photon");
+    std::vector<TH1*> h_photon = analyzer.makeHistograms("photon");
     for (auto& theHist : h_photon) {
       theHist->Print();
       theHist->Draw();
@@ -234,29 +220,30 @@ void RA2bZinvDriver(const std::string& runBlock = "", int toDo = -1) {
   }
 
   if (doHgjets || doHgjetsqcd) {
-    RA2bZinvAnalysis analyzer_gJets("gJets", cfgName, runBlock);
-    RA2bZinvAnalysis analyzer_gjetsqcd("gjetsqcd", cfgName, runBlock);
+    RA2bZinvAnalysis analyzer(true, cfgName, runBlock);
     fnstr = "histsGjets";  fnstr += runBlock + ".root";
     char* outfn = new char[fnstr.length()+1];  std::strcpy (outfn, fnstr.c_str());
     TFile *histoOutFile = TFile::Open(outfn, "RECREATE");
     if (doHgjets) {
-      std::vector<TH1*> h_gJets = analyzer_gJets.makeHistograms("gjets");
+      std::vector<TH1*> h_gJets = analyzer.makeHistograms("gjets");
       for (auto& theHist : h_gJets) {theHist->Print();  theHist->Draw();}
     }
     if (doHgjetsqcd) {
-      std::vector<TH1*> h_gjetsqcd = analyzer_gjetsqcd.makeHistograms("gjetsqcd");
+      std::vector<TH1*> h_gjetsqcd = analyzer.makeHistograms("gjetsqcd");
       for (auto& theHist : h_gjetsqcd) {theHist->Print();  theHist->Draw();}
     }
     histoOutFile->Write();
   }
 
   if (doListTrigPrescales) {
-    RA2bZinvAnalysis analyzer("zmm", cfgName, runBlock);
+    RA2bZinvAnalysis analyzer(false, cfgName, runBlock);
     analyzer.checkTrigPrescales("zmm");
   }
 
   if (!dumpSelEvIDsample.empty()) {
-    RA2bZinvAnalysis analyzer(dumpSelEvIDsample.data(), cfgName, runBlock);
+    bool isMC = true;
+    if (dumpSelEvIDsample == "zmm" || dumpSelEvIDsample == "zee" || dumpSelEvIDsample == "photon") isMC = true; 
+    RA2bZinvAnalysis analyzer(isMC, cfgName, runBlock);
     analyzer.dumpSelEvIDs(dumpSelEvIDsample.data(), (std::string("evtIDs_") + runBlock + ".txt").data());
   }
 
