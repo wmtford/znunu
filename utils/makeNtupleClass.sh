@@ -56,6 +56,12 @@ for ((i=0; i < ${#SAMPLES[@]}; i++)); do
 done
 
 sed -i 's/TempClass/NtupleClass/g' NtupleClass.h
+
+# Don't initialize empty tree (added by wtf)
+match='   if (tree == 0) {'
+insert='      return;'
+sed -i "s/$match/$match\n$insert/" NtupleClass.h
+
 rm TempClass.h TempClass.C > /dev/null 2>&1
 
 # fix header (optionally)
