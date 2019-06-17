@@ -1,4 +1,5 @@
 verbosity = 2
+root verbosity = Break  # Print, Info, Warning, Error, Break, SysError, Fatal
 era = Run2
 runBlock = 
 # tree path = /nfs/data38/cms/mulholland/lpcTrees/Skims/Run2ProductionV12/ # Colorado, owned by mulholland
@@ -17,7 +18,6 @@ delta phi sample = nominal  # nominal, ldp, hdp, ldpnominal
 integrated luminosity = 35.9
 apply Z/gamma Pt cut = true
 apply Z mass cut = true
-use analysis bin from tree = false
 use DeepCSV = true
 apply b-tag SF = false
 apply pileup weight = false

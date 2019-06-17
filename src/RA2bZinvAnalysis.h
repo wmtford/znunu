@@ -158,6 +158,7 @@ private:
   bool isMC_;
   string deltaPhi_;  // "nominal", "hdp", "ldp", "ldpnominal"
   int verbosity_;
+  string rootVerbosity_;
   string treeName_;
   string treeLoc_;
   string fileListsFile_;
@@ -165,7 +166,6 @@ private:
   double intLumi_;
   bool applyMassCut_;
   bool applyPtCut_;
-  bool useTreeCCbin_;
   bool useDeepCSV_;
   bool applyBTagSF_;
   bool applyPuWeight_;
@@ -202,7 +202,7 @@ private:
   void fillCutMaps();
   void bookAndFillHistograms(const char* sample, std::vector<histConfig*>& histograms, TCut baselineCuts);
   void fillCutFlow(TH1D* hcf, Double_t wt);
-  Int_t setBTags();
+  Int_t setBTags(int runYear);
   efficiencyAndPurity* effPurCorr_;
 
   double prefiring_weight_photon(unsigned p){
