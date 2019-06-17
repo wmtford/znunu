@@ -28,21 +28,13 @@ src/RA2bZinvAnalysis.C
 src/CCbinning.h
 src/CCbinning.C
 src/RA2bZinvAnalysis.cfi
-src/LeafDeclaration_XXXX.h 
+src/NtupleClass.h 
 src/YYYY.cfg  (optional)
 datFiles/[skim|ntuple]FilesZZZZ.dat
 
-The contents of the tree are different between data and MC, skimmed and
-unskimmed samples, and TreeMaker versions.  Therefore, before compiling,
-(Un)comment compiler directives at the top of RA2bZinvAnalysis.h to
-select: 
-data/MC
-skim/ntuple
-TreeMaker version
-
-Configuration of the RA2bZinvAnalysis instance, beyond that controlled
-by the compiler directives, is set via config files RA2bZinvAnalysis.cfi
-(for default initialization), plus (filename).cfg for specialization. 
+Configuration of the RA2bZinvAnalysis instance is set via config files
+RA2bZinvAnalysis.cfi (for default initialization), plus (filename).cfg
+for specialization.
 
 To launch from the command line,
 root -l -b RA2bZinvLoadClasses.C RA2bZinvDriver.C
@@ -51,24 +43,22 @@ The main source file, RA2bZinvAnalysis.C, defines a singleton class and
 some user-callable functions.  Its use is illustrated by the
 implementation in RA2bZinvDriver.C.
 
-The constructor takes one required argument, a const char* with the name
-of the .cfg file to be used; it can be the empty string "".  The
-optional second argument is the name of a runBlock, overriding the value
-set in the .cfi or .cfg file (only needed when running parallel jobs on
-separate runBlocks).  The .dat file, chosen in the .cfi or .cfg
-file, is an index of the names of the TreeMaker ntuple files for each of
-the samples.  (The reason for having more than one index file is simply
-their size for the raw nutple root file sets.)
+The constructor takes two required arguments: a bool to specify that the
+data are from simulation, a const char* with the name of the .cfg file
+to be used (can be the empty string ""), and an optional third string,
+the name of a runBlock that will override the value set in the .cfi or
+.cfg file (only needed when running parallel jobs on separate
+runBlocks).  The .dat file, chosen in the .cfi or .cfg file, is an index
+of the names of the TreeMaker ntuple files for each of the samples.
+(The reason for having more than one index file is simply their size for
+the raw nutple root file sets.)
 
-Once a fileList (datFiles/*Files*.dat) has been created for a given
-TreeMaker version, (un)skimmed, data/MC configuration, one can run
-RA2bZinvDriver with a non-empty, compatible sample name as argument to
-the runMakeClass method to generate a TreeMkrTemplate_*_*_Vxx.h file.
-With a little editing one then embeds the tree-specific information from
-this file into LeafDeclaration_*_*_Vxx.h.  See
-diff_TreeMkrTemplate_V12.h-LeafDeclaration_V12.h for guidance.  (Someone
-with fresh skills in some parsing language will doubtless write a macro
-to do this transformation.)
+Access to the ntuple's branches is provided by NtupleClass.h, a base
+class for the RA2bZinvAnalysis.  Edit utils/sourceNtupleClass.sh to
+point to the directories, files, and tree directory names for each of
+the tree structures to be analyized (data/MC, skim/ntuple, TreeMaker
+version), then run makeNtupleClass.sh, and move the resulting
+NtupleClass.h to src/.
 
 The baseline cuts are defined as a TCut string built in the getCuts
 method.  To lift one or more cuts in making N-1 histograms, or to impose
