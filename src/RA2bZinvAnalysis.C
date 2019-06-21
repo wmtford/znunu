@@ -34,12 +34,12 @@ namespace po = boost::program_options;
 
 // ======================================================================================
 
-RA2bZinvAnalysis::RA2bZinvAnalysis() : NtupleClass(0), isMC_(false) {
+RA2bZinvAnalysis::RA2bZinvAnalysis() : NtupleClass(0) {
   Config();
 }
 
-RA2bZinvAnalysis::RA2bZinvAnalysis(const bool isMC, const string& cfg_filename, const string& runBlock) :
-  NtupleClass(0), isMC_(isMC) {
+RA2bZinvAnalysis::RA2bZinvAnalysis(const string& cfg_filename, const string& runBlock) :
+  NtupleClass(0) {
   Config(cfg_filename);
   if (!runBlock.empty()) runBlock_ = runBlock;  // Constructor arg overrides config
   cout << "The runBlock is " << runBlock_ << endl;
@@ -103,14 +103,8 @@ RA2bZinvAnalysis::Config(const string& cfg_filename) {
   } else {
     treeName_ = "tree";  // For skims
   }
-
-  if (!isMC_) {
-    applyBTagSF_ = false;
-    applyPuWeight_ = false;
-  }
   if (ntupleVersion_ == "V12") useDeepCSV_ = false;
 
-  fillCutMaps();
   CCbins_ = new CCbinning(era_, deltaPhi_);
   effPurCorr_ = new efficiencyAndPurity(deltaPhi_);
   effPurCorr_->openFiles();
@@ -119,7 +113,6 @@ RA2bZinvAnalysis::Config(const string& cfg_filename) {
   cout << "The verbosity level is " << verbosity_ << endl;
   cout << "The root verbosity level is " << rootVerbosity_ << endl;
   cout << "The ntuple version is " << ntupleVersion_ << endl;
-  cout << "The MC flag is " << isMC_ << endl;
   cout << "The input-files-are-skims flag is " << isSkim_ << endl;
   cout << "The era is " << era_ << endl;
   cout << "The integrated luminosity = " << intLumi_ << endl;
@@ -127,13 +120,7 @@ RA2bZinvAnalysis::Config(const string& cfg_filename) {
   cout << "The minDeltaPhi cuts are " << deltaPhi_ << endl;
   cout << "Apply Z/gamma Pt cut is " << applyPtCut_ << endl;
   cout << "Use DeepCSV is " << useDeepCSV_ << endl;
-  cout << "Apply b-tag scale factors is " << applyBTagSF_ << endl;
-  cout << "Apply pileup weight is " << applyPuWeight_ << endl;
-  cout << "Use custom if pileup weight is " << customPuWeight_ << endl;
   cout << "Apply HEM jet veto for 2018HEM is " << applyHEMjetVeto_ << endl;
-  cout << "Apply Z Pt weight for 2017, 18 Z MC is " << applyZptWt_ << endl;
-  cout << "Apply double-ratio fit weight is " << applyDRfitWt_ << endl;
-  cout << "Apply scale factors to MC for non-DR histograms is " << applySFwtToMC_ << endl;
 
 }  // ======================================================================================
 
@@ -142,6 +129,7 @@ RA2bZinvAnalysis::getChain(const char* dataSet) {
 
   TString theSample = dataSet;
   TString key;
+  isMC_ = true;  // Depends on dataSet
   if      (theSample.Contains("zinv")) key = TString("zinv");
   else if (theSample.Contains("ttzvv")) key = TString("ttzvv");
   else if (theSample.Contains("dymm")) key = TString("dymm");
@@ -152,15 +140,34 @@ RA2bZinvAnalysis::getChain(const char* dataSet) {
   else if (theSample.Contains("VVee")) key = TString("VVee");
   else if (theSample.Contains("ttmm")) key = TString("ttmm");
   else if (theSample.Contains("ttee")) key = TString("ttee");
-  else if (theSample.Contains("zmm")) key = TString("zmm");  // ( and not "tt")
-  else if (theSample.Contains("zee")) key = TString("zee");  // ( and not "tt")
-  else if (theSample.Contains("photon")) key = TString("photon");
+  else if (theSample.Contains("zmm")) {
+    key = TString("zmm");  // ( and not "tt")
+    isMC_ = false;
+  }
+  else if (theSample.Contains("zee")) {
+    key = TString("zee");  // ( and not "tt")
+    isMC_ = false;
+  }
+  else if (theSample.Contains("photon")) {
+    key = TString("photon");
+    isMC_ = false;
+  }
   else if (theSample.Contains("gjetsqcd")) key = TString("gjetsqcd");
   else if (theSample.Contains("gjets")) key = TString("gjets");  // ( and not "qcd")
   else {
     cout << "getChain:  unknown dataSet '" << dataSet << "'" << endl;
     return;
   }
+  if (isMC_) {
+    cout << "For MC data set " << dataSet << "," << endl;
+    cout << "Apply b-tag scale factors is " << applyBTagSF_ << endl;
+    cout << "Apply pileup weight is " << applyPuWeight_ << endl;
+    cout << "Use custom if pileup weight is " << customPuWeight_ << endl;
+    cout << "Apply Z Pt weight for 2017, 18 Z MC is " << applyZptWt_ << endl;
+    cout << "Apply double-ratio fit weight is " << applyDRfitWt_ << endl;
+    cout << "Apply scale factors to MC for non-DR histograms is " << applySFwtToMC_ << endl;
+  }
+  fillCutMaps();  // Depends on isMC_
   if (deltaPhi_.find("ldp") != string::npos && isSkim_) key += "ldp";
   if (!runBlock_.empty()) key += runBlock_;  key("HEM") = "";
 
@@ -487,8 +494,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
   //
   // Define N - 1 (or N - multiple) cuts, book histograms.  Traverse the chain and fill.
   //
-  TString sampleKey = sampleKeyMap_.count(sample) > 0 ? sampleKeyMap_.at(sample) : TString("none");
-  getChain(sample);
+  TString sampleKey = sampleKeyMap_.count(sample) > 0 ? sampleKeyMap_.at(sample) : "none";
   TObjArray* forNotify = new TObjArray;
   forNotify->SetOwner();  // so that TreeFormulas will be deleted
 
@@ -496,7 +502,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
   forNotify->Add(baselineFormula);
 
   // For B-tagging corrections
-  if (applyBTagSF_) {
+  if (isMC_ && applyBTagSF_) {
     btagcorr_ = new BTagCorrector;
     btagcorr_->SetCalib(BTagSFfile_);
   } else {
@@ -574,13 +580,13 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       // cout << "First event, new file setup " << endl;  Show();
       int theYear = -1;
       if (isMC_) {
-	if (     path.Contains("MC2016")) theYear = Year2016;
+	if      (path.Contains("MC2016")) theYear = Year2016;
 	else if (path.Contains("MC2017")) theYear = Year2017;
 	else if (path.Contains("MC2018")) theYear = Year2018;
       } else {
-	if (RunNum < Start2017) theYear = Year2016;
+	if      (RunNum < Start2017) theYear = Year2016;
 	else if (RunNum < Start2018) theYear = Year2017;
-	else theYear = Year2018;
+	else                         theYear = Year2018;
       }
       if (theYear != currentYear) {
 	currentYear = theYear;
@@ -588,18 +594,20 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 	// Load the year-dependent correction factors.
 	effPurCorr_->getHistos(sample, currentYear);  // For purity, Fdir, trigger eff, reco eff
 	if (ntupleVersion_ == "V15" && currentYear != Year2016) csvMthreshold_ = 0.8838;
-	if (currentYear == Year2016) {
-	  // For now we have only 2016 pileup correction files
-	  if (applyPuWeight_ && customPuWeight_) {
-	    TFile* pufile = TFile::Open("../../Analysis/corrections/PileupHistograms_0121_69p2mb_pm4p6.root", "READ");
-	    puHist_ = (TH1*) pufile->Get("pu_weights_down");
+	if (isMC_) {
+	  if (currentYear == Year2016) {
+	    // For now we have only 2016 pileup correction files
+	    if (applyPuWeight_ && customPuWeight_) {
+	      TFile* pufile = TFile::Open("../../Analysis/corrections/PileupHistograms_0121_69p2mb_pm4p6.root", "READ");
+	      puHist_ = (TH1*) pufile->Get("pu_weights_down");
+	    }
+	    BTagSFfile_ = useDeepCSV_ ? "../datFiles/DeepCSV_2016LegacySF_WP_V1.csv" :
+	      "../../Analysis/btag/CSVv2_Moriond17_B_H_mod.csv";
+	  } else if (currentYear == Year2017) {
+	    BTagSFfile_ = "../datFiles/DeepCSV_94XSF_WP_V4_B_F.csv";
+	  } else if (currentYear == Year2018) {
+	    BTagSFfile_ = "../datFiles/DeepCSV_102XSF_WP_V1.csv";
 	  }
-	  BTagSFfile_ = useDeepCSV_ ? "../datFiles/DeepCSV_2016LegacySF_WP_V1.csv" :
-	    "../../Analysis/btag/CSVv2_Moriond17_B_H_mod.csv";
-	} else if (currentYear == Year2017) {
-	  BTagSFfile_ = "../datFiles/DeepCSV_94XSF_WP_V4_B_F.csv";
-	} else if (currentYear == Year2018) {
-	  BTagSFfile_ = "../datFiles/DeepCSV_102XSF_WP_V1.csv";
 	}
       }
       // Set MCwtCorr for this file
@@ -784,7 +792,10 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   // myTGaxis.SetMaxDigits(4);
 
   std::vector<histConfig*> histograms;
-  TCut baselineCuts = getCuts(sample);
+
+  getChain(sample);  // Set isMC_ here
+  TCut baselineCuts = getCuts(sample);  // Set HTcut_, etc. here
+
   TString sampleKey = sampleKeyMap_.count(sample) > 0 ? sampleKeyMap_.at(sample) : TString("none");
   bool isZll = (sampleKey == "zmm" || sampleKey == "zee" || sampleKey == "zll");
   bool isPhoton = (sampleKey == "photon" || sampleKey =="photonqcd");
@@ -1263,7 +1274,7 @@ RA2bZinvAnalysis::fillCC(TH1D* h, double wt) {
   if (binKin < 0) return;
   int binNjets = (hName.Contains("spl") || hName.Contains("Jb")) ? CCbins_->Jbin(NJets) : CCbins_->jbin(NJets);
   if (binNjets < 0) return;
-  if (!applyBTagSF_) {
+  if (!(isMC_ && applyBTagSF_)) {
     int binNb = CCbins_->bbin(NJets, BTags);
     binCC = (hName.Contains("spl") || hName.Contains("Jb")) ?
       CCbins_->Jbk(binNjets, binNb, binKin) :
@@ -1711,7 +1722,7 @@ RA2bZinvAnalysis::cutHistos::cutHistos(TChain* chain, TObjArray* forNotify) : fo
 
 void
 RA2bZinvAnalysis::cutHistos::setAxisLabels(TH1D* hcf) {
-  if (TString(hcf->GetName()).Contains(TString("hFilterCuts"))) {
+  if (TString(hcf->GetName()).Contains("hFilterCuts")) {
     hcf->GetXaxis()->SetBinLabel(1, "1 None");
     hcf->GetXaxis()->SetBinLabel(2, "2 TightHalo");
     hcf->GetXaxis()->SetBinLabel(3, "3 SupTgtHalo");
@@ -1730,7 +1741,7 @@ RA2bZinvAnalysis::cutHistos::setAxisLabels(TH1D* hcf) {
     hcf->GetXaxis()->SetBinLabel(16, "16 EcalNoiseJet");
     hcf->GetXaxis()->LabelsOption("vu");
   }
-  if (TString(hcf->GetName()).Contains(TString("hCut"))) {
+  if (TString(hcf->GetName()).Contains("hCut")) {
     hcf->GetXaxis()->SetBinLabel(1, "1 None");
     hcf->GetXaxis()->SetBinLabel(2, "2 HT");
     hcf->GetXaxis()->SetBinLabel(3, "3 MHT");
@@ -1760,7 +1771,7 @@ RA2bZinvAnalysis::cutHistos::fill(TH1D* hcf, Double_t wt, bool passTrg, bool pas
   commoncutf_->GetNdata();
 
   hcf->Fill(0.5, wt);
-  if (TString(hcf->GetName()).Contains(TString("Flow"))) {
+  if (TString(hcf->GetName()).Contains("Flow")) {
     if (HTcutf_->EvalInstance(0)) {
       hcf->Fill(1.5, wt);
       if (MHTcutf_->EvalInstance(0)) {

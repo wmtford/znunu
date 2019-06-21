@@ -9,10 +9,10 @@ remaining functions are accomplished by feeding the histograms into
 RA2b.py.  The input source is the skims of ntuples produced by
 TreeMaker.
 
-What the macro can do now is produce the 174-bin histogram of the
-background expectation, including both Z+jets and ttZ MC samples, and
-some N-1 plots of the main analysis variables.  It accommodates Kevin
-Pedro's recipes for both pileup and BTag scale factor corrections.
+The macro produces the 174-bin histogram of the background predictions
+and expectations, N-1 plots of the main analysis variables, cut-flow and
+double-ratio plots, etc.  It accommodates Kevin Pedro's recipes for both
+pileup and BTag scale factor corrections.
 
 The code lives in
 https://github.com/wmtford/znunu/blob/master/
@@ -43,15 +43,14 @@ The main source file, RA2bZinvAnalysis.C, defines a singleton class and
 some user-callable functions.  Its use is illustrated by the
 implementation in RA2bZinvDriver.C.
 
-The constructor takes two required arguments: a bool to specify that the
-data are from simulation, a const char* with the name of the .cfg file
-to be used (can be the empty string ""), and an optional third string,
-the name of a runBlock that will override the value set in the .cfi or
-.cfg file (only needed when running parallel jobs on separate
-runBlocks).  The .dat file, chosen in the .cfi or .cfg file, is an index
-of the names of the TreeMaker ntuple files for each of the samples.
-(The reason for having more than one index file is simply their size for
-the raw nutple root file sets.)
+The constructor takes one required arguments, a string with the name of
+the .cfg file to be used (can be the empty string ""), and an optional
+second string, the name of a runBlock that will override the value set in
+the .cfi or .cfg file (only needed when running parallel jobs on
+separate runBlocks).  The .dat file, chosen in the .cfi or .cfg file, is
+an index of the names of the TreeMaker ntuple files for each of the
+samples.  (The reason for having more than one index file is simply
+their size for the raw nutple root file sets.)
 
 Access to the ntuple's branches is provided by NtupleClass.h, a base
 class for the RA2bZinvAnalysis.  Edit utils/sourceNtupleClass.sh to

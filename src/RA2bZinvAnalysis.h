@@ -44,7 +44,7 @@ class RA2bZinvAnalysis : public NtupleClass {
 
 public:
   RA2bZinvAnalysis();
-  RA2bZinvAnalysis(const bool isMC, const std::string& cfg_filename, const std::string& runBlock = "");
+  RA2bZinvAnalysis(const std::string& cfg_filename, const std::string& runBlock = "");
   virtual ~RA2bZinvAnalysis() {};
 
   Bool_t Notify() override {newFileInChain_ = kTRUE;  return(kTRUE);};

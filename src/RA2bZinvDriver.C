@@ -80,9 +80,9 @@ void RA2bZinvDriver(const std::string& runBlock = "", int toDo = -1) {
 
   void combine(std::vector<TH1*> hl1, std::vector<TH1*> hl2);
   std::string fnstr;
-
+  RA2bZinvAnalysis analyzer(cfgName, runBlock);
+    
   if (doHzvv || doHttzvv) {
-    RA2bZinvAnalysis analyzer(true, cfgName, runBlock);
     fnstr = "histsZjets";  fnstr += runBlock + ".root";
     char* outfn = new char[fnstr.length()+1];  std::strcpy (outfn, fnstr.c_str());
     TFile *histoOutFile = TFile::Open(outfn, "RECREATE");
@@ -119,7 +119,6 @@ void RA2bZinvDriver(const std::string& runBlock = "", int toDo = -1) {
   }
 
   if (doHzmm || doHzee) {
-    RA2bZinvAnalysis analyzer(false, cfgName, runBlock);
     std::vector<TH1*> h_zmm, h_zee;
     TFile *histoOutFile;
     fnstr = "histsZ";
@@ -157,7 +156,6 @@ void RA2bZinvDriver(const std::string& runBlock = "", int toDo = -1) {
   }
 
   if (doHdymm || doHdyee || doHttzmm || doHttzee || doHVVmm || doHVVee || doHttmm || doHttee) {
-    RA2bZinvAnalysis analyzer(true, cfgName, runBlock);
     fnstr = "histsDYMC";  fnstr += runBlock + ".root";
     char* outfn = new char[fnstr.length()+1];  std::strcpy (outfn, fnstr.c_str());
     TFile *histoOutFile = TFile::Open(outfn, "RECREATE");
@@ -207,7 +205,6 @@ void RA2bZinvDriver(const std::string& runBlock = "", int toDo = -1) {
   }
 
   if (doHphoton) {
-    RA2bZinvAnalysis analyzer(false, cfgName, runBlock);
     fnstr = "histsPhoton";  fnstr += runBlock + ".root";
     char* outfn = new char[fnstr.length()+1];  std::strcpy (outfn, fnstr.c_str());
     TFile *histoOutFile = TFile::Open(outfn, "RECREATE");
@@ -220,7 +217,6 @@ void RA2bZinvDriver(const std::string& runBlock = "", int toDo = -1) {
   }
 
   if (doHgjets || doHgjetsqcd) {
-    RA2bZinvAnalysis analyzer(true, cfgName, runBlock);
     fnstr = "histsGjets";  fnstr += runBlock + ".root";
     char* outfn = new char[fnstr.length()+1];  std::strcpy (outfn, fnstr.c_str());
     TFile *histoOutFile = TFile::Open(outfn, "RECREATE");
@@ -236,14 +232,10 @@ void RA2bZinvDriver(const std::string& runBlock = "", int toDo = -1) {
   }
 
   if (doListTrigPrescales) {
-    RA2bZinvAnalysis analyzer(false, cfgName, runBlock);
     analyzer.checkTrigPrescales("zmm");
   }
 
   if (!dumpSelEvIDsample.empty()) {
-    bool isMC = true;
-    if (dumpSelEvIDsample == "zmm" || dumpSelEvIDsample == "zee" || dumpSelEvIDsample == "photon") isMC = true; 
-    RA2bZinvAnalysis analyzer(isMC, cfgName, runBlock);
     analyzer.dumpSelEvIDs(dumpSelEvIDsample.data(), (std::string("evtIDs_") + runBlock + ".txt").data());
   }
 
