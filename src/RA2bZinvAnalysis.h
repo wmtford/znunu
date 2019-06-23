@@ -38,7 +38,6 @@ static TString commonCuts_;
 static TString ptCut_;
 static TString massCut_;
 static TString photonDeltaRcut_;
-static TH2F *hPrefiring_photon_, *hPrefiring_jet_;
 
 class RA2bZinvAnalysis : public NtupleClass {
 
@@ -116,7 +115,8 @@ public:
     ~efficiencyAndPurity() {};
     void openFiles();
     void getHistos(const char* sample, int currentYear);
-    pair<double, double> weight(CCbinning* CCbins, Int_t NJets, Int_t BTags, Double_t MHT, Double_t HT,
+    pair<double, double> weight(CCbinning* CCbins,
+				Int_t NJets, Int_t BTags, Double_t MHT, Double_t HT,
 				vector<TLorentzVector> ZCandidates,
 				vector<TLorentzVector> Photons,
 				vector<TLorentzVector> Electrons,
@@ -124,6 +124,25 @@ public:
 				vector<double> EBphoton,
 				bool applyDRfitWt,
 				int currentYear);
+
+    double prefiring_weight_photon(vector<TLorentzVector>* Photons, unsigned p){
+    /* double prefiring_weight_photon(unsigned p){ */
+      if (hPrefiring_photon_ == nullptr) return 1;
+      return (1 - hPrefiring_photon_->GetBinContent(hPrefiring_photon_->GetXaxis()->FindBin(Photons->at(p).Eta()),
+						    hPrefiring_photon_->GetYaxis()->FindBin(Photons->at(p).Pt())));
+    };
+    double prefiring_weight_electron(vector<TLorentzVector>* Electrons, unsigned e){
+    /* double prefiring_weight_electron(unsigned e){ */
+      if (hPrefiring_photon_ == nullptr) return 1;
+      return (1 - hPrefiring_photon_->GetBinContent(hPrefiring_photon_->GetXaxis()->FindBin(Electrons->at(e).Eta()),
+						    hPrefiring_photon_->GetYaxis()->FindBin(Electrons->at(e).Pt())));
+    };
+    double prefiring_weight_jet(vector<TLorentzVector>* Jets, unsigned j){
+    /* double prefiring_weight_jet(unsigned j){ */
+      if (hPrefiring_jet_ == nullptr) return 1;
+      return (1 - hPrefiring_jet_->GetBinContent(hPrefiring_jet_->GetXaxis()->FindBin(Jets->at(j).Eta()),
+						 hPrefiring_jet_->GetYaxis()->FindBin(Jets->at(j).Pt()))) ;
+    };
     double quadSum(double x, double y) {return Sqrt(Power(x,2) + Power(y,2));};
     double quadSum(double x, double y, double z) {return Sqrt(Power(x,2) + Power(y,2) + Power(z,2));};
   private:
@@ -137,6 +156,7 @@ public:
     std::vector<TFile*> muonIDSFFile_;
     std::vector<TFile*> muonIsoSFFile_;
     TFile* prefiringWeightFile_;
+    TH2F *hPrefiring_photon_, *hPrefiring_jet_;
     TString theSample_;
     string deltaPhi_;
     std::vector<TH1F*> hPurity_, hTrigEff_;
@@ -204,30 +224,6 @@ private:
   void fillCutFlow(TH1D* hcf, Double_t wt);
   Int_t setBTags(int runYear);
   efficiencyAndPurity* effPurCorr_;
-
-  double prefiring_weight_photon(unsigned p){
-    double w = 1;
-    if (hPrefiring_photon_ != nullptr)
-      w = (1 - hPrefiring_photon_->GetBinContent(hPrefiring_photon_->GetXaxis()->FindBin(Photons->at(p).Eta()),
-						 hPrefiring_photon_->GetYaxis()->FindBin(Photons->at(p).Pt())));
-    return w;
-  };
-
-  double prefiring_weight_electron(unsigned p){
-    double w = 1;
-    if (hPrefiring_photon_ != nullptr)
-      w = (1 - hPrefiring_photon_->GetBinContent(hPrefiring_photon_->GetXaxis()->FindBin(Electrons->at(p).Eta()),
-						 hPrefiring_photon_->GetYaxis()->FindBin(Electrons->at(p).Pt())));
-    return w;
-  };
-
-  double prefiring_weight_jet(unsigned j){
-    double w = 1;
-    if (hPrefiring_jet_ != nullptr)
-      w = (1 - hPrefiring_jet_->GetBinContent(hPrefiring_jet_->GetXaxis()->FindBin(Jets->at(j).Eta()),
-					      hPrefiring_jet_->GetYaxis()->FindBin(Jets->at(j).Pt()))) ;
-    return w;
-  };
 
   bool testHEM() {
     // HEM veto for data depending on RunNum; for MC weight by lumi unless

@@ -668,11 +668,13 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 	// Apply L1 prefire weight for 2016 and 2017
 	if (sampleKey.Contains("ee")) {
 	  for (unsigned j = 0; j < Jets->size(); ++j) {
-	    NoPrefireWt *= prefiring_weight_jet(j);
+	    NoPrefireWt *= effPurCorr_->prefiring_weight_jet(Jets, j);
+	    // NoPrefireWt *= effPurCorr_->prefiring_weight_jet(j);
 	  }
 	  double eeNoPFwt = 1;
 	  for (unsigned e = 0; e < Electrons->size(); ++e) {
-	    double w = prefiring_weight_electron(e);
+	    double w = effPurCorr_->prefiring_weight_electron(Electrons, e);
+	    // double w = effPurCorr_->prefiring_weight_electron(e);
 	    if (w < eeNoPFwt) eeNoPFwt = w;
 	  }
 	  NoPrefireWt *= eeNoPFwt;
@@ -700,8 +702,10 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       eventWt *= MCwt;
     }  // isMC_
 
-    pair<double, double> efficiency = effPurCorr_->weight(CCbins_, NJets, BTags, MHT, HT, *ZCandidates, *Photons,
-							 *Electrons, *Muons, *Photons_isEB, applyDRfitWt_, currentYear);
+    pair<double, double> efficiency = effPurCorr_->weight(CCbins_,
+							  NJets, BTags, MHT, HT, *ZCandidates, *Photons,
+							 *Electrons, *Muons, *Photons_isEB,
+							  applyDRfitWt_, currentYear);
     effWt_ = efficiency.first;  effSys_ = efficiency.second;
 
     // Trigger requirements
@@ -2064,7 +2068,8 @@ RA2bZinvAnalysis::efficiencyAndPurity::getHistos(const char* sample, int current
 }  // ======================================================================================
 
 pair<double, double>
-RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins, Int_t NJets, Int_t BTags,
+RA2bZinvAnalysis::efficiencyAndPurity::weight(CCbinning* CCbins,
+					      Int_t NJets, Int_t BTags,
 					      Double_t MHT, Double_t HT,
 					      vector<TLorentzVector> ZCandidates,
 					      vector<TLorentzVector> Photons,
