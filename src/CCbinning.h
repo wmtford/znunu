@@ -121,7 +121,7 @@ private:
   std::vector< std::vector<int> > jetSubBins_;
   ivector_map toCCbin_, toCCbinSpl_, toCCbinJb_, toCCbinjb_, toCCbinjk_;
 
-  ClassDef(CCbinning, 1) // 2nd arg is ClassVersionID
+  /* ClassDef(CCbinning, 1) // 2nd arg is ClassVersionID */
 };
 
 #endif

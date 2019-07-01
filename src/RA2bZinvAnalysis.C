@@ -158,6 +158,9 @@ RA2bZinvAnalysis::getChain(const char* dataSet) {
     cout << "getChain:  unknown dataSet '" << dataSet << "'" << endl;
     return;
   }
+  if (deltaPhi_.find("ldp") != string::npos && isSkim_) key += "ldp";
+  if (!runBlock_.empty()) key += runBlock_;  key("HEM") = "";
+
   if (isMC_) {
     cout << "For MC data set " << dataSet << "," << endl;
     cout << "Apply b-tag scale factors is " << applyBTagSF_ << endl;
@@ -168,8 +171,6 @@ RA2bZinvAnalysis::getChain(const char* dataSet) {
     cout << "Apply scale factors to MC for non-DR histograms is " << applySFwtToMC_ << endl;
   }
   fillCutMaps();  // Depends on isMC_
-  if (deltaPhi_.find("ldp") != string::npos && isSkim_) key += "ldp";
-  if (!runBlock_.empty()) key += runBlock_;  key("HEM") = "";
 
   TChain* chain = new TChain(treeName_.data());
   std::vector<TString> files = fileList(key);
