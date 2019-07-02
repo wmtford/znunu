@@ -144,7 +144,7 @@ def panelHists():
   setMax = None
   ratioMin = [None, None, None, None]
   ratioMax = [None, None, None, None]
-  extraText = ""
+  extraText = "Preliminary"
   
   legHeader = None
   legList = []
@@ -172,14 +172,14 @@ def panelHists():
   varNames = [['hCCjb']]
   sampleSuffixN = ['zll']
   sampleSuffixD = [['ttll', 'VVll', 'ttzll', 'dyll']]
-  legendsD = [['  t #bar{t}', '  Diboson', '  t #bar{t} Z', '  Z + jets']]
+  legendsD = [['  t#bar{t}', '  Diboson', '  t#bar{t}Z', '  Z+jets']]
   iPeriod = 9
   NfileZll = ROOT.TFile('../outputs/histsDY_Run2v17.root')
   # NfilePhoton = ROOT.TFile('../outputs/histsPhoton_Run2v17.root')
   DfileZll = ROOT.TFile('../outputs/histsDYMC_Run2v17.root')
   # DfilePhoton = ROOT.TFile('../outputs/histsGjets_Run2v17_DRr2wt.root')
   extrapFile = ROOT.TFile('../outputs/hExtrap_Run2v17.root')
-  legHeader = 'Z #rightarrow l #bar{l}'
+  legHeader = 'Z #rightarrow l^{+}l^{-}'
   legendsN = ['  Data']
   
   
