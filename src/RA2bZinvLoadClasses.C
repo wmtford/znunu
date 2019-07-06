@@ -11,5 +11,6 @@
     cout << "Unknown SCRAM_ARCH = " << arch << "; can't load boost library.";
   }
   gROOT->ProcessLine(".L CCbinning.C+");
+  gROOT->ProcessLine(".L CutManager.C+");
   gROOT->ProcessLine(".L RA2bZinvAnalysis.C+");
 }

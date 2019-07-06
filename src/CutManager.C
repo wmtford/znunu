@@ -7,9 +7,12 @@
 
 // ClassImp(CutManager)
 
-CutManager::CutManager(const TString sample, const TString ntupleVersion, bool isSkim, bool isMC) :
-ntupleVersion_(ntupleVersion), isSkim_(isSkim), isMC_(isMC) {
+CutManager::CutManager(const TString sample, const TString ntupleVersion, bool isSkim, bool isMC,
+		       std::string era, string deltaPhi, bool applyMassCut, bool applyPtCut, CCbinning* CCbins) :
+  ntupleVersion_(ntupleVersion), isSkim_(isSkim), isMC_(isMC), era_(era), deltaPhi_(deltaPhi),
+  applyMassCut_(applyMassCut), applyPtCut_(applyPtCut), CCbins_(CCbins) {
 
+  fillCutMaps();  // Depends on isMC_
   TString sampleKey;
   try {sampleKey = sampleKeyMap_.at(sample);}
   catch (const std::out_of_range& oor) {
@@ -17,7 +20,6 @@ ntupleVersion_(ntupleVersion), isSkim_(isSkim), isMC_(isMC) {
     cuts_ = "0";
     return;
   }
-  fillCutMaps();  // Depends on isMC_
 
   if (ntupleVersion_ == "V12" || ntupleVersion_ == "V15")
     commonCuts_ =    "globalTightHalo2016Filter==1";
@@ -29,10 +31,12 @@ ntupleVersion_(ntupleVersion), isSkim_(isSkim), isMC_(isMC) {
   commonCuts_ += " && BadChargedCandidateFilter";
   commonCuts_ += " && BadPFMuonFilter";
   commonCuts_ += " && NVtx > 0";
-  if (ntupleVersion_ != "V12")
+  if (ntupleVersion_ != "V12") {
     // commonCuts_ += " && ecalBadCalibFilter==1";  // Added for 94X
-  if (!isMC_)
+  }
+  if (!isMC_) {
     commonCuts_ += " && eeBadScFilter==1";
+  }
   // Kevin Pedro, re V16:  Please note that I have included only the JetID "event cleaning" cut in these skims.
   // The PFCaloMETRatio, HT5/HT, and noMuonJet cuts are left out,
   // so the impact of these cuts can be tested and refined if necessary.

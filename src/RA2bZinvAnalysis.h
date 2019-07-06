@@ -13,6 +13,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "NtupleClass.h"
+#include "CutManager.h"
 #include "CCbinning.h"
 #include <TH1F.h>
 #include <TH1D.h>
@@ -28,17 +29,6 @@ using namespace TMath;
 
 void NtupleClass::Loop() {}
 
-// members needed by nested classes
-static TString HTcut_;
-static TString MHTcut_;
-static TString NJetscut_;
-static TString objcut_;
-static TString minDphicut_;
-static TString commonCuts_;
-static TString ptCut_;
-static TString massCut_;
-static TString photonDeltaRcut_;
-
 class RA2bZinvAnalysis : public NtupleClass {
 
 public:
@@ -49,7 +39,6 @@ public:
   Bool_t Notify() override {newFileInChain_ = kTRUE;  return(kTRUE);};
   std::vector<TH1*> makeHistograms(const char* sample);
   void dumpSelEvIDs(const char* sample, const char* idFileName);
-  TCut getCuts(const TString sampleKey);
   void setTriggerIndexList(const char* sample);
   double getPtZ() {
     if (!isMC_) return -1;
@@ -61,8 +50,6 @@ public:
   };
   void checkTrigPrescales(const char* sample);
 
-  enum yearFirstRun {Start2016 = 271036, Start2017 = 294645, Start2018 = 315252, StartHEM = 319077, Start2018C = 319313};
-  // First HEM run 319077
   enum runYear{Year2016 = 0, Year2017 = 1, Year2018 = 2, Year2018HEP = 3, Year2018HEM = 4};
 
   struct histConfig {
@@ -81,7 +68,7 @@ public:
     Int_t* ivalue;
     void (RA2bZinvAnalysis::*filler1D)(TH1D* h, double wt);
     void (RA2bZinvAnalysis::*filler2D)(TH2F* h, double wt);
-    std::vector<TString*> omitCuts;
+    std::vector<const TString*> omitCuts;
     const char* addCuts;
     TString NminusOneCuts;
     TTreeFormula* NminusOneFormula;
@@ -91,11 +78,12 @@ public:
 
   class cutHistos {
   public:
-    cutHistos(TChain* chain, TObjArray* forNotify);
+    cutHistos(TChain* chain, CutManager* selector, TObjArray* forNotify);
     ~cutHistos() {};
     void setAxisLabels(TH1D* hcf);
     void fill(TH1D* hcf, Double_t wt, bool passTrg, bool passHEM);
   private:
+    CutManager* evSelector_;
     TObjArray* forNotify_;
     TTreeFormula* HTcutf_;
     TTreeFormula* MHTcutf_;
@@ -206,21 +194,14 @@ private:
   double csvMthreshold_;
   double effWt_, effSys_;
 
-  typedef std::map<TString, std::vector<TString> > vstring_map;
-  typedef std::map<TString, TString> string_map;
   std::vector<unsigned> triggerIndexList_;
-  vstring_map triggerMapByName_;
-  string_map objCutMap_;
-  string_map minDphiCutMap_;
-  string_map MHTCutMap_;
-  string_map sampleKeyMap_;
+  CutManager* evSelector_;
 
   void Config(const std::string& cfg_filename="");
   void getChain(const char* dataSet);
   void setActiveBranches(const bool activateAll = false);
   std::vector<TString> fileList(TString sampleKey);
-  void fillCutMaps();
-  void bookAndFillHistograms(const char* sample, std::vector<histConfig*>& histograms, TCut baselineCuts);
+  void bookAndFillHistograms(const char* sample, std::vector<histConfig*>& histograms);
   void fillCutFlow(TH1D* hcf, Double_t wt);
   Int_t setBTags(int runYear);
   efficiencyAndPurity* effPurCorr_;
@@ -228,7 +209,7 @@ private:
   bool testHEM() {
     // HEM veto for data depending on RunNum; for MC weight by lumi unless
     // forced by a substring of runBlock_ (HE Present or Missing)
-    if (!isMC_ && RunNum < StartHEM) return false;
+    if (!isMC_ && RunNum < CutManager::StartHEM) return false;
     if (isMC_ && runBlock_.find("2018") == std::string::npos) return false;
     if (isMC_ && runBlock_.find("HEP") != std::string::npos) return false;
     if (isMC_ && runBlock_.find("HEM") == std::string::npos
