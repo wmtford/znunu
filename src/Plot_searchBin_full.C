@@ -37,9 +37,9 @@ void Plot_searchBin_full(string sample="signal",
 			 // string MChistname="plot_zinv_nj5_nb4_kin10_1",
 			 string elog="",string elogExp="", int pull=0) {
 
-  bool ZnnMCvsData = true;
+  bool ZnnMCvsData = false;
   bool ZnnMCvsZllMC = false;
-  bool ZllMCvsZllMC = false;
+  bool ZllMCvsZllMC = true;
   bool ZllDataVsZllMC = false;
   bool PhoDataVsPhoMC = false;
 
@@ -70,7 +70,7 @@ void Plot_searchBin_full(string sample="signal",
       predLegend = "Treat Z#rightarrow ll simulation as data";
     } else if (ZllMCvsZllMC) {
       legCoord[0] = 0.67;
-      legendHeader = "Z#rightarrow l^{+}l^{-} + jets yield";
+      legendHeader = "Z#rightarrow l^{+}l^{-}+jets yield";
       expectLegend = "Direct from simulation";
       predLegend = "Treat simulation as data";
     } else if (ZllDataVsZllMC) {

@@ -6,27 +6,29 @@ from array import array
 import ROOT
 import RA2b
 
-def textCMS(margin):
-  CMStxt = ROOT.TPaveText(margin, 0.98, 0.23, 1.0, "NDC")
-  CMStxt.SetBorderSize(0)
-  CMStxt.SetFillColor(0)
-  CMStxt.SetTextFont(42)
-  CMStxt.SetTextAlign(13)
-  CMStxt.SetTextSize(0.11)
-  CMStxt.SetMargin(0.)
-  CMStxt.AddText("#bf{CMS}")
-  return CMStxt
+# If we switch to using these two functions instead of RA2b.cmsLumi, we avoid segv.
+# (But RA2b.cmsLumi isn't the cause of the segv.)
+# def textCMS(margin):
+#   CMStxt = ROOT.TPaveText(margin, 0.98, 0.23, 1.0, "NDC")
+#   CMStxt.SetBorderSize(0)
+#   CMStxt.SetFillColor(0)
+#   CMStxt.SetTextFont(42)
+#   CMStxt.SetTextAlign(13)
+#   CMStxt.SetTextSize(0.11)
+#   CMStxt.SetMargin(0.)
+#   CMStxt.AddText("#bf{CMS}")
+#   return CMStxt
 
-def textLumi(margin):
-  Lumitxt = ROOT.TPaveText(0.80, 0.98, 1-margin, 1.0, "NDC")
-  Lumitxt.SetBorderSize(0)
-  Lumitxt.SetFillColor(0)
-  Lumitxt.SetTextFont(42)
-  Lumitxt.SetTextAlign(33)
-  Lumitxt.SetTextSize(0.09)
-  Lumitxt.SetMargin(0.)
-  Lumitxt.AddText("137 fb^{-1} (13 TeV)")
-  return Lumitxt
+# def textLumi(margin):
+#   Lumitxt = ROOT.TPaveText(0.80, 0.98, 1-margin, 1.0, "NDC")
+#   Lumitxt.SetBorderSize(0)
+#   Lumitxt.SetFillColor(0)
+#   Lumitxt.SetTextFont(42)
+#   Lumitxt.SetTextAlign(33)
+#   Lumitxt.SetTextSize(0.09)
+#   Lumitxt.SetMargin(0.)
+#   Lumitxt.AddText("137 fb^{-1} (13 TeV)")
+#   return Lumitxt
 
 def addDivisionsUp(ymin, ymax, axisTitleSize):
   # Putting lines and labels explaining search region definitions
@@ -144,15 +146,16 @@ def panelHists():
   setMax = None
   ratioMin = [None, None, None, None]
   ratioMax = [None, None, None, None]
-  extraText = "Preliminary"
+  extraText = ""
+  # extraText = "Preliminary"
   
   legHeader = None
   legList = []
   # legCoordsDefault = [0.6,0.6,0.89,0.89]
-  legCoordsDefault = [0.68,0.6,0.89,0.89]
+  # legCoordsDefault = [0.68,0.6,0.89,0.89]
   legCoords = None
   drawText = False
-  textCoordsDefault = [0.35,0.75,.55,.88]
+  # textCoordsDefault = [0.35,0.75,.55,.88]
   textCoords = None
   
   def histNamesBuild(namesRootList, suffix):
@@ -186,34 +189,34 @@ def panelHists():
   
   # =============================================================================
   reaction = -1
-  if (doMumu):
-    reaction += 1
-    legend = []
-    histnamesN = histNamesBuild(varNames[reaction], sampleSuffixN[reaction])
-    legend.append(legendsN[reaction])
-    histnamesD = []
-    for hnd in sampleSuffixD[reaction]:
-      histnamesD.append(histNamesBuild(varNames[reaction], hnd))
-    for ld in legendsD[reaction]:
-      legend.append(ld)
-    filehistsM['N'] = (NfileZll, nScale[reaction], histnamesN)
-    filehistsM['D'] = (DfileZll, dScale[reaction], histnamesD)
-    hists.append(filehistsM)
-    legList.append(legend)
-  if (doEe):
-    reaction += 1
-    legend = []
-    histnamesN = histNamesBuild(varNames[reaction], sampleSuffixN[reaction])
-    legend.append(legendsN[reaction])
-    histnamesD = []
-    for hnd in sampleSuffixD[reaction]:
-      histnamesD.append(histNamesBuild(varNames[reaction], hnd))
-    for ld in legendsD[reaction]:
-      legend.append(ld)
-    filehistsE['N'] = (NfileZll, nScale[reaction], histnamesN)
-    filehistsE['D'] = (DfileZll, dScale[reaction], histnamesD)
-    hists.append(filehistsE)
-    legList.append(legend)
+  # if (doMumu):
+  #   reaction += 1
+  #   legend = []
+  #   histnamesN = histNamesBuild(varNames[reaction], sampleSuffixN[reaction])
+  #   legend.append(legendsN[reaction])
+  #   histnamesD = []
+  #   for hnd in sampleSuffixD[reaction]:
+  #     histnamesD.append(histNamesBuild(varNames[reaction], hnd))
+  #   for ld in legendsD[reaction]:
+  #     legend.append(ld)
+  #   filehistsM['N'] = (NfileZll, nScale[reaction], histnamesN)
+  #   filehistsM['D'] = (DfileZll, dScale[reaction], histnamesD)
+  #   hists.append(filehistsM)
+  #   legList.append(legend)
+  # if (doEe):
+  #   reaction += 1
+  #   legend = []
+  #   histnamesN = histNamesBuild(varNames[reaction], sampleSuffixN[reaction])
+  #   legend.append(legendsN[reaction])
+  #   histnamesD = []
+  #   for hnd in sampleSuffixD[reaction]:
+  #     histnamesD.append(histNamesBuild(varNames[reaction], hnd))
+  #   for ld in legendsD[reaction]:
+  #     legend.append(ld)
+  #   filehistsE['N'] = (NfileZll, nScale[reaction], histnamesN)
+  #   filehistsE['D'] = (DfileZll, dScale[reaction], histnamesD)
+  #   hists.append(filehistsE)
+  #   legList.append(legend)
   if (doLl):
     reaction += 1
     legend = []
@@ -228,26 +231,26 @@ def panelHists():
     filehistsL['D'] = (DfileZll, dScale[reaction], histnamesD)
     hists.append(filehistsL)
     legList.append(legend)
-  if (doPhoton):
-    reaction += 1
-    legend = []
-    histnamesN = histNamesBuild(varNames[reaction], sampleSuffixN[reaction])
-    legend.append(legendsN[reaction])
-    histnamesD = []
-    for hnd in sampleSuffixD[reaction]:
-      histnamesD.append(histNamesBuild(varNames[reaction], hnd))
-    for ld in legendsD[reaction]:
-      legend.append(ld)
-    filehistsP['N'] = (NfilePhoton, nScale[reaction], histnamesN)
-    filehistsP['D'] = (DfilePhoton, dScale[reaction], histnamesD)
-    hists.append(filehistsP)
-    legList.append(legend)
+  # if (doPhoton):
+  #   reaction += 1
+  #   legend = []
+  #   histnamesN = histNamesBuild(varNames[reaction], sampleSuffixN[reaction])
+  #   legend.append(legendsN[reaction])
+  #   histnamesD = []
+  #   for hnd in sampleSuffixD[reaction]:
+  #     histnamesD.append(histNamesBuild(varNames[reaction], hnd))
+  #   for ld in legendsD[reaction]:
+  #     legend.append(ld)
+  #   filehistsP['N'] = (NfilePhoton, nScale[reaction], histnamesN)
+  #   filehistsP['D'] = (DfilePhoton, dScale[reaction], histnamesD)
+  #   hists.append(filehistsP)
+  #   legList.append(legend)
   
   #  ========================================================================================
   
-  reaction = -1
+  ireaction = -1
   for samples in hists:
-    reaction += 1
+    ireaction += 1
     Nfile = samples['N'][0]
     Dfile = samples['D'][0]
     for i in range(len(samples['N'][2])):
@@ -292,8 +295,8 @@ def panelHists():
         numHists=hNumer, denomHists=hDenList, doRatio=True,
         doLogy=doLogy, doCMSlumi=True, iPeriod=iPeriod, drawHorizontalLine=False,
         xTitle=hNumer.GetXaxis().GetTitle(), yTitle=hNumer.GetYaxis().GetTitle(),
-        ratioMin=ratioMin[reaction], ratioMax=ratioMax[reaction], setMin=setMin, setMax=setMax,
-        legHeader = legHeader, legList = legList[reaction],
+        ratioMin=ratioMin[ireaction], ratioMax=ratioMax[ireaction], setMin=setMin, setMax=setMax,
+        legHeader = legHeader, legList = legList[ireaction],
         # legCoords = legCoords,
         drawText = drawText, textCoords = textCoords, extraText = extraText,
         doClosureStyle = doClosureStyle, markerSize=0.8, canvasSize = [900,600]
@@ -321,7 +324,7 @@ def panelHists():
         if (obj.InheritsFrom("THStack")):
           hMC = obj.Clone("hMC")
         if (obj.InheritsFrom("TLegend")):
-          legend = obj.Clone("legend")
+          ovLegend = obj.Clone("ovLegend")
         if (obj.InheritsFrom("TFrame")):
           frame2 = obj.Clone("frame2")
           frame2.SetX1(0)
@@ -416,29 +419,30 @@ def panelHists():
       hMC.Draw()
       hData.SetMarkerSize(markerSize)
       hData.Draw("e0p X0 same")
-      CMStxt = textCMS(pml)
-      CMStxt.Draw()
-      Lumitxt = textLumi(pmr)
-      Lumitxt.Draw()
+      # CMStxt = textCMS(pml)
+      # CMStxt.Draw()
+      # Lumitxt = textLumi(pmr)
+      # Lumitxt.Draw()
+      RA2b.cmsLumi(pad = pad2, iPeriod = iPeriod, extraText = extraText)
+# def cmsLumi(pad,  iPeriod=None,  iPosX=None, extraText=None, cmsText=None):
       addDivisionsUp(p2min, p2max, axisTitleSize)
-      legend.SetX1NDC(0.78)
-      legend.SetY1NDC(0.32)
-      legend.SetX2NDC(0.93)
-      legend.SetY2NDC(0.75)
-      legend.SetTextSize(1.3*axisTitleSize)
-      legend.SetLineWidth(1)
-      legend.SetFillStyle(1001)
-      legend.SetFillColor(0)
-      legend.SetLineColor(1)
-      legend.SetBorderSize(1)
-      # legend.SetMargin(0.3)  # this 0.3 seems to be the default
-      legend.Draw()
+      ovLegend.SetX1NDC(0.78)
+      ovLegend.SetY1NDC(0.32)
+      ovLegend.SetX2NDC(0.93)
+      ovLegend.SetY2NDC(0.75)
+      ovLegend.SetTextSize(1.3*axisTitleSize)
+      ovLegend.SetLineWidth(1)
+      ovLegend.SetFillStyle(1001)
+      ovLegend.SetFillColor(0)
+      ovLegend.SetLineColor(1)
+      ovLegend.SetBorderSize(1)
+      # ovLegend.SetMargin(0.3)  # this 0.3 seems to be the default
+      ovLegend.Draw()
 
       newCanv.cd()
-
       newCanv.SaveAs(str(nhName)+"-Fextrap.pdf")
 
-      exit
+      exit  # We just have one sample, so skip the rest of the loop
     
   # =================================================================================
   
