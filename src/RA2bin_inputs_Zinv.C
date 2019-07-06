@@ -586,7 +586,7 @@ void RA2bin_inputs_Zinv(sampleChoice doSample = Signal,
 	if (ib == 0) {
 	  binzb++;
 	  hgJZgR0b->SetBinContent(binzb, ZgR[ijet][ikin]);
-	  hgJZgR0b->SetBinError(binzb, ZgRerr[ijet][ikin]);
+	  hgJZgR0b->SetBinError(binzb, ZgR[ijet][ikin]*ZgRerr[ijet][ikin]);
           cout << "iJet " << ijet << " Var (err nominal, eff): "
                << " gEtrg (" << gEtrgErr[ijet][ikin] << ", " << gEtrgErrEff[ijet][ikin] << ") "
                << " gSF (" << gSFerr[ijet][ikin] << ", " << gSFerrEff[ijet][ikin] << ") "
