@@ -39,15 +39,6 @@ public:
   Bool_t Notify() override {newFileInChain_ = kTRUE;  return(kTRUE);};
   std::vector<TH1*> makeHistograms(const char* sample);
   void dumpSelEvIDs(const char* sample, const char* idFileName);
-  void setTriggerIndexList(const char* sample);
-  double getPtZ() {
-    if (!isMC_) return -1;
-    for (int iGen = 0, nGen =  GenParticles_PdgId->size(); iGen < nGen; ++iGen) {
-      if (GenParticles_PdgId->at(iGen)==23 && GenParticles_Status->at(iGen) == 62)
-	return GenParticles->at(iGen).Pt();
-    }
-    return -1;
-  };
   void checkTrigPrescales(const char* sample);
 
   enum runYear{Year2016 = 0, Year2017 = 1, Year2018 = 2, Year2018HEP = 3, Year2018HEM = 4};
@@ -72,7 +63,7 @@ public:
     const char* addCuts;
     TString NminusOneCuts;
     TTreeFormula* NminusOneFormula;
-  histConfig() : binsX(nullptr), binsY(nullptr), dvalue(nullptr), ivalue(nullptr),
+    histConfig() : binsX(nullptr), binsY(nullptr), dvalue(nullptr), ivalue(nullptr),
       filler1D(nullptr), filler2D(nullptr), addCuts(""), NbinsY(0) {}
   };
 
@@ -160,7 +151,7 @@ public:
   };
 
 private:
-  std::string era_;  // "2016", "Run2"
+  string era_;  // "2016", "Run2"
   TString ntupleVersion_;
   bool isSkim_;
   bool isMC_;
@@ -182,29 +173,35 @@ private:
   bool applyZptWt_;
   bool applyDRfitWt_;
   bool applySFwtToMC_;
-  Bool_t newFileInChain_;
-  TH1* puHist_;
+
   CCbinning* CCbins_;
+  CutManager* evSelector_;
+  efficiencyAndPurity* effPurCorr_;
   BTagCorrector* btagcorr_;
   const char* BTagSFfile_;
-  TString isoSFlepTksVeto_;
-  TString isoSFlepTksCut_;
-  TString photonVeto_;
-  TString photonCut_;
   double csvMthreshold_;
+  TH1* puHist_;
+  Bool_t newFileInChain_;
   double effWt_, effSys_;
-
   std::vector<unsigned> triggerIndexList_;
-  CutManager* evSelector_;
 
   void Config(const std::string& cfg_filename="");
   void getChain(const char* dataSet);
   void setActiveBranches(const bool activateAll = false);
   std::vector<TString> fileList(TString sampleKey);
   void bookAndFillHistograms(const char* sample, std::vector<histConfig*>& histograms);
-  void fillCutFlow(TH1D* hcf, Double_t wt);
+  void setTriggerIndexList(const char* sample);
   Int_t setBTags(int runYear);
-  efficiencyAndPurity* effPurCorr_;
+  void fillCutFlow(TH1D* hcf, Double_t wt);
+
+  double getPtZ() {
+    if (!isMC_) return -1;
+    for (int iGen = 0, nGen =  GenParticles_PdgId->size(); iGen < nGen; ++iGen) {
+      if (GenParticles_PdgId->at(iGen)==23 && GenParticles_Status->at(iGen) == 62)
+	return GenParticles->at(iGen).Pt();
+    }
+    return -1;
+  };
 
   bool testHEM() {
     // HEM veto for data depending on RunNum; for MC weight by lumi unless

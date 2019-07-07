@@ -562,7 +562,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 	  }
 	  NoPrefireWt *= eeNoPFwt;
 	} else {
-	NoPrefireWt = NonPrefiringProb;
+	  NoPrefireWt = NonPrefiringProb;
 	}
 	MCwt *= NoPrefireWt;
       }  // 2016 or 2017
