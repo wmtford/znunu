@@ -7,9 +7,9 @@
 
 // ClassImp(CutManager)
 
-CutManager::CutManager(const TString sample, const TString ntupleVersion, bool isSkim, bool isMC,
+CutManager::CutManager(const TString sample, const TString ntupleVersion, bool isSkim, bool isMC, int verbosity,
 		       std::string era, string deltaPhi, bool applyMassCut, bool applyPtCut, CCbinning* CCbins) :
-  ntupleVersion_(ntupleVersion), isSkim_(isSkim), isMC_(isMC), era_(era), deltaPhi_(deltaPhi),
+  ntupleVersion_(ntupleVersion), isSkim_(isSkim), verbosity_(verbosity), isMC_(isMC), era_(era), deltaPhi_(deltaPhi),
   applyMassCut_(applyMassCut), applyPtCut_(applyPtCut), CCbins_(CCbins) {
 
   fillCutMaps();  // Depends on isMC_
@@ -330,5 +330,32 @@ CutManager::fillCutMaps() {
   triggerMapByName_["zll"].insert(triggerMapByName_["zll"].end(), triggerMapByName_["zee"].begin(), triggerMapByName_["zee"].end());
   triggerMapByName_["sle"] = triggerMapByName_["sig"];
   triggerMapByName_["slm"] = triggerMapByName_["sig"];
+
+}  // ======================================================================================
+
+void
+CutManager::setTriggerIndexList(const char* sample, vector<unsigned>* triggerIndexList,
+				vector<string>* TriggerNames, vector<int>* TriggerPrescales) {
+
+  triggerIndexList->clear();
+  std::vector<TString> triggers;
+  vstring_map trigMap = triggerMapByName();
+  if (trigMap.count(sample) > 0) {
+    triggers = trigMap.at(sample);
+  } else {
+    cout << "No matches in triggerMapByName for sample " << sample << endl;
+    return;
+  }
+  for (auto myTrigName : triggers) {
+    for (unsigned int ti = 0; ti < TriggerNames->size(); ++ti) {
+      if (TString(TriggerNames->at(ti)).Contains(myTrigName)) {
+	triggerIndexList->push_back(ti);
+	Int_t prescale = TriggerPrescales->at(ti);
+	if (verbosity_ >= 2 || (verbosity_ >= 1 && prescale != 1))
+	  cout << "Trigger " << TriggerNames->at(ti) << " (" << ti << ") prescaled by " << prescale << endl;
+	continue;
+      }
+    }
+  }
 
 }  // ======================================================================================

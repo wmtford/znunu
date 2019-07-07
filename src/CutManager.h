@@ -19,11 +19,13 @@ using std::endl;
 class CutManager {
 
  public:
-  CutManager(const TString sample, const TString ntupleVersion, bool isSkim, bool isMC,
+  CutManager(const TString sample, const TString ntupleVersion, bool isSkim, bool isMC, int verbosity,
 	     std::string era, string deltaPhi, bool applyMassCut, bool applyPtCut, CCbinning* CCbins);
   virtual ~CutManager() {};
   TCut baseline() {return cuts_;};
   enum yearFirstRun {Start2016 = 271036, Start2017 = 294645, Start2018 = 315252, StartHEM = 319077, Start2018C = 319313};
+  void setTriggerIndexList(const char* sample, vector<unsigned>* triggerIndexList,
+			   vector<string>* TriggerNames, vector<int>* TriggerPrescales);
   typedef std::map<TString, TString> string_map;
   typedef std::map<TString, std::vector<TString> > vstring_map;
   const string_map& sampleKeyMap() const {return sampleKeyMap_;};
@@ -47,6 +49,7 @@ class CutManager {
   TString ntupleVersion_;
   bool isSkim_;
   bool isMC_;
+  int verbosity_;
   std::string era_;  // "2016", "Run2"
   string deltaPhi_;  // "nominal", "hdp", "ldp", "ldpnominal"
   bool applyMassCut_;

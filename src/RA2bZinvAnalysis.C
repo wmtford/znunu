@@ -436,6 +436,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
   fChain->SetNotify(forNotify);
 
   // Traverse the tree and fill histograms
+  vector<unsigned> triggerIndexList;
   int currentYear = -1;
   double MCwtCorr = 1.;
   int count = 0, countInFile = 0, countInSel = 0, countNegWt = 0;
@@ -517,7 +518,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       }
       if (isMC_ && verbosity_ >= 1) cout << "MC weight for this file is " << Weight << " times correction " << MCwtCorr << endl;
       if (btagcorr_) btagcorr_->SetEffs(thisFile);
-      setTriggerIndexList(sample);
+      evSelector_->setTriggerIndexList(sample, &triggerIndexList, TriggerNames, TriggerPrescales);
     }  // newFileInChain_
 
     countInFile++;
@@ -594,7 +595,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
     bool passTrg = true;
     if (!isMC_) {
       passTrg = false;
-      for (auto trgIndex : triggerIndexList_)
+      for (auto trgIndex : triggerIndexList)
 	if (TriggerPass->at(trgIndex)) passTrg = true;
     }
 
@@ -681,7 +682,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 
   getChain(sample);  // Set isMC_ here
 
-  evSelector_ = new CutManager(sample, ntupleVersion_, isSkim_, isMC_,
+  evSelector_ = new CutManager(sample, ntupleVersion_, isSkim_, isMC_, verbosity_,
 			       era_, deltaPhi_, applyMassCut_, applyPtCut_, CCbins_);
   CutManager::string_map sampleMap = evSelector_->sampleKeyMap();
   TString sampleKey = sampleMap.count(sample) > 0 ? sampleMap.at(sample) : "none";
@@ -1346,32 +1347,6 @@ RA2bZinvAnalysis::fillGLdRpixelSeed(TH1D* h, double wt) {
   }
 }  // ======================================================================================
 
-void
-RA2bZinvAnalysis::setTriggerIndexList(const char* sample) {
-
-  triggerIndexList_.clear();
-  std::vector<TString> triggers;
-  CutManager::vstring_map trigMap = evSelector_->triggerMapByName();
-  if (trigMap.count(sample) > 0) {
-    triggers = trigMap.at(sample);
-  } else {
-    cout << "No matches in triggerMapByName for sample " << sample << endl;
-    return;
-  }
-  for (auto myTrigName : triggers) {
-    for (unsigned int ti = 0; ti < TriggerNames->size(); ++ti) {
-      if (TString(TriggerNames->at(ti)).Contains(myTrigName)) {
-	triggerIndexList_.push_back(ti);
-	Int_t prescale = TriggerPrescales->at(ti);
-	if (verbosity_ >= 2 || (verbosity_ >= 1 && prescale != 1))
-	  cout << "Trigger " << TriggerNames->at(ti) << " (" << ti << ") prescaled by " << prescale << endl;
-	continue;
-      }
-    }
-  }
-
-}  // ======================================================================================
-
 Int_t
 RA2bZinvAnalysis::setBTags(int runYear) {
   Int_t BTagsOrig = BTags;
@@ -1540,7 +1515,7 @@ RA2bZinvAnalysis::dumpSelEvIDs(const char* sample, const char* idFileName) {
   TObjArray* forNotify = new TObjArray;
   forNotify->SetOwner();  // so that TreeFormulas will be deleted
 
-  evSelector_ = new CutManager(sample, ntupleVersion_, isSkim_, isMC_,
+  evSelector_ = new CutManager(sample, ntupleVersion_, isSkim_, isMC_, verbosity_,
 			       era_, deltaPhi_, applyMassCut_, applyPtCut_, CCbins_);
   TCut baselineCuts = evSelector_->baseline();
   if (verbosity_ >= 1) cout << endl << "baseline = " << endl << baselineCuts << endl << endl;

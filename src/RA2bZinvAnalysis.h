@@ -119,14 +119,12 @@ private:
   TH1* puHist_;
   Bool_t newFileInChain_;
   double effWt_, effSys_;
-  std::vector<unsigned> triggerIndexList_;
 
   void Config(const std::string& cfg_filename="");
   void getChain(const char* dataSet);
   void setActiveBranches(const bool activateAll = false);
   std::vector<TString> fileList(TString sampleKey);
   void bookAndFillHistograms(const char* sample, std::vector<histConfig*>& histograms);
-  void setTriggerIndexList(const char* sample);
   Int_t setBTags(int runYear);
   void fillCutFlow(TH1D* hcf, Double_t wt);
 
