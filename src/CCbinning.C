@@ -5,7 +5,7 @@
 #include "CCbinning.h"
 #include <algorithm>  // for std::find()
 
-ClassImp(CCbinning)
+// ClassImp(CCbinning)
 
 CCbinning::CCbinning(const std::string& era, const std::string& deltaPhi) :
 era_(era), deltaPhi_(deltaPhi) {
