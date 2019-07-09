@@ -74,15 +74,7 @@ public:
   private:
     CutManager* evSelector_;
     TObjArray* forNotify_;
-    TTreeFormula* HTcutf_;
-    TTreeFormula* MHTcutf_;
-    TTreeFormula* NJetscutf_;
-    TTreeFormula* minDphicutf_;
-    TTreeFormula* objcutf_;
-    TTreeFormula* ptcutf_;
-    TTreeFormula* masscutf_;
-    TTreeFormula* photonDeltaRcutf_;
-    TTreeFormula* commoncutf_;
+    vector<TTreeFormula*> cutFormulas_;
   };
 
 private:

@@ -1160,15 +1160,17 @@ RA2bZinvAnalysis::fillGLdRpixelSeed(TH1D* h, double wt) {
 
 RA2bZinvAnalysis::cutHistos::cutHistos(TChain* chain, CutManager* selector, TObjArray* forNotify)
   : evSelector_(selector), forNotify_(forNotify) {
-  HTcutf_ = new TTreeFormula("HTcut", evSelector_->HTcut(), chain);  forNotify->Add(HTcutf_);
-  MHTcutf_ = new TTreeFormula("MHTcut", evSelector_->MHTcut(), chain);  forNotify->Add(MHTcutf_);
-  NJetscutf_ = new TTreeFormula("NJetscut", evSelector_->NJetscut(), chain);  forNotify->Add(NJetscutf_);
-  minDphicutf_ = new TTreeFormula("minDphicut", evSelector_->minDphicut(), chain);  forNotify->Add(minDphicutf_);
-  objcutf_ = new TTreeFormula("objcut", evSelector_->objcut(), chain);  forNotify->Add(objcutf_);
-  ptcutf_ = new TTreeFormula("ptcut", evSelector_->ptCut(), chain);  forNotify->Add(ptcutf_);
-  masscutf_ = new TTreeFormula("masscut", evSelector_->massCut(), chain);  forNotify->Add(masscutf_);
-  photonDeltaRcutf_ = new TTreeFormula("photonDeltaRcut", evSelector_->photonDeltaRcut(), chain);  forNotify->Add(photonDeltaRcutf_);
-  commoncutf_ = new TTreeFormula("commoncut", evSelector_->commonCuts(), chain);  forNotify->Add(commoncutf_);
+  cutFormulas_.push_back(new TTreeFormula("HTcut", evSelector_->HTcut(), chain));
+  cutFormulas_.push_back(new TTreeFormula("MHTcut", evSelector_->MHTcut(), chain));
+  cutFormulas_.push_back(new TTreeFormula("NJetscut", evSelector_->NJetscut(), chain));
+  cutFormulas_.push_back(new TTreeFormula("minDphicut", evSelector_->minDphicut(), chain));
+  cutFormulas_.push_back(new TTreeFormula("objcut", evSelector_->objcut(), chain));
+  cutFormulas_.push_back(new TTreeFormula("ptcut", evSelector_->ptCut(), chain));
+  cutFormulas_.push_back(new TTreeFormula("masscut", evSelector_->massCut(), chain));
+  cutFormulas_.push_back(new TTreeFormula("photonDeltaRcut", evSelector_->photonDeltaRcut(), chain));
+  cutFormulas_.push_back(new TTreeFormula("commoncut", evSelector_->commonCuts(), chain));
+  for (auto cutfptr : cutFormulas_) forNotify->Add(cutfptr);
+
 }  // ======================================================================================
 
 void
@@ -1211,64 +1213,37 @@ RA2bZinvAnalysis::cutHistos::setAxisLabels(TH1D* hcf) {
 
 void
 RA2bZinvAnalysis::cutHistos::fill(TH1D* hcf, Double_t wt, bool passTrg, bool passHEM) {
-  HTcutf_->GetNdata();
-  MHTcutf_->GetNdata();
-  NJetscutf_->GetNdata();
-  minDphicutf_->GetNdata();
-  objcutf_->GetNdata();
-  ptcutf_->GetNdata();
-  masscutf_->GetNdata();
-  photonDeltaRcutf_->GetNdata();
-  commoncutf_->GetNdata();
+  // Fill cut and cut flow histograms.  If null histogram pointer passed, just print cut value.
 
-  hcf->Fill(0.5, wt);
-  if (TString(hcf->GetName()).Contains("Flow")) {
-    if (HTcutf_->EvalInstance(0)) {
-      hcf->Fill(1.5, wt);
-      if (MHTcutf_->EvalInstance(0)) {
-	hcf->Fill(2.5, wt);
-	if (NJetscutf_->EvalInstance(0)) {
-	  hcf->Fill(3.5, wt);
-	  if (minDphicutf_->EvalInstance(0)) {
-	    hcf->Fill(4.5, wt);
-	    if (objcutf_->EvalInstance(0)) {
-	      hcf->Fill(5.5, wt);
-	      if (ptcutf_->EvalInstance(0)) {
-		hcf->Fill(6.5, wt);
-		if (masscutf_->EvalInstance(0)) {
-		  hcf->Fill(7.5, wt);
-		  if (photonDeltaRcutf_->EvalInstance(0)) {
-		    hcf->Fill(8.5, wt);
-		    if (passTrg) {
-		      hcf->Fill(9.5, wt);
-		      if (passHEM) {
-			hcf->Fill(10.5, wt);
-			if (commoncutf_->EvalInstance(0)) {
-			  hcf->Fill(11.5, wt);
-			}
-		      }
-		    }
-		  }
-		}
-	      }
-	    }
-	  }
-	}
-      }
+  bool pass = false;
+  TString cutName;
+  Size_t j = 0;
+  if (hcf != nullptr) hcf->Fill(0.5, wt);
+  for (Size_t i = 0; i < cutFormulas_.size() + 2; ++i) {
+    if (i == 8) {
+      cutName = "Trigger";
+      pass = passTrg;
+    } else if (i == 9) {
+      cutName = "HEM";
+      pass = passHEM;
+    } else {
+      TTreeFormula* cutf = cutFormulas_.at(j);
+      cutName = cutf->GetName();
+      cutf->GetNdata();
+      pass = cutf->EvalInstance(0);
+      j++;
     }
-  } else {
-    if (HTcutf_->EvalInstance(0)) hcf->Fill(1.5, wt);
-    if (MHTcutf_->EvalInstance(0)) hcf->Fill(2.5, wt);
-    if (NJetscutf_->EvalInstance(0)) hcf->Fill(3.5, wt);
-    if (minDphicutf_->EvalInstance(0)) hcf->Fill(4.5, wt);
-    if (objcutf_->EvalInstance(0)) hcf->Fill(5.5, wt);
-    if (ptcutf_->EvalInstance(0)) hcf->Fill(6.5, wt);
-    if (masscutf_->EvalInstance(0)) hcf->Fill(7.5, wt);
-    if (photonDeltaRcutf_->EvalInstance(0)) hcf->Fill(8.5, wt);
-    if (passTrg) hcf->Fill(9.5, wt);
-    if (passHEM) hcf->Fill(10.5, wt);
-    if (commoncutf_->EvalInstance(0)) hcf->Fill(11.5, wt);
+    if (hcf == nullptr) {
+      cout << "Cut " << cutName << " = " << pass << endl;
+      continue;
+    }
+    if (pass) {
+      if (hcf != nullptr) hcf->Fill(1.5 + i, wt);
+    } else if (TString(hcf->GetName()).Contains("Flow")) {
+      break;
+    }
   }
+
 }  // ======================================================================================
 
 void
@@ -1319,15 +1294,7 @@ RA2bZinvAnalysis::dumpSelEvIDs(const char* sample, const char* idFileName) {
   if (verbosity_ >= 1) cout << endl << "baseline = " << endl << baselineCuts << endl << endl;
   TTreeFormula* baselineFormula = new TTreeFormula("baselineCuts", baselineCuts, fChain);
   forNotify->Add(baselineFormula);
-  TTreeFormula* HTcutf_ = new TTreeFormula("HTcut", evSelector_->HTcut(), fChain);  forNotify->Add(HTcutf_);
-  TTreeFormula* MHTcutf_ = new TTreeFormula("MHTcut", evSelector_->MHTcut(), fChain);  forNotify->Add(MHTcutf_);
-  TTreeFormula* NJetscutf_ = new TTreeFormula("NJetscut", evSelector_->NJetscut(), fChain);  forNotify->Add(NJetscutf_);
-  TTreeFormula* minDphicutf_ = new TTreeFormula("minDphicut", evSelector_->minDphicut(), fChain);  forNotify->Add(minDphicutf_);
-  TTreeFormula* objcutf_ = new TTreeFormula("objcut", evSelector_->objcut(), fChain);  forNotify->Add(objcutf_);
-  TTreeFormula* ptcutf_ = new TTreeFormula("ptcut", evSelector_->ptCut(), fChain);  forNotify->Add(ptcutf_);
-  TTreeFormula* masscutf_ = new TTreeFormula("masscut", evSelector_->massCut(), fChain);  forNotify->Add(masscutf_);
-  TTreeFormula* photonDeltaRcutf_ = new TTreeFormula("photonDeltaRcut", evSelector_->photonDeltaRcut(), fChain);  forNotify->Add(photonDeltaRcutf_);
-  TTreeFormula* commoncutf_ = new TTreeFormula("commoncut", evSelector_->commonCuts(), fChain);  forNotify->Add(commoncutf_);
+  cutHistos cutHistFiller((TChain*) fChain, evSelector_, forNotify);  // to dump cuts
 
   fChain->SetNotify(forNotify);
 
@@ -1385,15 +1352,7 @@ RA2bZinvAnalysis::dumpSelEvIDs(const char* sample, const char* idFileName) {
     Int_t BTagsOrig = setBTags(currentYear);
 
     baselineFormula->GetNdata();  cout << "baseline = " << baselineFormula->EvalInstance(0) << endl;
-    HTcutf_->GetNdata();  cout << "HTcut = " << HTcutf_->EvalInstance(0) << endl;
-    MHTcutf_->GetNdata();  cout << "MHTcut = " << MHTcutf_->EvalInstance(0) << endl;
-    NJetscutf_->GetNdata();  cout << "NJetscut = " << NJetscutf_->EvalInstance(0) << endl;
-    minDphicutf_->GetNdata();  cout << "minDphicut = " << minDphicutf_->EvalInstance(0) << endl;
-    objcutf_->GetNdata();  cout << "objcut = " << objcutf_->EvalInstance(0) << endl;
-    ptcutf_->GetNdata();  cout << "ptcut = " << ptcutf_->EvalInstance(0) << endl;
-    masscutf_->GetNdata();  cout << "masscut = " << masscutf_->EvalInstance(0) << endl;
-    photonDeltaRcutf_->GetNdata();  cout << "photonDeltaRcut = " << photonDeltaRcutf_->EvalInstance(0) << endl;
-    commoncutf_->GetNdata();  cout << "commoncut = " << commoncutf_->EvalInstance(0) << endl;
+    cutHistFiller.fill(nullptr, 1, true, true);  // FIXME evaluate trigger, HEM selections
     cout << "globalTightHalo2016Filter = " << globalTightHalo2016Filter << endl;
     cout << "globalSuperTightHalo2016Filter = " << globalTightHalo2016Filter << endl;
     cout << "HBHENoiseFilter = " << HBHENoiseFilter << endl;
