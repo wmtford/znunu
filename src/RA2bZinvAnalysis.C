@@ -1216,6 +1216,7 @@ RA2bZinvAnalysis::cutHistos::fill(TH1D* hcf, Double_t wt, bool passTrg, bool pas
   // Fill cut and cut flow histograms.  If null histogram pointer passed, just print cut value.
 
   bool pass = false;
+  bool isCutFlow = TString(hcf->GetName()).Contains("Flow");
   TString cutName;
   Size_t j = 0;
   if (hcf != nullptr) hcf->Fill(0.5, wt);
@@ -1239,7 +1240,7 @@ RA2bZinvAnalysis::cutHistos::fill(TH1D* hcf, Double_t wt, bool passTrg, bool pas
     }
     if (pass) {
       if (hcf != nullptr) hcf->Fill(1.5 + i, wt);
-    } else if (TString(hcf->GetName()).Contains("Flow")) {
+    } else if (isCutFlow) {
       break;
     }
   }
