@@ -6,18 +6,12 @@
 #include "RA2bZinvAnalysis.h"
 #include <TStyle.h>
 #include <TROOT.h>
-#include <TCanvas.h>
 #include <TFile.h>
-#include <TRegexp.h>
-#include <TCut.h>
 #include <TTreeCache.h>
 
 #include <iostream>
 using std::cout;
 using std::endl;
-
-#include <fstream>
-using std::ifstream;
 
 #include <sstream>
 using std::stringstream;
@@ -954,6 +948,23 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 
 }  // ======================================================================================
 
+Int_t
+RA2bZinvAnalysis::setBTags(int runYear) {
+  Int_t BTagsOrig = BTags;
+  if (useDeepCSV_) {
+    BTags = BTagsDeepCSV;
+  } else if (ntupleVersion_ == "V15" && runYear != EfficiencyAndPurity::Year2016) {
+    // Recompute BTags with a different discriminator threshold
+    BTags = 0;
+    for (size_t j = 0; j < Jets->size(); ++j) {
+      if(!Jets_HTMask->at(j)) continue;
+      if (Jets_bDiscriminatorCSV->at(j) > csvMthreshold_) BTags++;
+    }
+  }
+  // From Rishi email of 20 Feb 2019, DeepCSV 2018 WP: 0.4184 and the 2017 WP: 0.4941
+  return BTagsOrig;
+}  // ======================================================================================
+
 void
 RA2bZinvAnalysis::fillCC(TH1D* h, double wt) {
 
@@ -1145,23 +1156,6 @@ RA2bZinvAnalysis::fillGLdRpixelSeed(TH1D* h, double wt) {
       h->Fill(dR, wt);
     }
   }
-}  // ======================================================================================
-
-Int_t
-RA2bZinvAnalysis::setBTags(int runYear) {
-  Int_t BTagsOrig = BTags;
-  if (useDeepCSV_) {
-    BTags = BTagsDeepCSV;
-  } else if (ntupleVersion_ == "V15" && runYear != EfficiencyAndPurity::Year2016) {
-    // Recompute BTags with a different discriminator threshold
-    BTags = 0;
-    for (size_t j = 0; j < Jets->size(); ++j) {
-      if(!Jets_HTMask->at(j)) continue;
-      if (Jets_bDiscriminatorCSV->at(j) > csvMthreshold_) BTags++;
-    }
-  }
-  // From Rishi email of 20 Feb 2019, DeepCSV 2018 WP: 0.4184 and the 2017 WP: 0.4941
-  return BTagsOrig;
 }  // ======================================================================================
 
 RA2bZinvAnalysis::cutHistos::cutHistos(TChain* chain, CutManager* selector, TObjArray* forNotify)
