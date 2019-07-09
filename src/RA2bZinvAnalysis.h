@@ -13,6 +13,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "NtupleClass.h"
+#include "TreeConfig.h"
 #include "CutManager.h"
 #include "CCbinning.h"
 #include "EfficiencyAndPurity.h"
@@ -94,9 +95,6 @@ private:
   string deltaPhi_;  // "nominal", "hdp", "ldp", "ldpnominal"
   int verbosity_;
   string rootVerbosity_;
-  string treeName_;
-  string treeLoc_;
-  string fileListsFile_;
   string runBlock_;
   double intLumi_;
   bool applyMassCut_;
@@ -110,6 +108,7 @@ private:
   bool applyDRfitWt_;
   bool applySFwtToMC_;
 
+  TreeConfig* treeConfig_;
   CCbinning* CCbins_;
   CutManager* evSelector_;
   EfficiencyAndPurity* effPurCorr_;
@@ -121,9 +120,7 @@ private:
   double effWt_, effSys_;
 
   void Config(const std::string& cfg_filename="");
-  void getChain(const char* dataSet);
-  void setActiveBranches(const bool activateAll = false);
-  std::vector<TString> fileList(TString sampleKey);
+  void optimizeTree(const bool activateAll = false);
   void bookAndFillHistograms(const char* sample, std::vector<histConfig*>& histograms);
   Int_t setBTags(int runYear);
   void fillCutFlow(TH1D* hcf, Double_t wt);

@@ -23,9 +23,11 @@ https://github.com/kpedro88/Analysis/blob/master/
 The files needed to run this class are
 src/RA2bZinvLoadClasses.C
 src/RA2bZinvDriver.C
-src/RA2bZinvAnalysis.h, .C
+src/TreeConfig.h, .C
 src/CutManager.h, .C
 src/CCbinning.h, .C
+src/EfficiencyAndPurity.h, .C
+src/RA2bZinvAnalysis.h, .C
 src/RA2bZinvAnalysis.cfi
 src/NtupleClass.h 
 src/YYYY.cfg  (optional)

@@ -48,6 +48,10 @@ RA2bZinvAnalysis::RA2bZinvAnalysis(const string& cfg_filename, const string& run
 void
 RA2bZinvAnalysis::Config(const string& cfg_filename) {
 
+  string treeName;
+  string treeLoc;
+  string fileListsFile;
+
   // Set up configuration, using boost/program_options.
   po::options_description desc("Config");
   desc.add_options()
@@ -55,8 +59,8 @@ RA2bZinvAnalysis::Config(const string& cfg_filename) {
     ("root verbosity", po::value<string>(&rootVerbosity_))  // Print, Info, Warning, Error, Break, SysError, Fatal
     ("era", po::value<string>(&era_))
     ("runBlock", po::value<string>(&runBlock_))  // May be overridden by constructor
-    ("tree path", po::value<string>(&treeLoc_))
-    ("root file index", po::value<string>(&fileListsFile_))
+    ("tree path", po::value<string>(&treeLoc))
+    ("root file index", po::value<string>(&fileListsFile))
     ("delta phi sample", po::value<string>(&deltaPhi_), "nominal, hdp, ldp, ldpnominal")
     ("integrated luminosity", po::value<double>(&intLumi_))
     ("apply Z mass cut", po::value<bool>(&applyMassCut_))
@@ -91,20 +95,22 @@ RA2bZinvAnalysis::Config(const string& cfg_filename) {
   else if (rootVerbosity_ == "Fatal") gErrorIgnoreLevel = kFatal;
 
   //  Extract tree signature from the path
-  string s = treeLoc_, delimiter = "Run2Production";
+  string s = treeLoc, delimiter = "Run2Production";
   size_t pos = s.find(delimiter);
   if (pos == string::npos) cout << "Can't find tree version; " << delimiter << " not in tree path" << endl;
   pos += delimiter.length();
   ntupleVersion_ = s.substr(pos, 3);
 
-  isSkim_ = treeLoc_.find("Skim") != string::npos;
+  isSkim_ = treeLoc.find("Skim") != string::npos;
   if (!isSkim_) {
-    treeName_ = "TreeMaker2/PreSelection";  // For ntuple
+    treeName = "TreeMaker2/PreSelection";  // For ntuple
   } else {
-    treeName_ = "tree";  // For skims
+    treeName = "tree";  // For skims
   }
   if (ntupleVersion_ == "V12") useDeepCSV_ = false;
 
+  treeConfig_ = new TreeConfig(era_, ntupleVersion_, isSkim_, deltaPhi_, verbosity_, treeName,
+			       treeLoc, fileListsFile, runBlock_);
   CCbins_ = new CCbinning(era_, deltaPhi_);
   effPurCorr_ = new EfficiencyAndPurity(deltaPhi_);
 
@@ -115,7 +121,7 @@ RA2bZinvAnalysis::Config(const string& cfg_filename) {
   cout << "The input-files-are-skims flag is " << isSkim_ << endl;
   cout << "The era is " << era_ << endl;
   cout << "The integrated luminosity = " << intLumi_ << endl;
-  cout << "The path to input files is " << treeLoc_ << endl;
+  cout << "The path to input files is " << treeLoc << endl;
   cout << "The minDeltaPhi cuts are " << deltaPhi_ << endl;
   cout << "Apply Z/gamma Pt cut is " << applyPtCut_ << endl;
   cout << "Use DeepCSV is " << useDeepCSV_ << endl;
@@ -124,236 +130,18 @@ RA2bZinvAnalysis::Config(const string& cfg_filename) {
 }  // ======================================================================================
 
 void
-RA2bZinvAnalysis::getChain(const char* dataSet) {
-
-  TString theSample = dataSet;
-  TString key;
-  isMC_ = true;  // Depends on dataSet
-  if      (theSample.Contains("zinv")) key = TString("zinv");
-  else if (theSample.Contains("ttzvv")) key = TString("ttzvv");
-  else if (theSample.Contains("dymm")) key = TString("dymm");
-  else if (theSample.Contains("dyee")) key = TString("dyee");
-  else if (theSample.Contains("ttzmm")) key = TString("ttzmm");
-  else if (theSample.Contains("ttzee")) key = TString("ttzee");
-  else if (theSample.Contains("VVmm")) key = TString("VVmm");
-  else if (theSample.Contains("VVee")) key = TString("VVee");
-  else if (theSample.Contains("ttmm")) key = TString("ttmm");
-  else if (theSample.Contains("ttee")) key = TString("ttee");
-  else if (theSample.Contains("zmm")) {
-    key = TString("zmm");  // ( and not "tt")
-    isMC_ = false;
-  }
-  else if (theSample.Contains("zee")) {
-    key = TString("zee");  // ( and not "tt")
-    isMC_ = false;
-  }
-  else if (theSample.Contains("photon")) {
-    key = TString("photon");
-    isMC_ = false;
-  }
-  else if (theSample.Contains("gjetsqcd")) key = TString("gjetsqcd");
-  else if (theSample.Contains("gjets")) key = TString("gjets");  // ( and not "qcd")
-  else {
-    cout << "getChain:  unknown dataSet '" << dataSet << "'" << endl;
-    return;
-  }
-  if (deltaPhi_.find("ldp") != string::npos && isSkim_) key += "ldp";
-  if (!runBlock_.empty()) key += runBlock_;  key("HEM") = "";
-
-  if (isMC_) {
-    cout << "For MC data set " << dataSet << "," << endl;
-    cout << "Apply b-tag scale factors is " << applyBTagSF_ << endl;
-    cout << "Apply pileup weight is " << applyPuWeight_ << endl;
-    cout << "Use custom if pileup weight is " << customPuWeight_ << endl;
-    cout << "Apply Z Pt weight for 2017, 18 Z MC is " << applyZptWt_ << endl;
-    cout << "Apply double-ratio fit weight is " << applyDRfitWt_ << endl;
-    cout << "Apply scale factors to MC for non-DR histograms is " << applySFwtToMC_ << endl;
-  }
-
-  TChain* chain = new TChain(treeName_.data());
-  std::vector<TString> files = fileList(key);
-  for (auto file : files) {
-    if (verbosity_ >= 2) cout << file << endl;
-    chain->Add(file);
-  }
-
-  Init(chain);  // NtupleClass::Init; set fChain
-  setActiveBranches();  // Argument true to activate all
-
-  return;
-
-}  // ======================================================================================
-
-std::vector<TString>
-RA2bZinvAnalysis::fileList(TString sampleKey) {
-
-  std::vector<TString> files;
-  TString dir(treeLoc_);
-  TString key, toReserve;
-  const char* fileName = fileListsFile_.data();
-  ifstream dataStream;
-  cout << "Getting root file list from " << fileName << endl;
-  dataStream.open(fileName); // open the data file
-  if (!dataStream.good()) {
-    cout << "Open failed for file " << fileName << endl;
-    return files; // exit if file not found
-  }
-
-  TString buf;
-  Ssiz_t from;
-  do {  // Look for matching sample key
-    buf.ReadLine(dataStream);
-    if (dataStream.eof()) {
-      cout << "EOF found prematurely while searching for key " << sampleKey << endl;
-      return files;
-    }
-    Ssiz_t pos = buf.First('#');
-    if (pos <= 0) continue;  // Ignore comment lines
-    buf = buf.Remove(pos, buf.Length()-pos);  // Remove comment following the tokens
-    from = 0;
-    buf.Tokenize(key, from);  // First token is the key
-  }
-  while (key != sampleKey);
-
-  int nReserve = 0;  // Second token is the optional size to reserve in the file list vector
-  bool next = buf.Tokenize(toReserve, from);
-  if (next && toReserve.IsDec()) sscanf(toReserve.Data(), "%d", &nReserve);
-
-  do {  // Read the file names for this sample
-    buf.ReadLine(dataStream);
-    if (dataStream.eof()) {
-      cout << "EOF found prematurely while searching for end of file list" << sampleKey << endl;
-      return files;
-    }
-    if (buf.Contains("#*")) {  // Ignore #* ... *# comment block
-      do {
-	buf.ReadLine(dataStream);
-	if (dataStream.eof()) {
-	  cout << "EOF found prematurely while searching for comment block terminator" << sampleKey << endl;
-	  return files;
-	}
-      }
-      while (!buf.Contains("*#"));
-    }
-    if (buf.Contains("#")) continue;
-    buf = buf.Strip();  // Remove any trailing whitespace
-    files.push_back(dir+buf);
-  }
-  while (!buf.Contains("##"));  // Dataset terminator is ##
-
-  return files;
-
-}  // ======================================================================================
-
-void
-RA2bZinvAnalysis::setActiveBranches(const bool activateAll) {
-
-  // Needed branches
-  std::vector<const char*> activeBranches_;
-  activeBranches_.push_back("NJets");
-  activeBranches_.push_back("BTags");
-  activeBranches_.push_back("HT");
-  activeBranches_.push_back("HT5");
-  activeBranches_.push_back("MHT");
-  activeBranches_.push_back("MHTPhi");
-  activeBranches_.push_back("JetID");
-  activeBranches_.push_back("Jets");
-  activeBranches_.push_back("Jets_hadronFlavor");
-  activeBranches_.push_back("Jets_HTMask");
-  activeBranches_.push_back("isoElectronTracks");
-  activeBranches_.push_back("isoMuonTracks");
-  activeBranches_.push_back("isoPionTracks");
-  activeBranches_.push_back("DeltaPhi1");
-  activeBranches_.push_back("DeltaPhi2");
-  activeBranches_.push_back("DeltaPhi3");
-  activeBranches_.push_back("DeltaPhi4");
-  if (isSkim_) {
-    activeBranches_.push_back("RA2bin");
-  } else {
-    activeBranches_.push_back("NJetsclean");
-    activeBranches_.push_back("BTagsclean");
-    activeBranches_.push_back("BTagsDeepCSVclean");
-    activeBranches_.push_back("HTclean");
-    activeBranches_.push_back("HT5clean");
-    activeBranches_.push_back("MHTclean");
-    activeBranches_.push_back("JetIDclean");
-    activeBranches_.push_back("Jetsclean");
-    activeBranches_.push_back("Jetsclean_hadronFlavor");
-    activeBranches_.push_back("Jetsclean_HTMask");
-    activeBranches_.push_back("isoElectronTracksclean");
-    activeBranches_.push_back("isoMuonTracksclean");
-    activeBranches_.push_back("isoPionTracksclean");
-    activeBranches_.push_back("DeltaPhi1clean");
-    activeBranches_.push_back("DeltaPhi2clean");
-    activeBranches_.push_back("DeltaPhi3clean");
-    activeBranches_.push_back("DeltaPhi4clean");
-  }
-  if (ntupleVersion_ != "V12") {
-    activeBranches_.push_back("NMuons");
-    activeBranches_.push_back("NElectrons");
-    activeBranches_.push_back("BTagsDeepCSV");
-    activeBranches_.push_back("ecalBadCalibFilter");
-  }
-  activeBranches_.push_back("RunNum");
-  activeBranches_.push_back("LumiBlockNum");
-  activeBranches_.push_back("EvtNum");
-  activeBranches_.push_back("Jets_bDiscriminatorCSV");
-  activeBranches_.push_back("Muons");
-  activeBranches_.push_back("Electrons");
-  activeBranches_.push_back("ZCandidates");
-  activeBranches_.push_back("Photons");
-  activeBranches_.push_back("Photons_nonPrompt");
-  activeBranches_.push_back("Photons_fullID");
-  activeBranches_.push_back("Photons_hasPixelSeed");
-  activeBranches_.push_back("Photons_isEB");
-  activeBranches_.push_back("NVtx");
-  activeBranches_.push_back("TriggerNames");
-  activeBranches_.push_back("TriggerPass");
-  activeBranches_.push_back("TriggerPrescales");
-  activeBranches_.push_back("HBHENoiseFilter");
-  activeBranches_.push_back("HBHEIsoNoiseFilter");
-  activeBranches_.push_back("eeBadScFilter");
-  activeBranches_.push_back("EcalDeadCellTriggerPrimitiveFilter");
-  activeBranches_.push_back("globalTightHalo2016Filter");
-  activeBranches_.push_back("globalSuperTightHalo2016Filter");
-  activeBranches_.push_back("BadChargedCandidateFilter");
-  activeBranches_.push_back("BadPFMuonFilter");
-  activeBranches_.push_back("PFCaloMETRatio");
-  activeBranches_.push_back("METRatioFilter");
-  activeBranches_.push_back("EcalNoiseJetFilter");
-  activeBranches_.push_back("HTRatioDPhiFilter");
-  activeBranches_.push_back("HTRatioFilter");
-
-  activeBranches_.push_back("nAllVertices");
-  if (isMC_) {
-    activeBranches_.push_back("puWeight");
-    activeBranches_.push_back("Weight");
-    activeBranches_.push_back("TrueNumInteractions");
-    activeBranches_.push_back("madMinPhotonDeltaR");
-    activeBranches_.push_back("GenMuons");
-    activeBranches_.push_back("GenElectrons");
-    activeBranches_.push_back("GenHT");
-    activeBranches_.push_back("GenTaus");
-    activeBranches_.push_back("GenParticles");
-    activeBranches_.push_back("GenParticles_PdgId");
-    activeBranches_.push_back("GenParticles_Status");
-    if (ntupleVersion_ != "V12" && ntupleVersion_ != "V15") {
-      activeBranches_.push_back("NonPrefiringProb");
-      // activeBranches_.push_back("NonPrefiringProbUp");
-      // activeBranches_.push_back("NonPrefiringProbDown");
-    }
-  }
-
+RA2bZinvAnalysis::optimizeTree(const bool activateAll) {
   cout << "activateAllBranches = " << activateAll << endl;
+
+  vector<const char*> activeBranches = treeConfig_->setActiveBranches();
   if (!activateAll) {
     fChain->SetBranchStatus("*", 0);  // disable all branches
     // cout << "Active branches:" << endl;
-    for (auto theBranch : activeBranches_) {
+    for (auto theBranch : activeBranches) {
       // cout << theBranch << endl;
       fChain->SetBranchStatus(theBranch, 1);
     }
   }
-
   cout << "Initial size of cache for fChain = " << fChain->GetCacheSize() << endl;
   TTreeCache::SetLearnEntries(1);
   fChain->SetCacheSize(200*1024*1024);
@@ -361,7 +149,7 @@ RA2bZinvAnalysis::setActiveBranches(const bool activateAll) {
   if (activateAll) {
     fChain->AddBranchToCache("*", true);
   } else {
-    for (auto theBranch : activeBranches_) fChain->AddBranchToCache(theBranch, true);
+    for (auto theBranch : activeBranches) fChain->AddBranchToCache(theBranch, true);
   }
   fChain->StopCacheLearningPhase();
   cout << "Reset size of cache for fChain = " << fChain->GetCacheSize() << endl;
@@ -678,9 +466,21 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   // TGaxis myTGaxis;
   // myTGaxis.SetMaxDigits(4);
 
-  std::vector<histConfig*> histograms;
+  TString key = treeConfig_->DSkey(sample, isMC_);  // Set isMC_ here
+  if (isMC_) {
+    cout << "For MC data set " << sample << "," << endl;
+    cout << "Apply b-tag scale factors is " << applyBTagSF_ << endl;
+    cout << "Apply pileup weight is " << applyPuWeight_ << endl;
+    cout << "Use custom if pileup weight is " << customPuWeight_ << endl;
+    cout << "Apply Z Pt weight for 2017, 18 Z MC is " << applyZptWt_ << endl;
+    cout << "Apply double-ratio fit weight is " << applyDRfitWt_ << endl;
+    cout << "Apply scale factors to MC for non-DR histograms is " << applySFwtToMC_ << endl;
+  }
 
-  getChain(sample);  // Set isMC_ here
+  Init(treeConfig_->getChain(key));  // NtupleClass::Init; set fChain
+  optimizeTree();  // Set arg true to activate all branches
+
+  std::vector<histConfig*> histograms;
 
   evSelector_ = new CutManager(sample, ntupleVersion_, isSkim_, isMC_, verbosity_,
 			       era_, deltaPhi_, applyMassCut_, applyPtCut_, CCbins_);
@@ -1479,7 +1279,9 @@ RA2bZinvAnalysis::cutHistos::fill(TH1D* hcf, Double_t wt, bool passTrg, bool pas
 
 void
 RA2bZinvAnalysis::checkTrigPrescales(const char* sample) {
-  getChain(sample);
+  TString key = treeConfig_->DSkey(sample, isMC_);  // Set isMC_ here
+  Init(treeConfig_->getChain(key));  // NtupleClass::Init; set fChain
+  optimizeTree();  // Set arg true to activate all branches
   Long64_t Nentries = fChain->GetEntries();
   Int_t countInFile = 0;
   for (Long64_t entry = 0; entry < Nentries; ++entry) {
@@ -1511,7 +1313,9 @@ RA2bZinvAnalysis::dumpSelEvIDs(const char* sample, const char* idFileName) {
   FILE* idFile;
   idFile = fopen(idFileName, "w");
 
-  getChain(sample);
+  TString key = treeConfig_->DSkey(sample, isMC_);  // Set isMC_ here
+  Init(treeConfig_->getChain(key));  // NtupleClass::Init; set fChain
+  optimizeTree();  // Set arg true to activate all branches
   TObjArray* forNotify = new TObjArray;
   forNotify->SetOwner();  // so that TreeFormulas will be deleted
 
