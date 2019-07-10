@@ -29,6 +29,7 @@ src/CCbinning.h, .C
 src/EfficiencyAndPurity.h, .C
 src/RA2bZinvAnalysis.h, .C
 src/RA2bZinvAnalysis.cfi
+src/Ntuple.h
 src/NtupleClass.h 
 src/YYYY.cfg  (optional)
 datFiles/[skim|ntuple]FilesZZZZ.dat
@@ -44,25 +45,24 @@ The main source file, RA2bZinvAnalysis.C, defines a singleton class and
 some user-callable functions.  Its use is illustrated by the
 implementation in RA2bZinvDriver.C.
 
-The constructor takes one required arguments, a string with the name of
+The constructor takes one required argument, a string with the name of
 the .cfg file to be used (can be the empty string ""), and an optional
 second string, the name of a runBlock that will override the value set in
 the .cfi or .cfg file (only needed when running parallel jobs on
 separate runBlocks).  The .dat file, chosen in the .cfi or .cfg file, is
 an index of the names of the TreeMaker ntuple files for each of the
 samples.  (The reason for having more than one index file is simply
-their size for the raw nutple root file sets.)
+their size for the raw ntuple root file sets.)
 
-Access to the ntuple's branches is provided by NtupleClass.h, a base
-class for the RA2bZinvAnalysis.  Edit utils/sourceNtupleClass.sh to
+Access to the ntuple's branches is provided by Ntuple.h, which is
+derived from NtupleClass.h.  Edit utils/sourceNtupleClass.sh to
 point to the directories, files, and tree directory names for each of
 the tree structures to be analyized (data/MC, skim/ntuple, TreeMaker
 version), then run makeNtupleClass.sh, and move the resulting
 NtupleClass.h to src/.
 
-The baseline cuts are defined as a TCut string built in the getCuts
-method.  To lift one or more cuts in making N-1 histograms, or to impose
-additional cuts, one needs to associate the specific cut string(s) found
-in getCuts with a class variable.  This variable will then be referenced
-by code one would add to the makeHistograms method.
-
+The baseline cuts are defined as a TCut, and individual cuts as
+TStrings, built in the CutManager class.  To lift one or more cuts in
+making N-1 histograms, or to impose additional cuts, one can specify
+these in the makeHistograms method via accessors in the CutManager
+object.
