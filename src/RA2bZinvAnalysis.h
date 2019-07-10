@@ -12,7 +12,7 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
-#include "NtupleClass.h"
+#include "Ntuple.h"
 #include "TreeConfig.h"
 #include "CutManager.h"
 #include "CCbinning.h"
@@ -21,22 +21,18 @@
 #include <TH1D.h>
 #include <TH2F.h>
 #include <TLorentzVector.h>
-#include <TTreeFormula.h>
 #include "../../Analysis/btag/BTagCorrector.h"
 
 #include <TMath.h>
 using namespace TMath;
 
-void NtupleClass::Loop() {}
-
-class RA2bZinvAnalysis : public NtupleClass {
+class RA2bZinvAnalysis {
 
 public:
   RA2bZinvAnalysis();
   RA2bZinvAnalysis(const std::string& cfg_filename, const std::string& runBlock = "");
   virtual ~RA2bZinvAnalysis() {};
 
-  Bool_t Notify() override {newFileInChain_ = kTRUE;  return(kTRUE);};
   std::vector<TH1*> makeHistograms(const char* sample);
   void dumpSelEvIDs(const char* sample, const char* idFileName);
   void checkTrigPrescales(const char* sample);
@@ -60,21 +56,20 @@ public:
     std::vector<const TString*> omitCuts;
     const char* addCuts;
     TString NminusOneCuts;
-    TTreeFormula* NminusOneFormula;
     histConfig() : binsX(nullptr), binsY(nullptr), dvalue(nullptr), ivalue(nullptr),
       filler1D(nullptr), filler2D(nullptr), addCuts(""), NbinsY(0) {}
   };
 
   class cutHistos {
   public:
-    cutHistos(TChain* chain, CutManager* selector, TObjArray* forNotify);
+    cutHistos(Ntuple* tuple, CutManager* selector);
     ~cutHistos() {};
     void setAxisLabels(TH1D* hcf);
     void fill(TH1D* hcf, Double_t wt, bool passTrg, bool passHEM);
   private:
-    CutManager* evSelector_;
-    TObjArray* forNotify_;
-    vector<TTreeFormula*> cutFormulas_;
+    Ntuple* tuple_;
+    CutManager* selector_;
+    vector<TString> cutNames_;
   };
 
 private:
@@ -97,7 +92,7 @@ private:
   bool applyZptWt_;
   bool applyDRfitWt_;
   bool applySFwtToMC_;
-
+  Ntuple* Tupl;
   TreeConfig* treeConfig_;
   CCbinning* CCbins_;
   CutManager* evSelector_;
@@ -106,20 +101,18 @@ private:
   const char* BTagSFfile_;
   double csvMthreshold_;
   TH1* puHist_;
-  Bool_t newFileInChain_;
   double effWt_, effSys_;
 
   void Config(const std::string& cfg_filename="");
-  void optimizeTree(const bool activateAll = false);
   void bookAndFillHistograms(const char* sample, std::vector<histConfig*>& histograms);
   Int_t setBTags(int runYear);
   void fillCutFlow(TH1D* hcf, Double_t wt);
 
-  double getPtZ() {
+  double getGenPtZ() {
     if (!isMC_) return -1;
-    for (int iGen = 0, nGen =  GenParticles_PdgId->size(); iGen < nGen; ++iGen) {
-      if (GenParticles_PdgId->at(iGen)==23 && GenParticles_Status->at(iGen) == 62)
-	return GenParticles->at(iGen).Pt();
+    for (int iGen = 0, nGen =  Tupl->GenParticles_PdgId->size(); iGen < nGen; ++iGen) {
+      if (Tupl->GenParticles_PdgId->at(iGen)==23 && Tupl->GenParticles_Status->at(iGen) == 62)
+	return Tupl->GenParticles->at(iGen).Pt();
     }
     return -1;
   };
@@ -127,11 +120,11 @@ private:
   bool testHEM() {
     // HEM veto for data depending on RunNum; for MC weight by lumi unless
     // forced by a substring of runBlock_ (HE Present or Missing)
-    if (!isMC_ && RunNum < CutManager::StartHEM) return false;
+    if (!isMC_ && Tupl->RunNum < CutManager::StartHEM) return false;
     if (isMC_ && runBlock_.find("2018") == std::string::npos) return false;
     if (isMC_ && runBlock_.find("HEP") != std::string::npos) return false;
     if (isMC_ && runBlock_.find("HEM") == std::string::npos
-	&& EvtNum % 1000 < 1000*21.0/59.6) return false;
+	&& Tupl->EvtNum % 1000 < 1000*21.0/59.6) return false;
     return true;
   }
 
@@ -149,9 +142,9 @@ private:
 
   bool passHEMjetVeto(double ptThresh = 30, double dPhiThresh = 0.5, TH1D* hg = nullptr, double wt = 1) {
     if (!testHEM()) return true;
-    for (auto & jet : *Jets) {
+    for (auto & jet : *(Tupl->Jets)) {
       if (!passHEMobjVeto(jet, ptThresh)) {
-	Double_t dPhi = TVector2::Phi_mpi_pi(jet.Phi() - MHTPhi);
+	Double_t dPhi = TVector2::Phi_mpi_pi(jet.Phi() - Tupl->MHTPhi);
 	if (hg != nullptr) hg->Fill(dPhi, wt);
 	if (abs(dPhi) < dPhiThresh) return false;
       }
@@ -159,47 +152,26 @@ private:
     return true;
   };
 
-  void cleanVars() {
-    if (isSkim_) return;
-    NJets = NJetsclean;
-    BTags = BTagsclean;
-    BTagsDeepCSV = BTagsDeepCSVclean;
-    HT = HTclean;
-    HT5 = HT5clean;
-    MHT = MHTclean;
-    JetID = JetIDclean;
-    Jets = Jetsclean;
-    Jets_hadronFlavor = Jetsclean_hadronFlavor;
-    Jets_HTMask = Jetsclean_HTMask;
-    isoElectronTracks = isoElectronTracksclean;
-    isoMuonTracks = isoMuonTracksclean;
-    isoPionTracks = isoPionTracksclean;
-    DeltaPhi1 = DeltaPhi1clean;
-    DeltaPhi2 = DeltaPhi2clean;
-    DeltaPhi3 = DeltaPhi3clean;
-    DeltaPhi4 = DeltaPhi4clean;
-  };
-
   // Functions to fill histograms with non-double, non-int types
   void fillFilterCuts(TH1D* h, double wt);
   void fillCC(TH1D* h, double wt);
-  void fillnZcand(TH1D* h, double wt) {h->Fill(ZCandidates->size(), wt);}
-  void fillZmass(TH1D* h, double wt) {for (auto & theZ : *ZCandidates) h->Fill(theZ.M(), wt);}
+  void fillnZcand(TH1D* h, double wt) {h->Fill(Tupl->ZCandidates->size(), wt);}
+  void fillZmass(TH1D* h, double wt) {for (auto & theZ : *(Tupl->ZCandidates)) h->Fill(theZ.M(), wt);}
   void fillZmassjb(TH1D* h, double wt);
-  void fillPUwtvsNint(TH2F* h, double wt) {h->Fill(TrueNumInteractions, puWeight, wt);}
-  void fillHT_DR_xWt(TH1D* h, double wt) {h->Fill(HT, wt*HT);}
-  void fillMHT_DR_xWt(TH1D* h, double wt) {h->Fill(MHT, wt*MHT);}
-  void fillNJets_DR_xWt(TH1D* h, double wt) {h->Fill(Double_t(NJets), wt*NJets);}
+  void fillPUwtvsNint(TH2F* h, double wt) {h->Fill(Tupl->TrueNumInteractions, Tupl->puWeight, wt);}
+  void fillHT_DR_xWt(TH1D* h, double wt) {h->Fill(Tupl->HT, wt*Tupl->HT);}
+  void fillMHT_DR_xWt(TH1D* h, double wt) {h->Fill(Tupl->MHT, wt*Tupl->MHT);}
+  void fillNJets_DR_xWt(TH1D* h, double wt) {h->Fill(Double_t(Tupl->NJets), wt*Tupl->NJets);}
   void fillSFwt_DR(TH1D* h, double wt) {double wtt = effWt_ > 0 ? wt/effWt_ : wt;  h->Fill(effWt_, wtt);}
   void fillSFsys_DR(TH1D* h, double wt) {double wtt = effWt_ > 0 ? wt/effWt_ : wt;  h->Fill(effSys_, wtt);}
-  void fillgenZpt(TH1D* h, double wt) {h->Fill(getPtZ(), wt);}
-  void fillZpt(TH1D* h, double wt) {for (auto & theZ : *ZCandidates) h->Fill(theZ.Pt(), wt);}
-  void fillPhotonPt(TH1D* h, double wt) {for (auto & theG : *Photons) h->Fill(theG.Pt(), wt);}
-  void fillMuonEta(TH1D* h, double wt) {for (auto & theMu : *Muons) h->Fill(theMu.Eta(), wt);}
-  void fillElectronEta(TH1D* h, double wt) {for (auto & theE : *Electrons) h->Fill(theE.Eta(), wt);}
+  void fillgenZpt(TH1D* h, double wt) {h->Fill(getGenPtZ(), wt);}
+  void fillZpt(TH1D* h, double wt) {for (auto & theZ : *(Tupl->ZCandidates)) h->Fill(theZ.Pt(), wt);}
+  void fillPhotonPt(TH1D* h, double wt) {for (auto & theG : *(Tupl->Photons)) h->Fill(theG.Pt(), wt);}
+  void fillMuonEta(TH1D* h, double wt) {for (auto & theMu : *(Tupl->Muons)) h->Fill(theMu.Eta(), wt);}
+  void fillElectronEta(TH1D* h, double wt) {for (auto & theE : *(Tupl->Electrons)) h->Fill(theE.Eta(), wt);}
   void fillJetDphi(TH1D* h, double wt) {bool passHEM = passHEMjetVeto(30, 1, h, wt);}
-  void fillPhotonEta(TH1D* h, double wt) {for (auto & theG : *Photons) h->Fill(theG.Eta(), wt);}
-  void fillGpt(TH1D* h, double wt) {for (auto & theG : *Photons) h->Fill(theG.Pt(), wt);}
+  void fillPhotonEta(TH1D* h, double wt) {for (auto & theG : *(Tupl->Photons)) h->Fill(theG.Eta(), wt);}
+  void fillGpt(TH1D* h, double wt) {for (auto & theG : *(Tupl->Photons)) h->Fill(theG.Pt(), wt);}
   void fillZGmass(TH1D* h, double wt);
   void fillGJdR(TH1D* h, double wt);
   void fillZGdRvsM(TH2F* h, double wt);
