@@ -31,10 +31,6 @@ EfficiencyAndPurity::openFiles() {
   photonSFFile_.push_back(new TFile((plotDir+"Photons2017_SF_all.root").Data(), "read"));
   photonSFFile_.push_back(new TFile((plotDir+"Photons2018_SF_all.root").Data(), "read"));
 
-  // elecSFFile_.push_back(new TFile((plotDir+"ElectronScaleFactors_Run2017.root").Data(), "read"));
-  // elecSFFile_.push_back(new TFile((plotDir+"ElectronScaleFactors_Run2017.root").Data(), "read"));
-  // elecSFFile_.push_back(new TFile((plotDir+"ElectronScaleFactors_Run2017.root").Data(), "read"));
-
   elecIDandIsoSFFile_.push_back(new TFile((plotDir+"Electrons2016_SF_ISOandID.root").Data(), "read"));
   elecIDandIsoSFFile_.push_back(new TFile((plotDir+"Electrons2017_SF_ISOandID.root").Data(), "read"));
   elecIDandIsoSFFile_.push_back(new TFile((plotDir+"Electrons2018_SF_ISOandID.root").Data(), "read"));
@@ -64,9 +60,6 @@ EfficiencyAndPurity::openFiles() {
   // Function parameter 0:  0.856646880781 +/- 0.0197955271053  // 0.857 +/- 0.020
   // Function parameter 1:  0.000194995307077 +/- 3.78488782632e-05  // (0.195 +/- 0.038) e-3
   // Average y0 = 0.9530 +/- 0.0069;  x0 = (y0 -p0) / p1  // 0.953 +/- 0.007
-  // DRpars_.push_back({0.8547, 0.0001983, 0.9526, 900});  // v17
-  // DRpars_.push_back({0.8547, 0.0001983, 0.9526, 900});
-  // DRpars_.push_back({0.8547, 0.0001983, 0.9526, 900});
   // Graph_from_hHT_DR_zmm  -- with v17 for 2016, 17 also
   // Function parameter 0:  0.854716822646 +/- 0.0198007015338
   // Function parameter 1:  0.000198285579166 +/- 3.78772029776e-05
@@ -75,26 +68,6 @@ EfficiencyAndPurity::openFiles() {
   // Function parameter 0:  0.847711708842 +/- 0.0195782643702
   // Function parameter 1:  0.00019064466223 +/- 3.74122384363e-05
   // Average y0 = 0.9419;  x0 = (y0 -p0) / p1
-  // DRpars_.push_back({0.8386, 0.0001812, 0.9290, 900});
-  // Graph_from_hHT_DR_zmm  Run 2 19 Mar 2019
-  // Function parameter 0:  0.838552899836 +/- 0.0192480033502
-  // Function parameter 1:  0.000181188022872 +/- 3.63880256987e-05
-  // Average y0 = 0.9290;  x0 = (y0 -p0) / p1
-  // DRpars_.push_back({0.8229, 0.0001665, 0.9061, 900});
-  // Graph_from_hHT_DR_zmm  Run 2 21 Feb 2019
-  // Function parameter 0:  0.822859680122 +/- 0.0188240089302
-  // Function parameter 1:  0.000166574459092 +/- 3.55474346141e-05
-  // DRpars_.push_back({0.8378, 0.0001363, 0.9054, 900});
-  // Graph_from_hHT_DR_zmm  2016 noPU
-  // Function parameter 0:  0.837859796025 +/- 0.0352792948296
-  // Function parameter 1:  0.000136284149882 +/- 6.6930863488e-05
-  // Average y0 = 1.0871.  x0 = (y0 -p0) / p1
-
-  // effWt /= (min(HT, 900.0) - 497.4)*(0.0002288) + 1.0395;  // Run2 Z Pt weighted
-  // Graph_from_hHT_DR_zmm
-  // Function parameter 0:  0.92567079283 +/- 0.021512658121
-  // Function parameter 1:  0.000228788345936 +/- 4.08070918994e-05
-  // Average y0 = 1.0395.  x0 = (y0 -p0) / p1
 
 }  // ======================================================================================
 
@@ -118,7 +91,6 @@ EfficiencyAndPurity::getHistos(const char* sample, int currentYear) {
 
   // For purity, Fdir, trigger eff, reco eff
   theSample_ = TString(sample);
-  // hSFeff_ = nullptr;
   hSFeff_.clear();
   FdirGraph_ = nullptr;
   hPurity_.clear();
@@ -153,8 +125,6 @@ EfficiencyAndPurity::getHistos(const char* sample, int currentYear) {
 	     theSample_.Contains("ttzmm") || theSample_.Contains("VVmm")) {
     hTrigEff_.push_back((TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_trig_m"));
     if (hTrigEff_.back() == nullptr) cout << "***** Histogram h_trig_m not found *****" << endl;
-    // hSFeff_ = (TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_SFm_MHT");
-    // if (hSFeff_ == nullptr) cout << "***** Histogram h_MHT not found *****" << endl;
 
     //These change based on year
     if (currentYear == Year2016) {
@@ -182,8 +152,6 @@ EfficiencyAndPurity::getHistos(const char* sample, int currentYear) {
 	     theSample_.Contains("ttzee") || theSample_.Contains("VVee")) {
     hTrigEff_.push_back((TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_trig_e"));
     if (hTrigEff_.back() == nullptr) cout << "***** Histogram h_trig_e not found *****" << endl;
-    // hSFeff_ = (TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_SFe_MHT");  // Maybe this should be h_NJets
-    // if (hSFeff_ == nullptr) cout << "***** Histogram h_MHT not found *****" << endl;
 
     //These change based on year
     if (currentYear == Year2016) {
@@ -243,8 +211,6 @@ EfficiencyAndPurity::getHistos(const char* sample, int currentYear) {
     te("Barrel") = "Endcap";
     eTrigEff_.push_back((TEfficiency*) photonTrigEffFile_.at(currentYear)->Get(te.Data()));
     if (eTrigEff_.back() == nullptr)  cout << "***** Histogram " << te << " not found *****" << endl;
-    // hSFeff_ = (TH1F*) purityTrigEffFile_.at(currentYear)->Get("h_SFg_MHT");  // Maybe this should be h_NJets
-    // if (hSFeff_ == nullptr) cout << "***** Histogram h_MHT not found *****" << endl;
 
     hSFeff_.push_back((TH2F*) photonSFFile_.at(currentYear)->Get("EGamma_SF2D"));
     if (hSFeff_.back() == nullptr) cout << "***** Histogram for photon SFs not found *****" << endl;
@@ -293,7 +259,6 @@ EfficiencyAndPurity::weight(CCbinning* CCbins,
       effSys = eff > 0 ? hPurity_[1]->GetBinError(bin) / eff : 0;
     }
     int CCbinjk = CCbins->jk(CCbins->jbin(NJets), CCbins->kinBin(HT, MHT));
-    // if (CCbinjk > 0 && FdirHist_ != nullptr && CCbinjk <= FdirHist_->GetNbinsX()) effWt *= FdirHist_->GetBinContent(CCbinjk);
     if (CCbinjk > 0 && FdirGraph_ != nullptr && CCbinjk < FdirGraph_->GetN()) {
       double eff = FdirGraph_->GetY()[CCbinjk-1];
       effWt *= eff;
@@ -380,20 +345,6 @@ EfficiencyAndPurity::weight(CCbinning* CCbins,
     }
 
   } else if (theSample_.Contains("gjets")) {
-    // if(EBphoton.at(0) == 1 && hTrigEff_[0] != nullptr) {
-    //   int bin = hTrigEff_[0]->GetNbinsX();  while (MHT < hTrigEff_[0]->GetBinLowEdge(bin)) bin--;
-    //   effWt *= hTrigEff_[0]->GetBinContent(bin);
-    // }
-    // if(EBphoton.at(0) == 0 && hTrigEff_[1] != nullptr) {
-    //   int bin = hTrigEff_[1]->GetNbinsX();  while (MHT < hTrigEff_[1]->GetBinLowEdge(bin)) bin--;
-    //   effWt *= hTrigEff_[1]->GetBinContent(bin);
-    // }
-    // if(EBphoton.at(0) == 1 && fTrigEff_[0] != nullptr) {
-    //   effWt *= fTrigEff_[0]->Eval(max(double(205), Photons.at(0).Pt()));  // hard-wired cutoff
-    // }
-    // if(EBphoton.at(0) == 0 && fTrigEff_[1] != nullptr) {
-    //   effWt *= fTrigEff_[1]->Eval(max(double(205), Photons.at(0).Pt()));  // hard-wired cutoff
-    // }
     if(EBphoton.at(0) == 1 && eTrigEff_[0] != nullptr) {
       TH1F* htot = (TH1F*) eTrigEff_[0]->GetTotalHistogram();
       Int_t bin = min(htot->GetNbinsX(), htot->FindBin(Photons.at(0).Pt()));

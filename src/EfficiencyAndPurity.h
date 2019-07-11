@@ -40,19 +40,16 @@ class EfficiencyAndPurity {
 			      int currentYear);
 
   double prefiring_weight_photon(vector<TLorentzVector>* Photons, unsigned p){
-    /* double prefiring_weight_photon(unsigned p){ */
     if (hPrefiring_photon_ == nullptr) return 1;
     return (1 - hPrefiring_photon_->GetBinContent(hPrefiring_photon_->GetXaxis()->FindBin(Photons->at(p).Eta()),
 						  hPrefiring_photon_->GetYaxis()->FindBin(Photons->at(p).Pt())));
   };
   double prefiring_weight_electron(vector<TLorentzVector>* Electrons, unsigned e){
-    /* double prefiring_weight_electron(unsigned e){ */
     if (hPrefiring_photon_ == nullptr) return 1;
     return (1 - hPrefiring_photon_->GetBinContent(hPrefiring_photon_->GetXaxis()->FindBin(Electrons->at(e).Eta()),
 						  hPrefiring_photon_->GetYaxis()->FindBin(Electrons->at(e).Pt())));
   };
   double prefiring_weight_jet(vector<TLorentzVector>* Jets, unsigned j){
-    /* double prefiring_weight_jet(unsigned j){ */
     if (hPrefiring_jet_ == nullptr) return 1;
     return (1 - hPrefiring_jet_->GetBinContent(hPrefiring_jet_->GetXaxis()->FindBin(Jets->at(j).Eta()),
 					       hPrefiring_jet_->GetYaxis()->FindBin(Jets->at(j).Pt()))) ;
@@ -63,7 +60,6 @@ class EfficiencyAndPurity {
   std::vector<TFile*> purityTrigEffFile_;
   std::vector<TFile*> photonTrigEffFile_;
   std::vector<TFile*> photonSFFile_;
-  //std::vector<TFile*> elecSFFile_;
   std::vector<TFile*> elecIDandIsoSFFile_;
   std::vector<TFile*> elecRecoLowSFFile_;
   std::vector<TFile*> elecRecoHighSFFile_;
@@ -79,9 +75,7 @@ class EfficiencyAndPurity {
   TF1* DRfun_;
   std::vector< std::vector<Double_t> > DRpars_;
 
-  /* TH1F* hSFeff_; */
   std::vector<TH2F*> hSFeff_;
-  /* TH1D* FdirHist_; */
   TGraphErrors* FdirGraph_;
 
   /* ClassDef(EfficiencyAndPurity, 1) // 2nd arg is ClassVersionID */
