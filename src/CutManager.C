@@ -3,7 +3,6 @@
 //
 
 #include "CutManager.h"
-#include <algorithm>  // for std::find()
 
 // ClassImp(CutManager)
 
