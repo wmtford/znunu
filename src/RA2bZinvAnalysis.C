@@ -122,299 +122,6 @@ RA2bZinvAnalysis::Config(const string& cfg_filename) {
 
 }  // ======================================================================================
 
-void
-RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConfig*>& histograms) {
-  //
-  // Define N - 1 (or N - multiple) cuts, book histograms.  Traverse the chain and fill.
-  //
-
-  CutManager::string_map sampleMap = evSelector_->sampleKeyMap();
-  TString sampleKey = sampleMap.count(sample) > 0 ? sampleMap.at(sample) : "none";
-
-  TCut baselineCuts = evSelector_->baseline();
-  Tupl->setTF("baselineCuts", (const char*) baselineCuts);
-
-  // For B-tagging corrections
-  if (isMC_ && applyBTagSF_) {
-    btagcorr_ = new BTagCorrector;
-    btagcorr_->SetCalib(BTagSFfile_);
-  } else {
-    btagcorr_ = nullptr;
-  }
-
-  // Z Pt weights
-  Double_t ptBins[297] = {0.,1.,2.,3.,4.,5.,6.,7.,8.,9.,10.,11.,12.,13.,14.,15.,16.,17.,18.,19.,20.,21.,22.,23.,24.,25.,26.,27.,28.,29.,30.,31.,32.,33.,34.,35.,36.,37.,38.,39.,40.,41.,42.,43.,44.,45.,46.,47.,48.,49.,50.,51.,52.,53.,54.,55.,56.,57.,58.,59.,60.,61.,62.,63.,64.,65.,66.,67.,68.,69.,70.,71.,72.,73.,74.,75.,76.,77.,78.,79.,80.,81.,82.,83.,84.,85.,86.,87.,88.,89.,90.,91.,92.,93.,94.,95.,96.,97.,98.,99.,100.,101.,102.,103.,104.,105.,106.,107.,108.,109.,110.,111.,112.,113.,114.,115.,116.,117.,118.,119.,120.,121.,122.,123.,124.,125.,126.,127.,128.,129.,130.,131.,132.,133.,134.,135.,136.,137.,138.,139.,140.,141.,142.,143.,144.,145.,146.,147.,148.,149.,150.,151.,152.,153.,154.,155.,156.,157.,158.,159.,160.,161.,162.,163.,164.,165.,166.,167.,168.,169.,170.,171.,172.,173.,174.,175.,176.,177.,178.,179.,180.,181.,182.,183.,184.,185.,186.,187.,188.,189.,190.,191.,192.,193.,194.,195.,196.,197.,198.,199.,200.,202.,204.,206.,208.,210.,212.,214.,216.,218.,220.,222.,224.,226.,228.,230.,232.,234.,236.,238.,240.,242.,244.,246.,248.,250.,252.,254.,256.,258.,260.,262.,264.,266.,268.,270.,272.,274.,276.,278.,280.,282.,284.,286.,288.,290.,292.,294.,296.,298.,300.,304.,308.,312.,316.,320.,324.,328.,332.,336.,340.,344.,348.,352.,356.,360.,364.,368.,372.,376.,380.,384.,388.,392.,396.,400.,410.,420.,430.,440.,450.,460.,470.,480.,490.,500.,520.,540.,560.,580.,600.,650.,700.,750.,800.,900.,1000.};
-  Double_t ptWgts[297] =
-    {0.615, 0.626, 0.649, 0.688, 0.739, 0.796, 0.852, 0.899, 0.936, 0.969, 0.995, 1.015, 1.034, 1.050, 1.065, 1.079, 1.092, 1.103, 1.118, 1.126, 1.139, 1.146, 1.156, 1.160, 1.164, 1.164, 1.165, 1.165, 1.164, 1.164, 1.164, 1.161, 1.158, 1.156, 1.154, 1.146, 1.147, 1.140, 1.135, 1.134, 1.129, 1.128, 1.121, 1.115, 1.110, 1.109, 1.111, 1.103, 1.094, 1.092, 1.093, 1.089, 1.085, 1.084, 1.074, 1.074, 1.067, 1.068, 1.062, 1.066, 1.063, 1.055, 1.050, 1.054, 1.048, 1.044, 1.042, 1.043, 1.034, 1.032, 1.035, 1.033, 1.028, 1.030, 1.029, 1.030, 1.012, 1.012, 1.018, 1.013, 1.011, 1.000, 1.007, 1.015, 0.989, 1.001, 0.994, 0.990, 0.990, 0.986, 0.981, 0.986, 0.972, 0.971, 0.977, 0.974, 0.978, 0.966, 0.985, 0.978, 0.966, 0.972, 0.969, 0.971, 0.964, 0.962, 0.948, 0.952, 0.943, 0.973, 0.936, 0.945, 0.935, 0.944, 0.953, 0.943, 0.935, 0.926, 0.946, 0.940, 0.943, 0.933, 0.920, 0.912, 0.923, 0.904, 0.919, 0.937, 0.941, 0.929, 0.923, 0.902, 0.925, 0.927, 0.896, 0.926, 0.905, 0.920, 0.908, 0.889, 0.910, 0.913, 0.911, 0.889, 0.881, 0.888, 0.904, 0.886, 0.891, 0.915, 0.879, 0.884, 0.900, 0.874, 0.850, 0.874, 0.873, 0.872, 0.894, 0.880, 0.870, 0.871, 0.863, 0.883, 0.863, 0.892, 0.845, 0.863, 0.892, 0.851, 0.878, 0.847, 0.881, 0.809, 0.860, 0.829, 0.851, 0.871, 0.846, 0.825, 0.860, 0.853, 0.894, 0.807, 0.793, 0.863, 0.832, 0.829, 0.870, 0.850, 0.831, 0.820, 0.829, 0.839, 0.880, 0.831, 0.804, 0.836, 0.822, 0.796, 0.812, 0.831, 0.830, 0.827, 0.802, 0.781, 0.855, 0.798, 0.774, 0.790, 0.810, 0.825, 0.799, 0.790, 0.811, 0.778, 0.803, 0.779, 0.795, 0.768, 0.809, 0.762, 0.767, 0.752, 0.822, 0.777, 0.791, 0.799, 0.721, 0.776, 0.718, 0.798, 0.754, 0.749, 0.758, 0.847, 0.766, 0.775, 0.718, 0.756, 0.826, 0.792, 0.792, 0.767, 0.679, 0.694, 0.750, 0.738, 0.707, 0.709, 0.711, 0.754, 0.762, 0.717, 0.722, 0.692, 0.714, 0.726, 0.703, 0.693, 0.704, 0.704, 0.653, 0.718, 0.748, 0.713, 0.733, 0.741, 0.742, 0.652, 0.586, 0.644, 0.656, 0.702, 0.721, 0.682, 0.758, 0.662, 0.578, 0.654, 0.723, 0.634, 0.680, 0.656, 0.602, 0.590, 0.566, 0.623, 0.562, 0.589, 0.604, 0.554, 0.525, 0.552, 0.503, 0.563, 0.476};
-
-  cutHistos cutHistFiller(Tupl, evSelector_);  // for cutFlow histograms
-
-  // Book histograms
-  if (verbosity_ >= 1) cout << endl << "baseline = " << endl << baselineCuts << endl << endl;
-  for (auto & hg : histograms) {
-    if (hg->NbinsY > 0) {
-      hg->hist = new TH2F(hg->name, hg->title, hg->NbinsX, hg->rangeX.first, hg->rangeX.second,
-			  hg->NbinsY, hg->rangeY.first, hg->rangeY.second);
-      hg->hist->SetOption("colz");
-    } else {
-      if (hg->binsX == nullptr)
-	hg->hist = new TH1D(hg->name, hg->title, hg->NbinsX, hg->rangeX.first, hg->rangeX.second);
-      else
-	hg->hist = new TH1D(hg->name, hg->title, hg->NbinsX, hg->binsX);
-      hg->hist->SetOption("hist");
-      hg->hist->SetMarkerSize(0);
-    }
-    hg->hist->Sumw2();
-    hg->hist->GetXaxis()->SetTitle(hg->axisTitles.first);
-    hg->hist->GetYaxis()->SetTitle(hg->axisTitles.second);
-    if (hg->name.Contains(TString("Cut"))) cutHistFiller.setAxisLabels((TH1D*) hg->hist);
-    if (hg->name.Contains(TString("hCut")) || hg->name.Contains(TString("hgen"))) {
-      hg->NminusOneCuts = "1";
-    } else {
-      hg->NminusOneCuts = baselineCuts;
-      for (auto cutToOmit : hg->omitCuts) hg->NminusOneCuts(*cutToOmit) = "1";
-      if (strlen(hg->addCuts) != 0) hg->NminusOneCuts += TString(" && ") + hg->addCuts;
-    }
-    if (verbosity_ >= 1) {
-      cout << "\n For sample " << sample << ", histo " << hg->name << ", hg->omitCuts = ";
-      for (auto cutToOmit : hg->omitCuts) cout << *cutToOmit << " ";
-      cout << "; hg->addCuts = " << hg->addCuts;
-      cout << ", cuts = " << endl << hg->NminusOneCuts << endl;
-    }
-    Tupl->setTF(hg->name, hg->NminusOneCuts);
-  }
-  Tupl->setNotify();
-
-  // Traverse the tree and fill histograms
-  vector<unsigned> triggerIndexList;
-  int currentYear = -1;
-  double MCwtCorr = 1.;
-  int count = 0, countInFile = 0, countInSel = 0, countNegWt = 0;
-  Long64_t Nentries = Tupl->fChain->GetEntries();
-  if (verbosity_ >= 1) cout << "Nentries in tree = " << Nentries << endl;
-  for (Long64_t entry = 0; entry < Nentries; ++entry) {
-    count++;
-    if (verbosity_ >= 1 && count % 100000 == 0) cout << "Entry number " << count << endl;
-
-    Long64_t centry = Tupl->LoadTree(entry);
-    if (centry < 0) {
-      cout << "LoadTree returned " << centry;
-      break;
-    }
-    Tupl->GetEntry(entry);
-    // cout << endl << "First entry" << endl;  Show();  break;
-    if (Tupl->newFileInChain()) {
-      // New input root file encountered
-      Tupl->setNewFileInChain(false);
-      countInFile = 0;
-      TFile* thisFile = Tupl->fChain->GetCurrentFile();
-      TString path = thisFile->GetName();
-      if (verbosity_ >= 1) cout << "Current file in chain: " << path << endl;
-      // cout << "First event, new file setup " << endl;  Show();
-      int theYear = -1;
-      if (isMC_) {
-	if      (path.Contains("MC2016")) theYear = EfficWt::Year2016;
-	else if (path.Contains("MC2017")) theYear = EfficWt::Year2017;
-	else if (path.Contains("MC2018")) theYear = EfficWt::Year2018;
-      } else {
-	if      (Tupl->RunNum < CutManager::Start2017) theYear = EfficWt::Year2016;
-	else if (Tupl->RunNum < CutManager::Start2018) theYear = EfficWt::Year2017;
-	else                                           theYear = EfficWt::Year2018;
-      }
-      if (theYear != currentYear) {
-	currentYear = theYear;
-	cout << "currentYear = " << currentYear << endl;
-	// Load the year-dependent correction factors.
-	effPurCorr_->getHistos(sample, currentYear);  // For purity, Fdir, trigger eff, reco eff
-	if (ntupleVersion_ == "V15" && currentYear != EfficWt::Year2016) csvMthreshold_ = 0.8838;
-	if (isMC_) {
-	  if (currentYear == EfficWt::Year2016) {
-	    // For now we have only 2016 pileup correction files
-	    if (applyPuWeight_ && customPuWeight_) {
-	      TFile* pufile = TFile::Open("../../Analysis/corrections/PileupHistograms_0121_69p2mb_pm4p6.root", "READ");
-	      puHist_ = (TH1*) pufile->Get("pu_weights_down");
-	    }
-	    BTagSFfile_ = useDeepCSV_ ? "../datFiles/DeepCSV_2016LegacySF_WP_V1.csv" :
-	      "../../Analysis/btag/CSVv2_Moriond17_B_H_mod.csv";
-	  } else if (currentYear == EfficWt::Year2017) {
-	    BTagSFfile_ = "../datFiles/DeepCSV_94XSF_WP_V4_B_F.csv";
-	  } else if (currentYear == EfficWt::Year2018) {
-	    BTagSFfile_ = "../datFiles/DeepCSV_102XSF_WP_V1.csv";
-	  }
-	}
-      }
-      // Set MCwtCorr for this file
-      if (isMC_ && isSkim_ &&
-	  (path.Contains("V16") || path.Contains("V17")) &&
-	  (path.Contains("MC2017") || path.Contains("MC2018")) &&
-	  (path.Contains("DYJetsToLL") || path.Contains("ZJetsToNuNu"))) {
-	if (applyZptWt_) {
-	  if      (path.Contains("HT-100to200")) MCwtCorr = 1.05713;
-	  else if (path.Contains("HT-200to400")) MCwtCorr = 1.20695;
-	  else if (path.Contains("HT-400to600")) MCwtCorr = 1.30533;
-	  else if (path.Contains("HT-600to800")) MCwtCorr = 1.38453;
-	  else if (path.Contains("HT-800to1200")) MCwtCorr = 1.40301;
-	  else if (path.Contains("HT-1200to2500")) MCwtCorr = 1.42145;
-	  else if (path.Contains("HT-2500toInf")) MCwtCorr = 1.11697;
-	} else {
-	  if      (path.Contains("HT-100to200")) MCwtCorr = 1.09226;
-	  else if (path.Contains("HT-200to400")) MCwtCorr = 1.18517;
-	  else if (path.Contains("HT-400to600")) MCwtCorr = 1.22966;
-	  else if (path.Contains("HT-600to800")) MCwtCorr = 1.27798;
-	  else if (path.Contains("HT-800to1200")) MCwtCorr = 1.27728;
-	  else if (path.Contains("HT-1200to2500")) MCwtCorr = 1.27279;
-	  else if (path.Contains("HT-2500toInf")) MCwtCorr = 0.975599;
-	}
-      }
-      if (isMC_ && verbosity_ >= 1) cout << "MC weight for this file is " << Tupl->Weight
-					 << " times correction " << MCwtCorr << endl;
-      if (btagcorr_) btagcorr_->SetEffs(thisFile);
-      evSelector_->setTriggerIndexList(sample, &triggerIndexList, Tupl->TriggerNames, Tupl->TriggerPrescales);
-    }  // newFileInChain
-
-    countInFile++;
-    // if (countInFile == 1) cout << "After get first entry in file, status of HT = " << Tupl->fChain->GetBranchStatus("HT")
-    // 			       << ", JetIDAK8 = " << Tupl->fChain->GetBranchStatus("JetIDAK8") << endl;
-
-    if (!isSkim_) Tupl->cleanVars();  // If unskimmed input, copy <var>clean to <var>
-    Int_t BTagsOrig = setBTags(currentYear);
-    // if (countInFile <= 100) cout << "BTagsOrig, BTags, BTagsDeepCSV = " << BTagsOrig
-    // 				 << ", " << Tupl->BTags << ", " << Tupl->BTagsDeepCSV << endl;
-
-    if (Tupl->ZCandidates->size() > 1 && verbosity_ >= 2) cout << Tupl->ZCandidates->size() << " Z candidates found" << endl;
-    // double baselineWt = Tupl->TFvalue("baseline");
-
-    // Compute event weight factors
-    Double_t eventWt = 1, MCwt = 1, PUweight = 1, NoPrefireWt = 1, ZPtWt = 1;
-    if (isMC_) {
-      MCwt = 1000*intLumi_*Tupl->Weight*MCwtCorr;  // MCwtCorr for 2017 MC
-      if (applyPuWeight_) {
-	// Pileup weight for 2016
-	if (customPuWeight_ && puHist_ != nullptr) {
-	  // This PU weight recipe from Kevin Pedro, https://twiki.cern.ch/twiki/bin/viewauth/CMS/RA2b13TeVProduction
-	  PUweight = puHist_->GetBinContent(puHist_->GetXaxis()->FindBin(min(Tupl->TrueNumInteractions,
-									     puHist_->GetBinLowEdge(puHist_->GetNbinsX()+1))));
-	} else
-	  PUweight = Tupl->puWeight;  // Take puWeight directly from the tree
-	MCwt *= PUweight;
-      }
-
-      if (currentYear == EfficWt::Year2016 || currentYear == EfficWt::Year2017) {
-	// Apply L1 prefire weight for 2016 and 2017
-	if (sampleKey.Contains("ee")) {
-	  for (unsigned j = 0; j < Tupl->Jets->size(); ++j) {
-	    NoPrefireWt *= effPurCorr_->prefiring_weight_jet(Tupl->Jets, j);
-	  }
-	  double eeNoPFwt = 1;
-	  for (unsigned e = 0; e < Tupl->Electrons->size(); ++e) {
-	    double w = effPurCorr_->prefiring_weight_electron(Tupl->Electrons, e);
-	    if (w < eeNoPFwt) eeNoPFwt = w;
-	  }
-	  NoPrefireWt *= eeNoPFwt;
-	} else {
-	  NoPrefireWt = Tupl->NonPrefiringProb;
-	}
-	MCwt *= NoPrefireWt;
-      }  // 2016 or 2017
-
-      if (applyZptWt_ && (TString(sample).Contains("dy") || TString(sample).Contains("zinv"))
-	  && (currentYear == EfficWt::Year2017 || currentYear == EfficWt::Year2018)) {
-	// Apply Z Pt weight for 2017 MC
-	double ptZ = getGenPtZ();
-	ZPtWt = 1.0;
-	if (ptZ > 0.0) {
-	  int iptbin;
-	  for (iptbin = 1; iptbin<297; iptbin++) {
-	    if (ptZ < ptBins[iptbin]) break;
-	  }
-	  ZPtWt *= ptWgts[iptbin-1];
-	}
-	MCwt *= ZPtWt;
-      }  // DY or Zinv in 2017 or 2018
-
-      eventWt *= MCwt;
-    }  // isMC_
-
-    pair<double, double> efficiency = effPurCorr_->weight(CCbins_,
-							  Tupl->NJets, Tupl->BTags, Tupl->MHT, Tupl->HT,
-							  *(Tupl->ZCandidates), *(Tupl->Photons),
-							  *(Tupl->Electrons), *(Tupl->Muons),
-							  *(Tupl->Photons_isEB), applyDRfitWt_, currentYear);
-    effWt_ = efficiency.first;  effSys_ = efficiency.second;
-
-    // Trigger requirements
-    bool passTrg = true;
-    if (!isMC_) {
-      passTrg = false;
-      for (auto trgIndex : triggerIndexList)
-	if (Tupl->TriggerPass->at(trgIndex)) passTrg = true;
-    }
-
-    // HEM veto for 2018HEM
-    bool passHEM = true;
-    if (applyHEMjetVeto_ && !passHEMjetVeto()) passHEM = false;
-
-    int CCbin = -2;
-    for (auto & hg : histograms) {
-      if (hg->name.Contains(TString("hCut"))) {
-	// Fill cut flow histograms before imposing trigger, HEM requirements
-	double cutHistWt = 1;
-	if (hg->name.Contains(TString("Wt"))) {
-	  cutHistWt = eventWt;
-	  if (applySFwtToMC_ && isMC_) cutHistWt *= effWt_;
-	}
-	cutHistFiller.fill((TH1D*) hg->hist, cutHistWt, passTrg, passHEM);
-	continue;
-      }
-      if (!passTrg) break;
-      if (!passHEM) break;
-      // (For a test) select events with electron (photon) in HEM region
-      // bool keep = false; for (auto & theE : *(Tupl->Electrons)) {if (!passHEMobjVeto(theE, 30, false)) keep = true;}  if (!keep) break;
-      // bool keep = false; for (auto & theG : *(Tupl->Photons)) {if (!passHEMobjVeto(theG, 30, false)) keep = true;}  if (!keep) break;
-
-      if (CCbin == -2) {
-	CCbin = CCbins_->jbk(CCbins_->jbin(Tupl->NJets), CCbins_->bbin(Tupl->NJets, Tupl->BTags),
-			     CCbins_->kinBin(Tupl->HT, Tupl->MHT));
-	if ((UInt_t) CCbin != Tupl->RA2bin && !(CCbin == -1 && Tupl->RA2bin == 0))
-	  cout << "CCbin = " << CCbin << ", != RA2bin = " << Tupl->RA2bin << endl;
-      }
-      double selWt = Tupl->TFvalue(hg->name);
-      if (selWt == 0) continue;
-
-      if (hg->name.Contains("hCC_")) {
-	countInSel++;
-	if (eventWt < 0) countNegWt++;
-      }
-
-      double eventWt0 = eventWt;
-      if ((applySFwtToMC_ && isMC_) || hg->name.Contains(TString("_DR"))) {
-	// For MC, or double ratio, apply weights for trigger eff, reco eff.
-	if (hg->name.Contains(TString("_DR"))) {
-	  if (Tupl->BTags > 0) continue;
-	  if (CCbin <= 0) continue;
-	}
-	eventWt *= effWt_;
-      }
-
-      if (hg->dvalue != nullptr) {
-	hg->hist->Fill(*(hg->dvalue), selWt*eventWt);
-      }
-      else if (hg->ivalue != nullptr) {
-	hg->hist->Fill(Double_t(*(hg->ivalue)), selWt*eventWt);
-      }
-      else if (hg->filler1D != nullptr) (this->*(hg->filler1D))((TH1D*) hg->hist, selWt*eventWt);
-      else if (hg->filler2D != nullptr) (this->*(hg->filler2D))((TH2F*) hg->hist, selWt*eventWt);
-      else cerr << "No method to fill histogram provided for " << hg->name << endl;
-      eventWt = eventWt0;  // Restore event weight after processing efficiency, purity weighted histograms
-
-    }  // loop over histograms
-  }  // loop over entries
-  cout << "At end, count = " << countInSel << ", with negative weights = " << countNegWt << endl;
-
-  if (btagcorr_) delete btagcorr_;
-
-}  // ======================================================================================
-
 std::vector<TH1*>
 RA2bZinvAnalysis::makeHistograms(const char* sample) {
   //
@@ -920,6 +627,299 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   for (auto & thisHist : histograms) theHists.push_back(thisHist->hist);
 
   return theHists;
+
+}  // ======================================================================================
+
+void
+RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConfig*>& histograms) {
+  //
+  // Define N - 1 (or N - multiple) cuts, book histograms.  Traverse the chain and fill.
+  //
+
+  CutManager::string_map sampleMap = evSelector_->sampleKeyMap();
+  TString sampleKey = sampleMap.count(sample) > 0 ? sampleMap.at(sample) : "none";
+
+  TCut baselineCuts = evSelector_->baseline();
+  Tupl->setTF("baselineCuts", (const char*) baselineCuts);
+
+  // For B-tagging corrections
+  if (isMC_ && applyBTagSF_) {
+    btagcorr_ = new BTagCorrector;
+    btagcorr_->SetCalib(BTagSFfile_);
+  } else {
+    btagcorr_ = nullptr;
+  }
+
+  // Z Pt weights
+  Double_t ptBins[297] = {0.,1.,2.,3.,4.,5.,6.,7.,8.,9.,10.,11.,12.,13.,14.,15.,16.,17.,18.,19.,20.,21.,22.,23.,24.,25.,26.,27.,28.,29.,30.,31.,32.,33.,34.,35.,36.,37.,38.,39.,40.,41.,42.,43.,44.,45.,46.,47.,48.,49.,50.,51.,52.,53.,54.,55.,56.,57.,58.,59.,60.,61.,62.,63.,64.,65.,66.,67.,68.,69.,70.,71.,72.,73.,74.,75.,76.,77.,78.,79.,80.,81.,82.,83.,84.,85.,86.,87.,88.,89.,90.,91.,92.,93.,94.,95.,96.,97.,98.,99.,100.,101.,102.,103.,104.,105.,106.,107.,108.,109.,110.,111.,112.,113.,114.,115.,116.,117.,118.,119.,120.,121.,122.,123.,124.,125.,126.,127.,128.,129.,130.,131.,132.,133.,134.,135.,136.,137.,138.,139.,140.,141.,142.,143.,144.,145.,146.,147.,148.,149.,150.,151.,152.,153.,154.,155.,156.,157.,158.,159.,160.,161.,162.,163.,164.,165.,166.,167.,168.,169.,170.,171.,172.,173.,174.,175.,176.,177.,178.,179.,180.,181.,182.,183.,184.,185.,186.,187.,188.,189.,190.,191.,192.,193.,194.,195.,196.,197.,198.,199.,200.,202.,204.,206.,208.,210.,212.,214.,216.,218.,220.,222.,224.,226.,228.,230.,232.,234.,236.,238.,240.,242.,244.,246.,248.,250.,252.,254.,256.,258.,260.,262.,264.,266.,268.,270.,272.,274.,276.,278.,280.,282.,284.,286.,288.,290.,292.,294.,296.,298.,300.,304.,308.,312.,316.,320.,324.,328.,332.,336.,340.,344.,348.,352.,356.,360.,364.,368.,372.,376.,380.,384.,388.,392.,396.,400.,410.,420.,430.,440.,450.,460.,470.,480.,490.,500.,520.,540.,560.,580.,600.,650.,700.,750.,800.,900.,1000.};
+  Double_t ptWgts[297] =
+    {0.615, 0.626, 0.649, 0.688, 0.739, 0.796, 0.852, 0.899, 0.936, 0.969, 0.995, 1.015, 1.034, 1.050, 1.065, 1.079, 1.092, 1.103, 1.118, 1.126, 1.139, 1.146, 1.156, 1.160, 1.164, 1.164, 1.165, 1.165, 1.164, 1.164, 1.164, 1.161, 1.158, 1.156, 1.154, 1.146, 1.147, 1.140, 1.135, 1.134, 1.129, 1.128, 1.121, 1.115, 1.110, 1.109, 1.111, 1.103, 1.094, 1.092, 1.093, 1.089, 1.085, 1.084, 1.074, 1.074, 1.067, 1.068, 1.062, 1.066, 1.063, 1.055, 1.050, 1.054, 1.048, 1.044, 1.042, 1.043, 1.034, 1.032, 1.035, 1.033, 1.028, 1.030, 1.029, 1.030, 1.012, 1.012, 1.018, 1.013, 1.011, 1.000, 1.007, 1.015, 0.989, 1.001, 0.994, 0.990, 0.990, 0.986, 0.981, 0.986, 0.972, 0.971, 0.977, 0.974, 0.978, 0.966, 0.985, 0.978, 0.966, 0.972, 0.969, 0.971, 0.964, 0.962, 0.948, 0.952, 0.943, 0.973, 0.936, 0.945, 0.935, 0.944, 0.953, 0.943, 0.935, 0.926, 0.946, 0.940, 0.943, 0.933, 0.920, 0.912, 0.923, 0.904, 0.919, 0.937, 0.941, 0.929, 0.923, 0.902, 0.925, 0.927, 0.896, 0.926, 0.905, 0.920, 0.908, 0.889, 0.910, 0.913, 0.911, 0.889, 0.881, 0.888, 0.904, 0.886, 0.891, 0.915, 0.879, 0.884, 0.900, 0.874, 0.850, 0.874, 0.873, 0.872, 0.894, 0.880, 0.870, 0.871, 0.863, 0.883, 0.863, 0.892, 0.845, 0.863, 0.892, 0.851, 0.878, 0.847, 0.881, 0.809, 0.860, 0.829, 0.851, 0.871, 0.846, 0.825, 0.860, 0.853, 0.894, 0.807, 0.793, 0.863, 0.832, 0.829, 0.870, 0.850, 0.831, 0.820, 0.829, 0.839, 0.880, 0.831, 0.804, 0.836, 0.822, 0.796, 0.812, 0.831, 0.830, 0.827, 0.802, 0.781, 0.855, 0.798, 0.774, 0.790, 0.810, 0.825, 0.799, 0.790, 0.811, 0.778, 0.803, 0.779, 0.795, 0.768, 0.809, 0.762, 0.767, 0.752, 0.822, 0.777, 0.791, 0.799, 0.721, 0.776, 0.718, 0.798, 0.754, 0.749, 0.758, 0.847, 0.766, 0.775, 0.718, 0.756, 0.826, 0.792, 0.792, 0.767, 0.679, 0.694, 0.750, 0.738, 0.707, 0.709, 0.711, 0.754, 0.762, 0.717, 0.722, 0.692, 0.714, 0.726, 0.703, 0.693, 0.704, 0.704, 0.653, 0.718, 0.748, 0.713, 0.733, 0.741, 0.742, 0.652, 0.586, 0.644, 0.656, 0.702, 0.721, 0.682, 0.758, 0.662, 0.578, 0.654, 0.723, 0.634, 0.680, 0.656, 0.602, 0.590, 0.566, 0.623, 0.562, 0.589, 0.604, 0.554, 0.525, 0.552, 0.503, 0.563, 0.476};
+
+  cutHistos cutHistFiller(Tupl, evSelector_);  // for cutFlow histograms
+
+  // Book histograms
+  if (verbosity_ >= 1) cout << endl << "baseline = " << endl << baselineCuts << endl << endl;
+  for (auto & hg : histograms) {
+    if (hg->NbinsY > 0) {
+      hg->hist = new TH2F(hg->name, hg->title, hg->NbinsX, hg->rangeX.first, hg->rangeX.second,
+			  hg->NbinsY, hg->rangeY.first, hg->rangeY.second);
+      hg->hist->SetOption("colz");
+    } else {
+      if (hg->binsX == nullptr)
+	hg->hist = new TH1D(hg->name, hg->title, hg->NbinsX, hg->rangeX.first, hg->rangeX.second);
+      else
+	hg->hist = new TH1D(hg->name, hg->title, hg->NbinsX, hg->binsX);
+      hg->hist->SetOption("hist");
+      hg->hist->SetMarkerSize(0);
+    }
+    hg->hist->Sumw2();
+    hg->hist->GetXaxis()->SetTitle(hg->axisTitles.first);
+    hg->hist->GetYaxis()->SetTitle(hg->axisTitles.second);
+    if (hg->name.Contains(TString("Cut"))) cutHistFiller.setAxisLabels((TH1D*) hg->hist);
+    if (hg->name.Contains(TString("hCut")) || hg->name.Contains(TString("hgen"))) {
+      hg->NminusOneCuts = "1";
+    } else {
+      hg->NminusOneCuts = baselineCuts;
+      for (auto cutToOmit : hg->omitCuts) hg->NminusOneCuts(*cutToOmit) = "1";
+      if (strlen(hg->addCuts) != 0) hg->NminusOneCuts += TString(" && ") + hg->addCuts;
+    }
+    if (verbosity_ >= 1) {
+      cout << "\n For sample " << sample << ", histo " << hg->name << ", hg->omitCuts = ";
+      for (auto cutToOmit : hg->omitCuts) cout << *cutToOmit << " ";
+      cout << "; hg->addCuts = " << hg->addCuts;
+      cout << ", cuts = " << endl << hg->NminusOneCuts << endl;
+    }
+    Tupl->setTF(hg->name, hg->NminusOneCuts);
+  }
+  Tupl->setNotify();
+
+  // Traverse the tree and fill histograms
+  vector<unsigned> triggerIndexList;
+  int currentYear = -1;
+  double MCwtCorr = 1.;
+  int count = 0, countInFile = 0, countInSel = 0, countNegWt = 0;
+  Long64_t Nentries = Tupl->fChain->GetEntries();
+  if (verbosity_ >= 1) cout << "Nentries in tree = " << Nentries << endl;
+  for (Long64_t entry = 0; entry < Nentries; ++entry) {
+    count++;
+    if (verbosity_ >= 1 && count % 100000 == 0) cout << "Entry number " << count << endl;
+
+    Long64_t centry = Tupl->LoadTree(entry);
+    if (centry < 0) {
+      cout << "LoadTree returned " << centry;
+      break;
+    }
+    Tupl->GetEntry(entry);
+    // cout << endl << "First entry" << endl;  Show();  break;
+    if (Tupl->newFileInChain()) {
+      // New input root file encountered
+      Tupl->setNewFileInChain(false);
+      countInFile = 0;
+      TFile* thisFile = Tupl->fChain->GetCurrentFile();
+      TString path = thisFile->GetName();
+      if (verbosity_ >= 1) cout << "Current file in chain: " << path << endl;
+      // cout << "First event, new file setup " << endl;  Show();
+      int theYear = -1;
+      if (isMC_) {
+	if      (path.Contains("MC2016")) theYear = EfficWt::Year2016;
+	else if (path.Contains("MC2017")) theYear = EfficWt::Year2017;
+	else if (path.Contains("MC2018")) theYear = EfficWt::Year2018;
+      } else {
+	if      (Tupl->RunNum < CutManager::Start2017) theYear = EfficWt::Year2016;
+	else if (Tupl->RunNum < CutManager::Start2018) theYear = EfficWt::Year2017;
+	else                                           theYear = EfficWt::Year2018;
+      }
+      if (theYear != currentYear) {
+	currentYear = theYear;
+	cout << "currentYear = " << currentYear << endl;
+	// Load the year-dependent correction factors.
+	effPurCorr_->getHistos(sample, currentYear);  // For purity, Fdir, trigger eff, reco eff
+	if (ntupleVersion_ == "V15" && currentYear != EfficWt::Year2016) csvMthreshold_ = 0.8838;
+	if (isMC_) {
+	  if (currentYear == EfficWt::Year2016) {
+	    // For now we have only 2016 pileup correction files
+	    if (applyPuWeight_ && customPuWeight_) {
+	      TFile* pufile = TFile::Open("../../Analysis/corrections/PileupHistograms_0121_69p2mb_pm4p6.root", "READ");
+	      puHist_ = (TH1*) pufile->Get("pu_weights_down");
+	    }
+	    BTagSFfile_ = useDeepCSV_ ? "../datFiles/DeepCSV_2016LegacySF_WP_V1.csv" :
+	      "../../Analysis/btag/CSVv2_Moriond17_B_H_mod.csv";
+	  } else if (currentYear == EfficWt::Year2017) {
+	    BTagSFfile_ = "../datFiles/DeepCSV_94XSF_WP_V4_B_F.csv";
+	  } else if (currentYear == EfficWt::Year2018) {
+	    BTagSFfile_ = "../datFiles/DeepCSV_102XSF_WP_V1.csv";
+	  }
+	}
+      }
+      // Set MCwtCorr for this file
+      if (isMC_ && isSkim_ &&
+	  (path.Contains("V16") || path.Contains("V17")) &&
+	  (path.Contains("MC2017") || path.Contains("MC2018")) &&
+	  (path.Contains("DYJetsToLL") || path.Contains("ZJetsToNuNu"))) {
+	if (applyZptWt_) {
+	  if      (path.Contains("HT-100to200")) MCwtCorr = 1.05713;
+	  else if (path.Contains("HT-200to400")) MCwtCorr = 1.20695;
+	  else if (path.Contains("HT-400to600")) MCwtCorr = 1.30533;
+	  else if (path.Contains("HT-600to800")) MCwtCorr = 1.38453;
+	  else if (path.Contains("HT-800to1200")) MCwtCorr = 1.40301;
+	  else if (path.Contains("HT-1200to2500")) MCwtCorr = 1.42145;
+	  else if (path.Contains("HT-2500toInf")) MCwtCorr = 1.11697;
+	} else {
+	  if      (path.Contains("HT-100to200")) MCwtCorr = 1.09226;
+	  else if (path.Contains("HT-200to400")) MCwtCorr = 1.18517;
+	  else if (path.Contains("HT-400to600")) MCwtCorr = 1.22966;
+	  else if (path.Contains("HT-600to800")) MCwtCorr = 1.27798;
+	  else if (path.Contains("HT-800to1200")) MCwtCorr = 1.27728;
+	  else if (path.Contains("HT-1200to2500")) MCwtCorr = 1.27279;
+	  else if (path.Contains("HT-2500toInf")) MCwtCorr = 0.975599;
+	}
+      }
+      if (isMC_ && verbosity_ >= 1) cout << "MC weight for this file is " << Tupl->Weight
+					 << " times correction " << MCwtCorr << endl;
+      if (btagcorr_) btagcorr_->SetEffs(thisFile);
+      evSelector_->setTriggerIndexList(sample, &triggerIndexList, Tupl->TriggerNames, Tupl->TriggerPrescales);
+    }  // newFileInChain
+
+    countInFile++;
+    // if (countInFile == 1) cout << "After get first entry in file, status of HT = " << Tupl->fChain->GetBranchStatus("HT")
+    // 			       << ", JetIDAK8 = " << Tupl->fChain->GetBranchStatus("JetIDAK8") << endl;
+
+    if (!isSkim_) Tupl->cleanVars();  // If unskimmed input, copy <var>clean to <var>
+    Int_t BTagsOrig = setBTags(currentYear);
+    // if (countInFile <= 100) cout << "BTagsOrig, BTags, BTagsDeepCSV = " << BTagsOrig
+    // 				 << ", " << Tupl->BTags << ", " << Tupl->BTagsDeepCSV << endl;
+
+    if (Tupl->ZCandidates->size() > 1 && verbosity_ >= 2) cout << Tupl->ZCandidates->size() << " Z candidates found" << endl;
+    // double baselineWt = Tupl->TFvalue("baseline");
+
+    // Compute event weight factors
+    Double_t eventWt = 1, MCwt = 1, PUweight = 1, NoPrefireWt = 1, ZPtWt = 1;
+    if (isMC_) {
+      MCwt = 1000*intLumi_*Tupl->Weight*MCwtCorr;  // MCwtCorr for 2017 MC
+      if (applyPuWeight_) {
+	// Pileup weight for 2016
+	if (customPuWeight_ && puHist_ != nullptr) {
+	  // This PU weight recipe from Kevin Pedro, https://twiki.cern.ch/twiki/bin/viewauth/CMS/RA2b13TeVProduction
+	  PUweight = puHist_->GetBinContent(puHist_->GetXaxis()->FindBin(min(Tupl->TrueNumInteractions,
+									     puHist_->GetBinLowEdge(puHist_->GetNbinsX()+1))));
+	} else
+	  PUweight = Tupl->puWeight;  // Take puWeight directly from the tree
+	MCwt *= PUweight;
+      }
+
+      if (currentYear == EfficWt::Year2016 || currentYear == EfficWt::Year2017) {
+	// Apply L1 prefire weight for 2016 and 2017
+	if (sampleKey.Contains("ee")) {
+	  for (unsigned j = 0; j < Tupl->Jets->size(); ++j) {
+	    NoPrefireWt *= effPurCorr_->prefiring_weight_jet(Tupl->Jets, j);
+	  }
+	  double eeNoPFwt = 1;
+	  for (unsigned e = 0; e < Tupl->Electrons->size(); ++e) {
+	    double w = effPurCorr_->prefiring_weight_electron(Tupl->Electrons, e);
+	    if (w < eeNoPFwt) eeNoPFwt = w;
+	  }
+	  NoPrefireWt *= eeNoPFwt;
+	} else {
+	  NoPrefireWt = Tupl->NonPrefiringProb;
+	}
+	MCwt *= NoPrefireWt;
+      }  // 2016 or 2017
+
+      if (applyZptWt_ && (TString(sample).Contains("dy") || TString(sample).Contains("zinv"))
+	  && (currentYear == EfficWt::Year2017 || currentYear == EfficWt::Year2018)) {
+	// Apply Z Pt weight for 2017 MC
+	double ptZ = getGenPtZ();
+	ZPtWt = 1.0;
+	if (ptZ > 0.0) {
+	  int iptbin;
+	  for (iptbin = 1; iptbin<297; iptbin++) {
+	    if (ptZ < ptBins[iptbin]) break;
+	  }
+	  ZPtWt *= ptWgts[iptbin-1];
+	}
+	MCwt *= ZPtWt;
+      }  // DY or Zinv in 2017 or 2018
+
+      eventWt *= MCwt;
+    }  // isMC_
+
+    pair<double, double> efficiency = effPurCorr_->weight(CCbins_,
+							  Tupl->NJets, Tupl->BTags, Tupl->MHT, Tupl->HT,
+							  *(Tupl->ZCandidates), *(Tupl->Photons),
+							  *(Tupl->Electrons), *(Tupl->Muons),
+							  *(Tupl->Photons_isEB), applyDRfitWt_, currentYear);
+    effWt_ = efficiency.first;  effSys_ = efficiency.second;
+
+    // Trigger requirements
+    bool passTrg = true;
+    if (!isMC_) {
+      passTrg = false;
+      for (auto trgIndex : triggerIndexList)
+	if (Tupl->TriggerPass->at(trgIndex)) passTrg = true;
+    }
+
+    // HEM veto for 2018HEM
+    bool passHEM = true;
+    if (applyHEMjetVeto_ && !passHEMjetVeto()) passHEM = false;
+
+    int CCbin = -2;
+    for (auto & hg : histograms) {
+      if (hg->name.Contains(TString("hCut"))) {
+	// Fill cut flow histograms before imposing trigger, HEM requirements
+	double cutHistWt = 1;
+	if (hg->name.Contains(TString("Wt"))) {
+	  cutHistWt = eventWt;
+	  if (applySFwtToMC_ && isMC_) cutHistWt *= effWt_;
+	}
+	cutHistFiller.fill((TH1D*) hg->hist, cutHistWt, passTrg, passHEM);
+	continue;
+      }
+      if (!passTrg) break;
+      if (!passHEM) break;
+      // (For a test) select events with electron (photon) in HEM region
+      // bool keep = false; for (auto & theE : *(Tupl->Electrons)) {if (!passHEMobjVeto(theE, 30, false)) keep = true;}  if (!keep) break;
+      // bool keep = false; for (auto & theG : *(Tupl->Photons)) {if (!passHEMobjVeto(theG, 30, false)) keep = true;}  if (!keep) break;
+
+      if (CCbin == -2) {
+	CCbin = CCbins_->jbk(CCbins_->jbin(Tupl->NJets), CCbins_->bbin(Tupl->NJets, Tupl->BTags),
+			     CCbins_->kinBin(Tupl->HT, Tupl->MHT));
+	if ((UInt_t) CCbin != Tupl->RA2bin && !(CCbin == -1 && Tupl->RA2bin == 0))
+	  cout << "CCbin = " << CCbin << ", != RA2bin = " << Tupl->RA2bin << endl;
+      }
+      double selWt = Tupl->TFvalue(hg->name);
+      if (selWt == 0) continue;
+
+      if (hg->name.Contains("hCC_")) {
+	countInSel++;
+	if (eventWt < 0) countNegWt++;
+      }
+
+      double eventWt0 = eventWt;
+      if ((applySFwtToMC_ && isMC_) || hg->name.Contains(TString("_DR"))) {
+	// For MC, or double ratio, apply weights for trigger eff, reco eff.
+	if (hg->name.Contains(TString("_DR"))) {
+	  if (Tupl->BTags > 0) continue;
+	  if (CCbin <= 0) continue;
+	}
+	eventWt *= effWt_;
+      }
+
+      if (hg->dvalue != nullptr) {
+	hg->hist->Fill(*(hg->dvalue), selWt*eventWt);
+      }
+      else if (hg->ivalue != nullptr) {
+	hg->hist->Fill(Double_t(*(hg->ivalue)), selWt*eventWt);
+      }
+      else if (hg->filler1D != nullptr) (this->*(hg->filler1D))((TH1D*) hg->hist, selWt*eventWt);
+      else if (hg->filler2D != nullptr) (this->*(hg->filler2D))((TH2F*) hg->hist, selWt*eventWt);
+      else cerr << "No method to fill histogram provided for " << hg->name << endl;
+      eventWt = eventWt0;  // Restore event weight after processing efficiency, purity weighted histograms
+
+    }  // loop over histograms
+  }  // loop over entries
+  cout << "At end, count = " << countInSel << ", with negative weights = " << countNegWt << endl;
+
+  if (btagcorr_) delete btagcorr_;
 
 }  // ======================================================================================
 
