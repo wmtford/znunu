@@ -22,14 +22,16 @@ class CutManager {
   CutManager(const TString sample, const TString ntupleVersion, bool isSkim, bool isMC, int verbosity,
 	     std::string era, string deltaPhi, bool applyMassCut, bool applyPtCut, CCbinning* CCbins);
   virtual ~CutManager() {};
-  TCut baseline() {return cuts_;};
+
   enum yearFirstRun {Start2016 = 271036, Start2017 = 294645, Start2018 = 315252, StartHEM = 319077, Start2018C = 319313};
-  void setTriggerIndexList(const char* sample, vector<unsigned>* triggerIndexList,
-			   vector<string>* TriggerNames, vector<int>* TriggerPrescales);
   typedef std::map<TString, TString> string_map;
   typedef std::map<TString, std::vector<TString> > vstring_map;
+
+  void setTriggerIndexList(const char* sample, vector<unsigned>* triggerIndexList,
+			   vector<string>* TriggerNames, vector<int>* TriggerPrescales);
   const string_map& sampleKeyMap() const {return sampleKeyMap_;};
   const vstring_map& triggerMapByName() const {return triggerMapByName_;};
+  const TCut baseline() const {return cuts_;};
   const TString& HTcut() const {return HTcut_;};
   const TString& MHTcut() const {return MHTcut_;};
   const TString& NJetscut() const {return NJetscut_;};

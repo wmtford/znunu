@@ -50,7 +50,7 @@ public:
   void setNotify() {fChain->SetNotify(forNotify_);};
 
   double TFvalue(const TString key) {
-    try {TFmap_.at(key);}  catch (const std::out_of_range& oor) {
+    if (TFmap_.count(key) == 0) {
       cout << "Ntuple::TFvalue: no key matching " << key << endl;
       return -1;
     }

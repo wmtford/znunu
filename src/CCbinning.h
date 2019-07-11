@@ -86,27 +86,27 @@ public:
 
   int jbk(int j, int b, int k) {
     std::vector<int> jbk = {j, b, k};
-    try {toCCbin_.at(jbk);}  catch (const std::out_of_range& oor) {return -1;}
+    if (toCCbin_.count(jbk) == 0) return -1;
     return(toCCbin_.at(jbk));
   };
   int jb(int j, int b) {
     std::vector<int> jb = {j, b};
-    try {toCCbinjb_.at(jb);}  catch (const std::out_of_range& oor) {return -1;}
+    if (toCCbinjb_.count(jb) == 0) return -1;
     return(toCCbinjb_.at(jb));
   };
   int jk(int j, int k) {
     std::vector<int> jk = {j, k};
-    try {toCCbinjk_.at(jk);}  catch (const std::out_of_range& oor) {return -1;}
+    if (toCCbinjk_.count(jk) == 0) return -1;
     return(toCCbinjk_.at(jk));
   };
   int Jbk(int J, int b, int k) {
     std::vector<int> Jbk = {J, b, k};
-    try {toCCbinSpl_.at(Jbk);}  catch (const std::out_of_range& oor) {return -1;}
+    if (toCCbinSpl_.count(Jbk) == 0) return -1;
     return(toCCbinSpl_.at(Jbk));
   };
   int Jb(int J, int b) {
     std::vector<int> Jb = {J, b};
-    try {toCCbinJb_.at(Jb);}  catch (const std::out_of_range& oor) {return -1;}
+    if (toCCbinJb_.count(Jb) == 0) return -1;
     return(toCCbinJb_.at(Jb));
   };
 

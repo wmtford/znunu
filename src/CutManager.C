@@ -14,7 +14,7 @@ CutManager::CutManager(const TString sample, const TString ntupleVersion, bool i
 
   fillCutMaps();  // Depends on isMC_
   TString sampleKey;
-  try {sampleKey = sampleKeyMap_.at(sample);}
+  try {sampleKey = sampleKeyMap_.at(sample);}  // Alternate method:  test map::count.
   catch (const std::out_of_range& oor) {
     std::cerr << oor.what() << "CutManager instantiated with invalid sample = " << sample << endl;
     cuts_ = "0";
