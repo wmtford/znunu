@@ -105,7 +105,7 @@ RA2bZinvAnalysis::Config(const string& cfg_filename) {
   treeConfig_ = new TreeConfig(era_, ntupleVersion_, isSkim_, deltaPhi_, verbosity_, treeName,
 			       treeLoc, fileListsFile, runBlock_);
   CCbins_ = new CCbinning(era_, deltaPhi_);
-  effPurCorr_ = new EfficiencyAndPurity(deltaPhi_);
+  effPurCorr_ = new EfficWt(deltaPhi_);
 
   cout << "After initialization," << endl;
   cout << "The verbosity level is " << verbosity_ << endl;
@@ -213,22 +213,22 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       // cout << "First event, new file setup " << endl;  Show();
       int theYear = -1;
       if (isMC_) {
-	if      (path.Contains("MC2016")) theYear = EfficiencyAndPurity::Year2016;
-	else if (path.Contains("MC2017")) theYear = EfficiencyAndPurity::Year2017;
-	else if (path.Contains("MC2018")) theYear = EfficiencyAndPurity::Year2018;
+	if      (path.Contains("MC2016")) theYear = EfficWt::Year2016;
+	else if (path.Contains("MC2017")) theYear = EfficWt::Year2017;
+	else if (path.Contains("MC2018")) theYear = EfficWt::Year2018;
       } else {
-	if      (Tupl->RunNum < CutManager::Start2017) theYear = EfficiencyAndPurity::Year2016;
-	else if (Tupl->RunNum < CutManager::Start2018) theYear = EfficiencyAndPurity::Year2017;
-	else                                           theYear = EfficiencyAndPurity::Year2018;
+	if      (Tupl->RunNum < CutManager::Start2017) theYear = EfficWt::Year2016;
+	else if (Tupl->RunNum < CutManager::Start2018) theYear = EfficWt::Year2017;
+	else                                           theYear = EfficWt::Year2018;
       }
       if (theYear != currentYear) {
 	currentYear = theYear;
 	cout << "currentYear = " << currentYear << endl;
 	// Load the year-dependent correction factors.
 	effPurCorr_->getHistos(sample, currentYear);  // For purity, Fdir, trigger eff, reco eff
-	if (ntupleVersion_ == "V15" && currentYear != EfficiencyAndPurity::Year2016) csvMthreshold_ = 0.8838;
+	if (ntupleVersion_ == "V15" && currentYear != EfficWt::Year2016) csvMthreshold_ = 0.8838;
 	if (isMC_) {
-	  if (currentYear == EfficiencyAndPurity::Year2016) {
+	  if (currentYear == EfficWt::Year2016) {
 	    // For now we have only 2016 pileup correction files
 	    if (applyPuWeight_ && customPuWeight_) {
 	      TFile* pufile = TFile::Open("../../Analysis/corrections/PileupHistograms_0121_69p2mb_pm4p6.root", "READ");
@@ -236,9 +236,9 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 	    }
 	    BTagSFfile_ = useDeepCSV_ ? "../datFiles/DeepCSV_2016LegacySF_WP_V1.csv" :
 	      "../../Analysis/btag/CSVv2_Moriond17_B_H_mod.csv";
-	  } else if (currentYear == EfficiencyAndPurity::Year2017) {
+	  } else if (currentYear == EfficWt::Year2017) {
 	    BTagSFfile_ = "../datFiles/DeepCSV_94XSF_WP_V4_B_F.csv";
-	  } else if (currentYear == EfficiencyAndPurity::Year2018) {
+	  } else if (currentYear == EfficWt::Year2018) {
 	    BTagSFfile_ = "../datFiles/DeepCSV_102XSF_WP_V1.csv";
 	  }
 	}
@@ -299,7 +299,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 	MCwt *= PUweight;
       }
 
-      if (currentYear == EfficiencyAndPurity::Year2016 || currentYear == EfficiencyAndPurity::Year2017) {
+      if (currentYear == EfficWt::Year2016 || currentYear == EfficWt::Year2017) {
 	// Apply L1 prefire weight for 2016 and 2017
 	if (sampleKey.Contains("ee")) {
 	  for (unsigned j = 0; j < Tupl->Jets->size(); ++j) {
@@ -318,7 +318,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       }  // 2016 or 2017
 
       if (applyZptWt_ && (TString(sample).Contains("dy") || TString(sample).Contains("zinv"))
-	  && (currentYear == EfficiencyAndPurity::Year2017 || currentYear == EfficiencyAndPurity::Year2018)) {
+	  && (currentYear == EfficWt::Year2017 || currentYear == EfficWt::Year2018)) {
 	// Apply Z Pt weight for 2017 MC
 	double ptZ = getGenPtZ();
 	ZPtWt = 1.0;
@@ -928,7 +928,7 @@ RA2bZinvAnalysis::setBTags(int runYear) {
   Int_t BTagsOrig = Tupl->BTags;
   if (useDeepCSV_) {
     Tupl->BTags = Tupl->BTagsDeepCSV;
-  } else if (ntupleVersion_ == "V15" && runYear != EfficiencyAndPurity::Year2016) {
+  } else if (ntupleVersion_ == "V15" && runYear != EfficWt::Year2016) {
     // Recompute BTags with a different discriminator threshold
     Tupl->BTags = 0;
     for (size_t j = 0; j < (Tupl->Jets)->size(); ++j) {

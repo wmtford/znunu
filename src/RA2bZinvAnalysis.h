@@ -16,7 +16,7 @@
 #include "TreeConfig.h"
 #include "CutManager.h"
 #include "CCbinning.h"
-#include "EfficiencyAndPurity.h"
+#include "EfficWt.h"
 #include <TH1F.h>
 #include <TH1D.h>
 #include <TH2F.h>
@@ -96,7 +96,7 @@ private:
   TreeConfig* treeConfig_;
   CCbinning* CCbins_;
   CutManager* evSelector_;
-  EfficiencyAndPurity* effPurCorr_;
+  EfficWt* effPurCorr_;
   BTagCorrector* btagcorr_;
   const char* BTagSFfile_;
   double csvMthreshold_;

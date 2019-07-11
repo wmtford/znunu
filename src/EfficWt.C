@@ -2,19 +2,18 @@
 //  Weights to correct MC for efficiencies, data for purity
 //
 
-#include "EfficiencyAndPurity.h"
+#include "EfficWt.h"
 #include <TF1.h>
 #include <TRegexp.h>
-// #include <algorithm>  // for std::find()
 
-// ClassImp(EfficiencyAndPurity)
+// ClassImp(EfficWt)
 
-EfficiencyAndPurity::EfficiencyAndPurity(string deltaPhi) : deltaPhi_(deltaPhi) {
+EfficWt::EfficWt(string deltaPhi) : deltaPhi_(deltaPhi) {
   openFiles();
 }
 
 void
-EfficiencyAndPurity::openFiles() {
+EfficWt::openFiles() {
   TString plotDir("../plots/histograms/");
 
   prefiringWeightFile_ = new TFile((plotDir+"L1PrefiringMaps_new.root").Data(), "read");
@@ -72,7 +71,7 @@ EfficiencyAndPurity::openFiles() {
 }  // ======================================================================================
 
 void
-EfficiencyAndPurity::getHistos(const char* sample, int currentYear) {
+EfficWt::getHistos(const char* sample, int currentYear) {
 
   std::vector<const char*> year;  year.push_back("2016");  year.push_back("2017");  year.push_back("2018");
 
@@ -223,7 +222,7 @@ EfficiencyAndPurity::getHistos(const char* sample, int currentYear) {
 }  // ======================================================================================
 
 pair<double, double>
-EfficiencyAndPurity::weight(CCbinning* CCbins,
+EfficWt::weight(CCbinning* CCbins,
 					      Int_t NJets, Int_t BTags,
 					      Double_t MHT, Double_t HT,
 					      vector<TLorentzVector> ZCandidates,

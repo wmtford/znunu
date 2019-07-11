@@ -2,8 +2,8 @@
 //  Weights to correct MC for efficiencies, data for purity
 //
 
-#ifndef EFFICIENCYANDPURITY_H
-#define EFFICIENCYANDPURITY_H
+#ifndef EFFICWT_H
+#define EFFICWT_H
 
 #define _CRT_SECURE_NO_WARNINGS
 
@@ -18,14 +18,14 @@
 #include <TMath.h>
 using namespace TMath;
 
-class EfficiencyAndPurity {
+class EfficWt {
  public:
 
   enum runYear{Year2016 = 0, Year2017 = 1, Year2018 = 2, Year2018HEP = 3, Year2018HEM = 4};
 
-  EfficiencyAndPurity() : deltaPhi_("nominal") {};
-  EfficiencyAndPurity(string deltaPhi);
-  ~EfficiencyAndPurity() {};
+  EfficWt() : deltaPhi_("nominal") {};
+  EfficWt(string deltaPhi);
+  ~EfficWt() {};
 
   void openFiles();
   void getHistos(const char* sample, int currentYear);
@@ -78,7 +78,7 @@ class EfficiencyAndPurity {
   std::vector<TH2F*> hSFeff_;
   TGraphErrors* FdirGraph_;
 
-  /* ClassDef(EfficiencyAndPurity, 1) // 2nd arg is ClassVersionID */
+  /* ClassDef(EfficWt, 1) // 2nd arg is ClassVersionID */
 };
 
 #endif
