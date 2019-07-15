@@ -31,7 +31,11 @@ class RA2bZinvAnalysis {
 public:
   RA2bZinvAnalysis();
   RA2bZinvAnalysis(const std::string& cfg_filename, const std::string& runBlock = "");
-  virtual ~RA2bZinvAnalysis() {};
+  virtual ~RA2bZinvAnalysis() {
+    delete treeConfig_;
+    delete CCbins_;
+    delete effPurCorr_;
+  };
 
   std::vector<TH1*> makeHistograms(const char* sample);
   void dumpSelEvIDs(const char* sample, const char* idFileName);
