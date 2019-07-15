@@ -3,7 +3,6 @@
 //
 
 #include "EfficWt.h"
-#include <TF1.h>
 #include <TRegexp.h>
 
 // ClassImp(EfficWt)

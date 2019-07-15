@@ -152,6 +152,29 @@ private:
     return true;
   };
 
+  void cleanVars() {
+    // For TreeMaker these replacements are made when skims are produced,
+    // so this applies only to raw ntuple data sets.
+    if (isSkim_) return;
+    Tupl->NJets = Tupl->NJetsclean;
+    Tupl->BTags = Tupl->BTagsclean;
+    Tupl->BTagsDeepCSV = Tupl->BTagsDeepCSVclean;
+    Tupl->HT = Tupl->HTclean;
+    Tupl->HT5 = Tupl->HT5clean;
+    Tupl->MHT = Tupl->MHTclean;
+    Tupl->JetID = Tupl->JetIDclean;
+    Tupl->Jets = Tupl->Jetsclean;
+    Tupl->Jets_hadronFlavor = Tupl->Jetsclean_hadronFlavor;
+    Tupl->Jets_HTMask = Tupl->Jetsclean_HTMask;
+    Tupl->isoElectronTracks = Tupl->isoElectronTracksclean;
+    Tupl->isoMuonTracks = Tupl->isoMuonTracksclean;
+    Tupl->isoPionTracks = Tupl->isoPionTracksclean;
+    Tupl->DeltaPhi1 = Tupl->DeltaPhi1clean;
+    Tupl->DeltaPhi2 = Tupl->DeltaPhi2clean;
+    Tupl->DeltaPhi3 = Tupl->DeltaPhi3clean;
+    Tupl->DeltaPhi4 = Tupl->DeltaPhi4clean;
+  };
+
   // Functions to fill histograms with non-double, non-int types
   void fillFilterCuts(TH1D* h, double wt);
   void fillCC(TH1D* h, double wt);

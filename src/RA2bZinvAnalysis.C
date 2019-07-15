@@ -146,10 +146,13 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
     cout << "Apply scale factors to MC for non-DR histograms is " << applySFwtToMC_ << endl;
   }
 
-  Tupl = new Ntuple(treeConfig_->getChain(key));
-  Tupl->optimizeTree(treeConfig_->setActiveBranches());  // Set 2nd arg true to activate all branches
-
-  std::vector<histConfig*> histograms;
+  bool activateAll = false;
+  if (activateAll) {
+    cout << "Activating all branches" << endl;
+    Tupl = new Ntuple(treeConfig_->getChain(key));  // Add arg = false to suppress caching
+  } else {
+    Tupl = new Ntuple(treeConfig_->getChain(key), treeConfig_->activeBranchList());
+  }
 
   evSelector_ = new CutManager(sample, ntupleVersion_, isSkim_, isMC_, verbosity_,
 			       era_, deltaPhi_, applyMassCut_, applyPtCut_, CCbins_);
@@ -157,6 +160,8 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   TString sampleKey = sampleMap.count(sample) > 0 ? sampleMap.at(sample) : "none";
   bool isZll = (sampleKey == "zmm" || sampleKey == "zee" || sampleKey == "zll");
   bool isPhoton = (sampleKey == "photon" || sampleKey =="photonqcd");
+
+  std::vector<histConfig*> histograms;
 
   histConfig hCutFlow;
   hCutFlow.name = TString("hCutFlow_") + sample;  hCutFlow.title = "Cut flow unweighted";
@@ -626,6 +631,9 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   std::vector<TH1*> theHists;
   for (auto & thisHist : histograms) theHists.push_back(thisHist->hist);
 
+  delete Tupl;
+  delete evSelector_;
+
   return theHists;
 
 }  // ======================================================================================
@@ -784,7 +792,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
     // if (countInFile == 1) cout << "After get first entry in file, status of HT = " << Tupl->fChain->GetBranchStatus("HT")
     // 			       << ", JetIDAK8 = " << Tupl->fChain->GetBranchStatus("JetIDAK8") << endl;
 
-    if (!isSkim_) Tupl->cleanVars();  // If unskimmed input, copy <var>clean to <var>
+    cleanVars();  // If unskimmed input, copy <var>clean to <var>
     Int_t BTagsOrig = setBTags(currentYear);
     // if (countInFile <= 100) cout << "BTagsOrig, BTags, BTagsDeepCSV = " << BTagsOrig
     // 				 << ", " << Tupl->BTags << ", " << Tupl->BTagsDeepCSV << endl;
@@ -919,7 +927,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
   }  // loop over entries
   cout << "At end, count = " << countInSel << ", with negative weights = " << countNegWt << endl;
 
-  if (btagcorr_) delete btagcorr_;
+  delete btagcorr_;
 
 }  // ======================================================================================
 
@@ -1228,8 +1236,7 @@ RA2bZinvAnalysis::cutHistos::fill(TH1D* hcf, Double_t wt, bool passTrg, bool pas
 void
 RA2bZinvAnalysis::checkTrigPrescales(const char* sample) {
   TString key = treeConfig_->DSkey(sample, isMC_);  // Set isMC_ here
-  Tupl = new Ntuple(treeConfig_->getChain(key));
-  Tupl->optimizeTree(treeConfig_->setActiveBranches());  // Set 2nd arg true to activate all branches
+  Tupl = new Ntuple(treeConfig_->getChain(key), treeConfig_->activeBranchList());
   Long64_t Nentries = Tupl->fChain->GetEntries();
   for (Long64_t entry = 0; entry < Nentries; ++entry) {
     Long64_t centry = Tupl->LoadTree(entry);
@@ -1251,6 +1258,7 @@ RA2bZinvAnalysis::checkTrigPrescales(const char* sample) {
 	       << " (" << ti << ") prescaled by " << prescale << endl;
       }
     }
+    delete Tupl;
   }
 
 }  // ======================================================================================
@@ -1264,8 +1272,7 @@ RA2bZinvAnalysis::dumpSelEvIDs(const char* sample, const char* idFileName) {
   idFile = fopen(idFileName, "w");
 
   TString key = treeConfig_->DSkey(sample, isMC_);  // Set isMC_ here
-  Tupl = new Ntuple(treeConfig_->getChain(key));
-  Tupl->optimizeTree(treeConfig_->setActiveBranches());  // Set 2nd arg true to activate all branches
+  Tupl = new Ntuple(treeConfig_->getChain(key), treeConfig_->activeBranchList());
 
   evSelector_ = new CutManager(sample, ntupleVersion_, isSkim_, isMC_, verbosity_,
 			       era_, deltaPhi_, applyMassCut_, applyPtCut_, CCbins_);
@@ -1326,7 +1333,7 @@ RA2bZinvAnalysis::dumpSelEvIDs(const char* sample, const char* idFileName) {
     printf("%15u %15u %15llu\n", Tupl->RunNum, Tupl->LumiBlockNum, Tupl->EvtNum);
     fprintf(idFile, "%15u %15u %15llu\n", Tupl->RunNum, Tupl->LumiBlockNum, Tupl->EvtNum);
 
-    if (!isSkim_) Tupl->cleanVars();  // If unskimmed input, copy <var>clean to <var>
+    cleanVars();  // If unskimmed input, copy <var>clean to <var>
     int currentYear = 0;  // FIXME !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     Int_t BTagsOrig = setBTags(currentYear);
 
@@ -1358,5 +1365,7 @@ RA2bZinvAnalysis::dumpSelEvIDs(const char* sample, const char* idFileName) {
     // }
   }
   fclose(idFile);
+  delete Tupl;
+  delete evSelector_;
 
 }  // ======================================================================================

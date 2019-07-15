@@ -13,6 +13,7 @@
 #include <TH2F.h>
 #include <TGraphErrors.h>
 #include <TEfficiency.h>
+#include <TF1.h>
 #include <TLorentzVector.h>
 
 #include <TMath.h>
@@ -25,7 +26,9 @@ class EfficWt {
 
   EfficWt() : deltaPhi_("nominal") {};
   EfficWt(string deltaPhi);
-  ~EfficWt() {};
+  ~EfficWt() {
+    delete DRfun_;
+  };
 
   void openFiles();
   void getHistos(const char* sample, int currentYear);

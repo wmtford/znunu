@@ -135,101 +135,101 @@ TreeConfig::fileList(TString sampleKey) {
 
 }  // ======================================================================================
 
-vector<const char*>
-TreeConfig::setActiveBranches() {
+vector<const char*>*
+TreeConfig::activeBranchList() {
 
   // Needed branches
-  vector<const char*> activeBranches;
-  activeBranches.push_back("NJets");
-  activeBranches.push_back("BTags");
-  activeBranches.push_back("HT");
-  activeBranches.push_back("HT5");
-  activeBranches.push_back("MHT");
-  activeBranches.push_back("MHTPhi");
-  activeBranches.push_back("JetID");
-  activeBranches.push_back("Jets");
-  activeBranches.push_back("Jets_hadronFlavor");
-  activeBranches.push_back("Jets_HTMask");
-  activeBranches.push_back("isoElectronTracks");
-  activeBranches.push_back("isoMuonTracks");
-  activeBranches.push_back("isoPionTracks");
-  activeBranches.push_back("DeltaPhi1");
-  activeBranches.push_back("DeltaPhi2");
-  activeBranches.push_back("DeltaPhi3");
-  activeBranches.push_back("DeltaPhi4");
+  activeBranches = new vector<const char*>;
+  activeBranches->push_back("NJets");
+  activeBranches->push_back("BTags");
+  activeBranches->push_back("HT");
+  activeBranches->push_back("HT5");
+  activeBranches->push_back("MHT");
+  activeBranches->push_back("MHTPhi");
+  activeBranches->push_back("JetID");
+  activeBranches->push_back("Jets");
+  activeBranches->push_back("Jets_hadronFlavor");
+  activeBranches->push_back("Jets_HTMask");
+  activeBranches->push_back("isoElectronTracks");
+  activeBranches->push_back("isoMuonTracks");
+  activeBranches->push_back("isoPionTracks");
+  activeBranches->push_back("DeltaPhi1");
+  activeBranches->push_back("DeltaPhi2");
+  activeBranches->push_back("DeltaPhi3");
+  activeBranches->push_back("DeltaPhi4");
   if (isSkim_) {
-    activeBranches.push_back("RA2bin");
+    activeBranches->push_back("RA2bin");
   } else {
-    activeBranches.push_back("NJetsclean");
-    activeBranches.push_back("BTagsclean");
-    activeBranches.push_back("BTagsDeepCSVclean");
-    activeBranches.push_back("HTclean");
-    activeBranches.push_back("HT5clean");
-    activeBranches.push_back("MHTclean");
-    activeBranches.push_back("JetIDclean");
-    activeBranches.push_back("Jetsclean");
-    activeBranches.push_back("Jetsclean_hadronFlavor");
-    activeBranches.push_back("Jetsclean_HTMask");
-    activeBranches.push_back("isoElectronTracksclean");
-    activeBranches.push_back("isoMuonTracksclean");
-    activeBranches.push_back("isoPionTracksclean");
-    activeBranches.push_back("DeltaPhi1clean");
-    activeBranches.push_back("DeltaPhi2clean");
-    activeBranches.push_back("DeltaPhi3clean");
-    activeBranches.push_back("DeltaPhi4clean");
+    activeBranches->push_back("NJetsclean");
+    activeBranches->push_back("BTagsclean");
+    activeBranches->push_back("BTagsDeepCSVclean");
+    activeBranches->push_back("HTclean");
+    activeBranches->push_back("HT5clean");
+    activeBranches->push_back("MHTclean");
+    activeBranches->push_back("JetIDclean");
+    activeBranches->push_back("Jetsclean");
+    activeBranches->push_back("Jetsclean_hadronFlavor");
+    activeBranches->push_back("Jetsclean_HTMask");
+    activeBranches->push_back("isoElectronTracksclean");
+    activeBranches->push_back("isoMuonTracksclean");
+    activeBranches->push_back("isoPionTracksclean");
+    activeBranches->push_back("DeltaPhi1clean");
+    activeBranches->push_back("DeltaPhi2clean");
+    activeBranches->push_back("DeltaPhi3clean");
+    activeBranches->push_back("DeltaPhi4clean");
   }
   if (ntupleVersion_ != "V12") {
-    activeBranches.push_back("NMuons");
-    activeBranches.push_back("NElectrons");
-    activeBranches.push_back("BTagsDeepCSV");
-    activeBranches.push_back("ecalBadCalibFilter");
+    activeBranches->push_back("NMuons");
+    activeBranches->push_back("NElectrons");
+    activeBranches->push_back("BTagsDeepCSV");
+    activeBranches->push_back("ecalBadCalibFilter");
   }
-  activeBranches.push_back("RunNum");
-  activeBranches.push_back("LumiBlockNum");
-  activeBranches.push_back("EvtNum");
-  activeBranches.push_back("Jets_bDiscriminatorCSV");
-  activeBranches.push_back("Muons");
-  activeBranches.push_back("Electrons");
-  activeBranches.push_back("ZCandidates");
-  activeBranches.push_back("Photons");
-  activeBranches.push_back("Photons_nonPrompt");
-  activeBranches.push_back("Photons_fullID");
-  activeBranches.push_back("Photons_hasPixelSeed");
-  activeBranches.push_back("Photons_isEB");
-  activeBranches.push_back("NVtx");
-  activeBranches.push_back("TriggerNames");
-  activeBranches.push_back("TriggerPass");
-  activeBranches.push_back("TriggerPrescales");
-  activeBranches.push_back("HBHENoiseFilter");
-  activeBranches.push_back("HBHEIsoNoiseFilter");
-  activeBranches.push_back("eeBadScFilter");
-  activeBranches.push_back("EcalDeadCellTriggerPrimitiveFilter");
-  activeBranches.push_back("globalTightHalo2016Filter");
-  activeBranches.push_back("globalSuperTightHalo2016Filter");
-  activeBranches.push_back("BadChargedCandidateFilter");
-  activeBranches.push_back("BadPFMuonFilter");
-  activeBranches.push_back("PFCaloMETRatio");
-  activeBranches.push_back("METRatioFilter");
-  activeBranches.push_back("EcalNoiseJetFilter");
-  activeBranches.push_back("HTRatioDPhiFilter");
-  activeBranches.push_back("HTRatioFilter");
-  activeBranches.push_back("nAllVertices");
+  activeBranches->push_back("RunNum");
+  activeBranches->push_back("LumiBlockNum");
+  activeBranches->push_back("EvtNum");
+  activeBranches->push_back("Jets_bDiscriminatorCSV");
+  activeBranches->push_back("Muons");
+  activeBranches->push_back("Electrons");
+  activeBranches->push_back("ZCandidates");
+  activeBranches->push_back("Photons");
+  activeBranches->push_back("Photons_nonPrompt");
+  activeBranches->push_back("Photons_fullID");
+  activeBranches->push_back("Photons_hasPixelSeed");
+  activeBranches->push_back("Photons_isEB");
+  activeBranches->push_back("NVtx");
+  activeBranches->push_back("TriggerNames");
+  activeBranches->push_back("TriggerPass");
+  activeBranches->push_back("TriggerPrescales");
+  activeBranches->push_back("HBHENoiseFilter");
+  activeBranches->push_back("HBHEIsoNoiseFilter");
+  activeBranches->push_back("eeBadScFilter");
+  activeBranches->push_back("EcalDeadCellTriggerPrimitiveFilter");
+  activeBranches->push_back("globalTightHalo2016Filter");
+  activeBranches->push_back("globalSuperTightHalo2016Filter");
+  activeBranches->push_back("BadChargedCandidateFilter");
+  activeBranches->push_back("BadPFMuonFilter");
+  activeBranches->push_back("PFCaloMETRatio");
+  activeBranches->push_back("METRatioFilter");
+  activeBranches->push_back("EcalNoiseJetFilter");
+  activeBranches->push_back("HTRatioDPhiFilter");
+  activeBranches->push_back("HTRatioFilter");
+  activeBranches->push_back("nAllVertices");
   if (isMC_) {
-    activeBranches.push_back("puWeight");
-    activeBranches.push_back("Weight");
-    activeBranches.push_back("TrueNumInteractions");
-    activeBranches.push_back("madMinPhotonDeltaR");
-    activeBranches.push_back("GenMuons");
-    activeBranches.push_back("GenElectrons");
-    activeBranches.push_back("GenHT");
-    activeBranches.push_back("GenTaus");
-    activeBranches.push_back("GenParticles");
-    activeBranches.push_back("GenParticles_PdgId");
-    activeBranches.push_back("GenParticles_Status");
+    activeBranches->push_back("puWeight");
+    activeBranches->push_back("Weight");
+    activeBranches->push_back("TrueNumInteractions");
+    activeBranches->push_back("madMinPhotonDeltaR");
+    activeBranches->push_back("GenMuons");
+    activeBranches->push_back("GenElectrons");
+    activeBranches->push_back("GenHT");
+    activeBranches->push_back("GenTaus");
+    activeBranches->push_back("GenParticles");
+    activeBranches->push_back("GenParticles_PdgId");
+    activeBranches->push_back("GenParticles_Status");
     if (ntupleVersion_ != "V12" && ntupleVersion_ != "V15") {
-      activeBranches.push_back("NonPrefiringProb");
-      // activeBranches.push_back("NonPrefiringProbUp");
-      // activeBranches.push_back("NonPrefiringProbDown");
+      activeBranches->push_back("NonPrefiringProb");
+      // activeBranches->push_back("NonPrefiringProbUp");
+      // activeBranches->push_back("NonPrefiringProbDown");
     }
   }
 

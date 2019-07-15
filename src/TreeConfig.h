@@ -21,10 +21,12 @@ public:
   TreeConfig(const string& era, const TString& ntupleVersion, const bool& isSkim,
 	     const string& deltaPhi, const int& verbosity, const string& treeName, const string& treeLoc,
 	     const string& fileListsFile, const string& runBlock);
-  virtual ~TreeConfig() {};
+  virtual ~TreeConfig() {
+    delete activeBranches;
+  };
   TString DSkey(const char* dataSet, bool& isMC);
   TChain* getChain(TString key);
-  vector<const char*> setActiveBranches();
+  vector<const char*>* activeBranchList();
 
 private:
   string era_;  // "2016", "Run2", ...
@@ -37,6 +39,8 @@ private:
   string treeLoc_;
   string fileListsFile_;
   string runBlock_;
+  vector<const char*>* activeBranches;
+
   vector<TString> fileList(TString sampleKey);
 
   /* ClassDef(TreeConfig, 1) // 2nd arg is ClassVersionID */
