@@ -17,32 +17,32 @@ using std::endl;
 class CCbinning {
 
 public:
-  CCbinning(const std::string& era = "2016", const std::string& deltaPhi = "nominal");
+  CCbinning(const string& era = "Run2", const string& deltaPhi = "nominal");
   virtual ~CCbinning() {};
   int kinBin(double& ht, double& mht);
   unsigned kinSize() {return kinSize_;};
 
-  std::vector<int> nJetThresholds() {
-    std::vector<int> jThresh;
+  vector<int> nJetThresholds() {
+    vector<int> jThresh;
     for (Size_t j = 0; j < jbThresholds_.size(); ++j) jThresh.push_back(jbThresholds_[j][0]);
     return jThresh;
   };
   int nJetThreshold(int j) {return jbThresholds_[j][0];};
-  std::vector<int> nJet1Thresholds() {
-    std::vector<int> jThresh;
+  vector<int> nJet1Thresholds() {
+    vector<int> jThresh;
     for (Size_t j = 0; j < JbThresholds_.size(); ++j) jThresh.push_back(JbThresholds_[j][0]);
     return jThresh;
   };
   int nJet1Threshold(int j) {return JbThresholds_[j][0];};
-  std::vector<int> nbThresholds(int jbin) {
-    std::vector<int> bThresh;
+  vector<int> nbThresholds(int jbin) {
+    vector<int> bThresh;
     for (Size_t b = 1; b < jbThresholds_[jbin].size(); ++b) bThresh.push_back(jbThresholds_[jbin][b]);
     return bThresh;
   };
   int nbThreshold(int j, int b) {return jbThresholds_[j][b];};
-  std::vector< std::vector<int> > jetSubBins() {return jetSubBins_;};
+  vector< vector<int> > jetSubBins() {return jetSubBins_;};
 
-  typedef std::map<std::vector<int>, Int_t> ivector_map;
+  typedef map<vector<int>, Int_t> ivector_map;
   ivector_map toCCbin() {return toCCbin_;};
   ivector_map toCCbinjb() {return toCCbinjb_;};
   ivector_map toCCbinjk() {return toCCbinjk_;};
@@ -78,47 +78,55 @@ public:
     return bbin - 1;
   };
 
-  std::vector< std::vector<double> > kinThresholds() {return kinThresholds_;};
+  vector< vector<double> > kinThresholds() {return kinThresholds_;};
   double mhtThreshold(int m) {return kinThresholds_[m][0];};
   double htThreshold(int m, int h) {return kinThresholds_[m][1+h];};
   Size_t binsmht() {return kinThresholds_.size();};
   Size_t binsht(int m) {return kinThresholds_[m].size() - 1;};
 
   int jbk(int j, int b, int k) {
-    std::vector<int> jbk = {j, b, k};
-    if (toCCbin_.count(jbk) == 0) return -1;
-    return(toCCbin_.at(jbk));
+    if (k < 0) return -1;
+    vector<int> jbk = {j, b, k};
+    ivector_map::iterator iter = toCCbin_.find(jbk);
+    if (iter == toCCbin_.end()) return -1;
+    return iter->second;
   };
   int jb(int j, int b) {
-    std::vector<int> jb = {j, b};
-    if (toCCbinjb_.count(jb) == 0) return -1;
-    return(toCCbinjb_.at(jb));
+    vector<int> jb = {j, b};
+    ivector_map::iterator iter = toCCbinjb_.find(jb);
+    if (iter == toCCbinjb_.end()) return -1;
+    return iter->second;
   };
   int jk(int j, int k) {
-    std::vector<int> jk = {j, k};
-    if (toCCbinjk_.count(jk) == 0) return -1;
-    return(toCCbinjk_.at(jk));
+    if (k < 0) return -1;
+    vector<int> jk = {j, k};
+    ivector_map::iterator iter = toCCbinjk_.find(jk);
+    if (iter == toCCbinjk_.end()) return -1;
+    return iter->second;
   };
   int Jbk(int J, int b, int k) {
-    std::vector<int> Jbk = {J, b, k};
-    if (toCCbinSpl_.count(Jbk) == 0) return -1;
-    return(toCCbinSpl_.at(Jbk));
+    if (k < 0) return -1;
+    vector<int> Jbk = {J, b, k};
+    ivector_map::iterator iter = toCCbinSpl_.find(Jbk);
+    if (iter == toCCbinSpl_.end()) return -1;
+    return iter->second;
   };
   int Jb(int J, int b) {
-    std::vector<int> Jb = {J, b};
-    if (toCCbinJb_.count(Jb) == 0) return -1;
-    return(toCCbinJb_.at(Jb));
+    vector<int> Jb = {J, b};
+    ivector_map::iterator iter = toCCbinJb_.find(Jb);
+    if (iter == toCCbinJb_.end()) return -1;
+    return iter->second;
   };
 
 private:
-  std::string era_;  // "2016", ...
-  std::string deltaPhi_;  // "nominal", "hdp", "ldp", "ldpnominal"
-  std::vector< std::vector<double> > kinThresholds_;
-  std::vector< std::vector<int> > jbThresholds_;
-  std::vector< std::vector<int> > JbThresholds_;
+  string era_;  // "2016", ...
+  string deltaPhi_;  // "nominal", "hdp", "ldp", "ldpnominal"
+  vector< vector<double> > kinThresholds_;
+  vector< vector<int> > jbThresholds_;
+  vector< vector<int> > JbThresholds_;
   unsigned kinSize_;
   unsigned kinSizeNominal_;
-  std::vector< std::vector<int> > jetSubBins_;
+  vector< vector<int> > jetSubBins_;
   ivector_map toCCbin_, toCCbinSpl_, toCCbinJb_, toCCbinjb_, toCCbinjk_;
 
   /* ClassDef(CCbinning, 1) // 2nd arg is ClassVersionID */

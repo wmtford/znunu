@@ -135,6 +135,8 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   // TGaxis myTGaxis;
   // myTGaxis.SetMaxDigits(4);
 
+  double cpu0  = get_cpu_time();
+
   TString key = treeConfig_->DSkey(sample, isMC_);  // Set isMC_ here
   if (isMC_) {
     cout << "For MC data set " << sample << "," << endl;
@@ -142,7 +144,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
     cout << "Apply pileup weight is " << applyPuWeight_ << endl;
     cout << "Use custom if pileup weight is " << customPuWeight_ << endl;
     cout << "Apply Z Pt weight for 2017, 18 Z MC is " << applyZptWt_ << endl;
-    cout << "Apply double-ratio fit weight is " << applyDRfitWt_ << endl;
+    cout << "Apply double-ratio fit weight to gJets is " << applyDRfitWt_ << endl;
     cout << "Apply scale factors to MC for non-DR histograms is " << applySFwtToMC_ << endl;
   }
 
@@ -627,6 +629,8 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   // histograms.push_back(&hGLdRpixelSeed);
 
   bookAndFillHistograms(sample, histograms);
+  double cpu1  = get_cpu_time();
+  cout << endl << "CPU Time  = " << cpu1  - cpu0  << endl << endl;
 
   std::vector<TH1*> theHists;
   for (auto & thisHist : histograms) theHists.push_back(thisHist->hist);
@@ -891,8 +895,13 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       if (CCbin == -2) {
 	CCbin = CCbins_->jbk(CCbins_->jbin(Tupl->NJets), CCbins_->bbin(Tupl->NJets, Tupl->BTags),
 			     CCbins_->kinBin(Tupl->HT, Tupl->MHT));
-	if ((UInt_t) CCbin != Tupl->RA2bin && !(CCbin == -1 && Tupl->RA2bin == 0))
-	  cout << "CCbin = " << CCbin << ", != RA2bin = " << Tupl->RA2bin << endl;
+	if ((UInt_t) CCbin != Tupl->RA2bin && !(CCbin == -1 && Tupl->RA2bin == 0)) {
+	  cout << "CCbin = " << CCbin << ", != RA2bin = " << Tupl->RA2bin
+	       << ", NJets = " << Tupl->NJets << ", j = " << CCbins_->jbin(Tupl->NJets)
+	       << ", Nb = " << Tupl->BTags << ", b = " << CCbins_->bbin(Tupl->NJets, Tupl->BTags)
+	       << ", HT = " << Tupl->HT << ", MHT = " << Tupl->MHT << ", k = " << CCbins_->kinBin(Tupl->HT, Tupl->MHT)
+	       << endl;
+	}
       }
       double selWt = Tupl->TFvalue(hg->name);
       if (selWt == 0) continue;
@@ -1053,8 +1062,9 @@ RA2bZinvAnalysis::fillFilterCuts(TH1D* h, double wt) {
   // else if (!(Tupl->DeltaPhi1 >= 1.025 * Tupl->HT5 / Tupl->HT - 0.5875))
   else if (!Tupl->HTRatioDPhiFilter)
     h->Fill(14.5, wt);
-  if (!(Tupl->RunNum <CutManager::Start2017 || Tupl->RunNum >= CutManager::Start2018 ||
-	Tupl->EcalNoiseJetFilter)) h->Fill(15.5, wt);
+  if (!isMC_ && Tupl->RunNum >= CutManager::Start2017 && Tupl->RunNum < CutManager::Start2018) {
+    if (!(Tupl->EcalNoiseJetFilter)) h->Fill(15.5, wt);
+  }
 
 }  // ======================================================================================
 

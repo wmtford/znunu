@@ -12,13 +12,13 @@ CutManager::CutManager(const TString sample, const TString ntupleVersion, bool i
   applyMassCut_(applyMassCut), applyPtCut_(applyPtCut), CCbins_(CCbins) {
 
   fillCutMaps();  // Depends on isMC_
-  TString sampleKey;
-  try {sampleKey = sampleKeyMap_.at(sample);}  // Alternate method:  test map::count.
-  catch (const std::out_of_range& oor) {
-    std::cerr << oor.what() << "CutManager instantiated with invalid sample = " << sample << endl;
+  string_map::iterator iter = sampleKeyMap_.find(sample);
+  if (iter == sampleKeyMap_.end()) {
+    cout << "CutManager instantiated with invalid sample = " << sample << endl;
     cuts_ = "0";
     return;
   }
+  TString sampleKey = iter->second;
 
   if (ntupleVersion_ == "V12" || ntupleVersion_ == "V15")
     commonCuts_ =    "globalTightHalo2016Filter==1";

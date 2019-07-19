@@ -26,6 +26,9 @@
 #include <TMath.h>
 using namespace TMath;
 
+#include <time.h>
+#include <sys/time.h>
+
 class RA2bZinvAnalysis {
 
 public:
@@ -111,6 +114,7 @@ private:
   void bookAndFillHistograms(const char* sample, std::vector<histConfig*>& histograms);
   Int_t setBTags(int runYear);
   void fillCutFlow(TH1D* hcf, Double_t wt);
+  double get_cpu_time() {return (double)clock() / CLOCKS_PER_SEC;};
 
   double getGenPtZ() {
     if (!isMC_) return -1;

@@ -55,11 +55,12 @@ public:
   void setNotify() {fChain->SetNotify(forNotify_);};
   // User access to the value of a TTreeFormula, by name:
   double TFvalue(const TString key) {
-    if (TFmap_.count(key) == 0) {
+    std::map<TString, TTreeFormula*>::iterator iter = TFmap_.find(key);
+    if (iter == TFmap_.end()) {
       cout << "Ntuple::TFvalue: no key matching " << key << endl;
       return -1;
     }
-    TTreeFormula* theTF = TFmap_.at(key);
+    TTreeFormula* theTF = iter->second;
     theTF->GetNdata();
     return theTF->EvalInstance(0);
   };
