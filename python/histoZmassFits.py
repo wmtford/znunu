@@ -15,6 +15,7 @@ def purityFits(dataFileName, MCFileName):
   lumiee = lumimm
   MCscaleM = 1
   MCscaleE = 1
+  extraText = "Supplementary"  # Replace 'Preliminary'
   print '\n'
   print "removeDYkfactor = "+str(removeDYkfactor)
   
@@ -108,7 +109,8 @@ def purityFits(dataFileName, MCFileName):
       for hist in hsMC:
         hist.Print()
   
-      purityList = RA2b.getZmassFitPlot(doDiMu=doMumu, doDiEl=doEe, dataSet=hData, mcSet=hsMC, doLumi=lumimm, iPeriod = period)
+      purityList = RA2b.getZmassFitPlot(doDiMu=doMumu, doDiEl=doEe, dataSet=hData, mcSet=hsMC,
+                                        doLumi=lumimm, iPeriod = period, iPos=0, extraText=extraText)
       # No provision for separate mm, ee lumi's
   
       for i in range(len(purityList)):
@@ -126,12 +128,16 @@ def purityFits(dataFileName, MCFileName):
           else:
             if (i == 2):
               canv.SaveAs(str(plotNameRoot)+"mm.pdf")
+              canv.SaveAs(str(plotNameRoot)+"mm.png")
             elif (i == 4):
               canv.SaveAs(str(plotNameRoot)+"ee.pdf")
+              canv.SaveAs(str(plotNameRoot)+"ee.png")
             elif (cIter == 1):
               canv.SaveAs("fitZmass_allloose_mm.pdf")
+              canv.SaveAs("fitZmass_allloose_mm.png")
             elif (cIter == 3):
               canv.SaveAs("fitZmass_allloose_ee.pdf")
+              canv.SaveAs("fitZmass_allloose_ee.png")
       jbGroup += 4
   
     fitjb.append(fitb)

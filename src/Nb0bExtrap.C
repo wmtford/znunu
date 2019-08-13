@@ -711,18 +711,13 @@ void Nb0bExtrap(const string& era = "Run2", const string& deltaPhi = "nominal") 
       }
     }
   }
-  if (doClosure) {
-    ZinvBGpred->Draw();
-    hMCexp->Draw();
-    hPulls->Draw();
-  } else {
+  if (!doClosure) {
     datFile.close();
     latexFile.close();
     // fclose(datFile);
-    hExtrap->Draw();
     gSysRelErrors->Write();
   }
-  histoOutFile->Write();
+  histoOutFile->Write();  // Write out all booked histograms
 
   gApplication->Terminate(0);
 

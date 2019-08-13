@@ -30,6 +30,7 @@ postDRfit = True
 plotRefLine = True
 Ymin = 0.5
 Ymax = 1.5
+extraText = '    Supplementary'
 
 DYkfactor = 1.23
 yTitle = "R^{data}_{Z#rightarrow l^{+}l^{-}/#gamma}/R^{sim}_{Z#rightarrow l^{+}l^{-}/#gamma}"
@@ -293,8 +294,9 @@ for sample in doSample:
             pad1.cd()
             drawPad(c3, pad1, [mtpad, 0, 0.15, mlpad1], [300., 1545.], 1,
                     ["H_{T} [GeV]", yTitle])
-            CMStxt = textCMS(mlpad1)
-            CMStxt.Draw()
+            # CMStxt = textCMS(mlpad1)
+            # CMStxt.Draw()
+            RA2b.cmsLumi(pad = pad1, iPeriod = -1, extraText = extraText)
         axisTitleSize *= 1.0/(1 - 1*mlpad1)
         c2 = ROOT.gROOT.FindObject("c2")
         if (type(c2)==ROOT.TCanvas):
@@ -318,3 +320,4 @@ for sample in doSample:
             Lumitxt.Draw()
 
         newCanv.SaveAs("DRtriple.pdf")
+        newCanv.SaveAs("DRtriple.png")
