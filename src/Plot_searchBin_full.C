@@ -852,7 +852,8 @@ void Plot_searchBin_full(string sample="signal",
       tline->SetLineStyle(1);
       tline->SetLineColor(kBlue);
       tline->Draw();
-      numerator->DrawCopy("same");
+      // numerator->DrawCopy("same");
+      numerator->DrawCopy("e0same");  // Show errors for points outside plot range
 
       // numerator->Print("all");
       // denominator->Print("all");
