@@ -24,5 +24,5 @@ apply pileup weight = false
 use custom pileup weight = true
 apply HEM jet veto = true
 apply Z Pt weight = true
-apply double-ratio fit weight = false
+apply double-ratio fit weight = true
 apply scale factors to MC = false

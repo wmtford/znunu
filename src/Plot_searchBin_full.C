@@ -168,6 +168,7 @@ void Plot_searchBin_full(string sample="signal",
   // float ymax_top = 200000.;
   float ymax_top = 2000000.;
   // float ymax_top = 40000.;
+  // float ymin_top = 0.015 -0.01;  // wtf
   float ymin_top = 0.015;
 
   float ymax2_top = 20000.;
@@ -175,6 +176,7 @@ void Plot_searchBin_full(string sample="signal",
   float ymax3_top = 200.;
   float ymax4_top = 30.;
 
+  // float ymax_bottom = 1.99 +2.3;
   float ymax_bottom = 1.99;
   float ymin_bottom = 0.01;
 
