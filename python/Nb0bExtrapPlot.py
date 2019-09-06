@@ -4,10 +4,10 @@ Make two-panel figure with histograms
 """
 from array import array
 import ROOT
-import RA2b
+import RA2bUtils
 
-# If we switch to using these two functions instead of RA2b.cmsLumi, we avoid segv.
-# (But RA2b.cmsLumi isn't the cause of the segv.)
+# If we switch to using these two functions instead of RA2bUtils.cmsLumi, we avoid segv.
+# (But RA2bUtils.cmsLumi isn't the cause of the segv.)
 # def textCMS(margin):
 #   CMStxt = ROOT.TPaveText(margin, 0.98, 0.23, 1.0, "NDC")
 #   CMStxt.SetBorderSize(0)
@@ -291,7 +291,7 @@ def panelHists():
       doClosureStyle = False
       # if ("hCC" in nhName):
       #   doClosureStyle = True
-      canvTuple = RA2b.getPlotAndRatio(
+      canvTuple = RA2bUtils.getPlotAndRatio(
         numHists=hNumer, denomHists=hDenList, doRatio=True,
         doLogy=doLogy, doCMSlumi=True, iPeriod=iPeriod, drawHorizontalLine=False,
         xTitle=hNumer.GetXaxis().GetTitle(), yTitle=hNumer.GetYaxis().GetTitle(),
@@ -423,7 +423,7 @@ def panelHists():
       # CMStxt.Draw()
       # Lumitxt = textLumi(pmr)
       # Lumitxt.Draw()
-      RA2b.cmsLumi(pad = pad2, iPeriod = iPeriod, extraText = extraText)
+      RA2bUtils.cmsLumi(pad = pad2, iPeriod = iPeriod, extraText = extraText)
 # def cmsLumi(pad,  iPeriod=None,  iPosX=None, extraText=None, cmsText=None):
       addDivisionsUp(p2min, p2max, axisTitleSize)
       ovLegend.SetX1NDC(0.78)

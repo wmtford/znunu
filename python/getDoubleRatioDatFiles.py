@@ -7,7 +7,7 @@ scripts/extrapDatFileDriver.csh
 """
 import sys
 import ROOT
-import RA2b
+import RA2bUtils
 
 ROOT.gROOT.SetBatch(1)
 
@@ -63,12 +63,12 @@ for sample in doSample:
                 mht_binning = [300.,350.,400.,450.,600.,750,900.]
 
         ## get the double ratio graphs
-        nj_dr = RA2b.getDoubleRatioGraph('NJets',applyPuWeight=True,dphiCut=sample,binning=nj_binning,applyMHTCut=mhtCut)
-        mht_dr = RA2b.getDoubleRatioGraph('MHT',applyPuWeight=True,dphiCut=sample,binning=mht_binning,applyMHTCut=mhtCut)
-        ht_dr = RA2b.getDoubleRatioGraph('HT',applyPuWeight=True,dphiCut=sample,applyMHTCut=mhtCut)
+        nj_dr = RA2bUtils.getDoubleRatioGraph('NJets',applyPuWeight=True,dphiCut=sample,binning=nj_binning,applyMHTCut=mhtCut)
+        mht_dr = RA2bUtils.getDoubleRatioGraph('MHT',applyPuWeight=True,dphiCut=sample,binning=mht_binning,applyMHTCut=mhtCut)
+        ht_dr = RA2bUtils.getDoubleRatioGraph('HT',applyPuWeight=True,dphiCut=sample,applyMHTCut=mhtCut)
         
         ## get the double ratio plots with values and uncertainties
-        dr_out = RA2b.getDoubleRatioPlot([nj_dr,mht_dr,ht_dr])
+        dr_out = RA2bUtils.getDoubleRatioPlot([nj_dr,mht_dr,ht_dr])
 
     else:
         # Histograms from RA2bZinvAnalysis
@@ -171,9 +171,9 @@ for sample in doSample:
         histoHT['zee_mc'].Scale(mcLumiRatio_ee/DYkfactor)
 
         ## get the double ratio graphs
-        nj_dr = RA2b.getDoubleRatioGraph('NJets', histos=histoNJets)
-        mht_dr = RA2b.getDoubleRatioGraph('MHT', histos=histoMHT)
-        ht_dr = RA2b.getDoubleRatioGraph('HT', histos=histoHT)
+        nj_dr = RA2bUtils.getDoubleRatioGraph('NJets', histos=histoNJets)
+        mht_dr = RA2bUtils.getDoubleRatioGraph('MHT', histos=histoMHT)
+        ht_dr = RA2bUtils.getDoubleRatioGraph('HT', histos=histoHT)
         
         binMeanNJets = []
         hNJetsCC_pho_da = dataPhotonFile.Get("hNJets_DRCC_photon")
@@ -204,9 +204,9 @@ for sample in doSample:
         binMeans['HT'] = binMeanHT
 
         ## get the double ratio plots with values and uncertainties
-        dr_out = RA2b.getDoubleRatioPlot([nj_dr, mht_dr, ht_dr], binMeans = binMeans,
-                                         iPeriod = iPeriod, Ymin = Ymin, Ymax = Ymax,
-                                         plotRefLine = plotRefLine, yTitle = yTitle)
+        dr_out = RA2bUtils.getDoubleRatioPlot([nj_dr, mht_dr, ht_dr], binMeans = binMeans,
+                                              iPeriod = iPeriod, Ymin = Ymin, Ymax = Ymax,
+                                              plotRefLine = plotRefLine, yTitle = yTitle)
 
     # raw_input("Press the <ENTER> key to continue...")
     if (sample == "sig"):

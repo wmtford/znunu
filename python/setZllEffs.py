@@ -11,7 +11,7 @@ Lepton scale factors are two separate files
 provided by Frank."""
 
 from array import array
-import RA2b
+# import RA2b
 import ROOT
 import histoZmassFits
 
@@ -42,21 +42,21 @@ trig_e_bins = array('d', [250, 2300])
 
 if (doPurityFits):
     ########## run fits to get purity ################
-    if (doRA2bFits):
-        fit_2j = []
-        fit_3to4j = []
-        fit_5jplus = []
+    # if (doRA2bFits):
+    #     fit_2j = []
+    #     fit_3to4j = []
+    #     fit_5jplus = []
 
-        # nb=12 is nb>=2
-        for nb in [0,1,12]:
-            fit_2j.append(RA2b.getZmassFitPlot(bJetBin=nb,nJetBin=1,savePlot=True,plotMC=False))  # wtf
-            fit_3to4j.append(RA2b.getZmassFitPlot(bJetBin=nb,nJetBin=2,savePlot=True,plotMC=False))  # wtf
-            fit_5jplus.append(RA2b.getZmassFitPlot(bJetBin=nb,extraCuts='NJets>=5',savePlot=True,plotMC=False))  # wtf
-            # fit_2j.append(RA2b.getZmassFitPlot(bJetBin=nb,nJetBin=1,savePlot=True))
-            # fit_3to4j.append(RA2b.getZmassFitPlot(bJetBin=nb,nJetBin=2,savePlot=True))
-            # fit_5jplus.append(RA2b.getZmassFitPlot(bJetBin=nb,extraCuts='NJets>=5',savePlot=True))
+    #     # nb=12 is nb>=2
+    #     for nb in [0,1,12]:
+    #         fit_2j.append(RA2b.getZmassFitPlot(bJetBin=nb,nJetBin=1,savePlot=True,plotMC=False))  # wtf
+    #         fit_3to4j.append(RA2b.getZmassFitPlot(bJetBin=nb,nJetBin=2,savePlot=True,plotMC=False))  # wtf
+    #         fit_5jplus.append(RA2b.getZmassFitPlot(bJetBin=nb,extraCuts='NJets>=5',savePlot=True,plotMC=False))  # wtf
+    #         # fit_2j.append(RA2b.getZmassFitPlot(bJetBin=nb,nJetBin=1,savePlot=True))
+    #         # fit_3to4j.append(RA2b.getZmassFitPlot(bJetBin=nb,nJetBin=2,savePlot=True))
+    #         # fit_5jplus.append(RA2b.getZmassFitPlot(bJetBin=nb,extraCuts='NJets>=5',savePlot=True))
 
-        fits = [fit_2j,fit_3to4j,fit_5jplus,fit_5jplus,fit_5jplus]
+    #     fits = [fit_2j,fit_3to4j,fit_5jplus,fit_5jplus,fit_5jplus]
     else:
         # use Z mass histograms from RA2bZinvAnalysis
         if (doLDP):

@@ -3,7 +3,7 @@
 Plot and fit Z mass histograms
 """
 import ROOT
-import RA2b
+import RA2bUtils
 
 def purityFits(dataFileName, MCFileName):
   singleOutFile = True
@@ -16,6 +16,8 @@ def purityFits(dataFileName, MCFileName):
   MCscaleM = 1
   MCscaleE = 1
   extraText = "Supplementary"  # Replace 'Preliminary'
+  text = "arXiv 1908.04722"
+  textCoords = [0.23, 0.82, 0.43, 0.88]
   print '\n'
   print "removeDYkfactor = "+str(removeDYkfactor)
   
@@ -109,8 +111,9 @@ def purityFits(dataFileName, MCFileName):
       for hist in hsMC:
         hist.Print()
   
-      purityList = RA2b.getZmassFitPlot(doDiMu=doMumu, doDiEl=doEe, dataSet=hData, mcSet=hsMC,
-                                        doLumi=lumimm, iPeriod = period, iPos=0, extraText=extraText)
+      purityList = RA2bUtils.getZmassFitPlot(doDiMu=doMumu, doDiEl=doEe, dataSet=hData, mcSet=hsMC,
+                                             doLumi=lumimm, iPeriod = period, iPos=0,
+                                             text = text, textCoords = textCoords, extraText = extraText)
       # No provision for separate mm, ee lumi's
   
       for i in range(len(purityList)):
