@@ -17,19 +17,13 @@ doMumu = True
 doEe = True
 doLl = True
 doPhoton = True
-nScale = [1, 1, 1, 1]
-dScale = [1, 1, 1, 1]
 MZmmMax = 0
 MZeeMax = 0
 setMin = None
 setMax = None
 ratioTitle = None
-ratioMin = [None, None, None, None]
-ratioMax = [None, None, None, None]
 text = "arXiv 1908.04722"
 extraText = "Supplementary"  # Default is "Preliminary"
-
-legList = []
 # legCoordsDefault = [0.6,0.6,0.89,0.89]
 legCoordsDefault = [0.68,0.6,0.89,0.89]
 legCoords = None
@@ -37,17 +31,17 @@ drawText = True
 textCoordsDefault = [0.35,0.75,.55,.88]
 textCoords = [0.23, 0.82, 0.43, 0.88]
 
+# FIXME:  following lists should be declared and built below, depend on reaction booleans
+nScale = [1, 1, 1, 1]
+dScale = [1, 1, 1, 1]
+ratioMin = [None, None, None, None]
+ratioMax = [None, None, None, None]
+
 def histNamesBuild(namesRootList, suffix):
   histNames = []
   for nameRoot in namesRootList:
     histNames.append(nameRoot+"_"+suffix)
   return histNames
-
-hists = []
-filehistsM = {}
-filehistsE = {}
-filehistsL = {}
-filehistsP = {}
 
 #  ========================================================================================
 
@@ -141,7 +135,6 @@ elif (doDatavData):
               ['hHT', 'hMHT', 'hNJets', 'hBTags', 'hPhotonPt', 'hPhotonEta', 'hVertices', 'hCC']]
   sampleSuffixN = ['zmm', 'zee', 'zll', 'photon']
   sampleSuffixD = [['zmm'], ['zee'], ['zll'], ['photon']]
-  # sampleSuffixD = sampleSuffixN
   if (runYear is "2016"):
     iPeriod = 5
     NfileZll = ROOT.TFile('../outputs/histsDY_2016v17.root')
@@ -245,6 +238,10 @@ elif (doMCvMC):
   # ratioMax = [11, 1.1]
 
 # =============================================================================
+
+# Fill lists hists and legList for the various reactions.
+hists = []
+legList = []
 reaction = -1
 if (doMumu):
   reaction += 1
@@ -256,9 +253,10 @@ if (doMumu):
     histnamesD.append(histNamesBuild(varNames[reaction], hnd))
   for ld in legendsD[reaction]:
     legend.append(ld)
-  filehistsM['N'] = (NfileZll, nScale[reaction], histnamesN)
-  filehistsM['D'] = (DfileZll, dScale[reaction], histnamesD)
-  hists.append(filehistsM)
+  filehists = {}
+  filehists['N'] = (NfileZll, nScale[reaction], histnamesN)
+  filehists['D'] = (DfileZll, dScale[reaction], histnamesD)
+  hists.append(filehists)
   legList.append(legend)
 if (doEe):
   reaction += 1
@@ -270,9 +268,10 @@ if (doEe):
     histnamesD.append(histNamesBuild(varNames[reaction], hnd))
   for ld in legendsD[reaction]:
     legend.append(ld)
-  filehistsE['N'] = (NfileZll, nScale[reaction], histnamesN)
-  filehistsE['D'] = (DfileZll, dScale[reaction], histnamesD)
-  hists.append(filehistsE)
+  filehists = {}
+  filehists['N'] = (NfileZll, nScale[reaction], histnamesN)
+  filehists['D'] = (DfileZll, dScale[reaction], histnamesD)
+  hists.append(filehists)
   legList.append(legend)
 if (doLl):
   reaction += 1
@@ -284,9 +283,10 @@ if (doLl):
     histnamesD.append(histNamesBuild(varNames[reaction], hnd))
   for ld in legendsD[reaction]:
     legend.append(ld)
-  filehistsL['N'] = (NfileZll, nScale[reaction], histnamesN)
-  filehistsL['D'] = (DfileZll, dScale[reaction], histnamesD)
-  hists.append(filehistsL)
+  filehists = {}
+  filehists['N'] = (NfileZll, nScale[reaction], histnamesN)
+  filehists['D'] = (DfileZll, dScale[reaction], histnamesD)
+  hists.append(filehists)
   legList.append(legend)
 if (doPhoton):
   reaction += 1
@@ -298,13 +298,15 @@ if (doPhoton):
     histnamesD.append(histNamesBuild(varNames[reaction], hnd))
   for ld in legendsD[reaction]:
     legend.append(ld)
-  filehistsP['N'] = (NfilePhoton, nScale[reaction], histnamesN)
-  filehistsP['D'] = (DfilePhoton, dScale[reaction], histnamesD)
-  hists.append(filehistsP)
+  filehists = {}
+  filehists['N'] = (NfilePhoton, nScale[reaction], histnamesN)
+  filehists['D'] = (DfilePhoton, dScale[reaction], histnamesD)
+  hists.append(filehists)
   legList.append(legend)
 
 #  ========================================================================================
 
+# Create a plot canvas for each reaction and save it to output file(s).
 canvas = ROOT.TCanvas()
 if (singleOutFile):
   canvas.Print("ratioPlots.pdf[")
@@ -322,7 +324,7 @@ for samples in hists:
     hNumer.Scale(samples['N'][1])
     hDenList = []
     for c in range(len(samples['D'][2])):  # Denominator may have multiple components
-      dhName = samples['D'][2][c][i]  # scale is stored in samples['D'][1]
+      dhName = samples['D'][2][c][i]
       print "dhName = "+str(dhName)+" in file "+str(Dfile)
       hDen = Dfile.Get(dhName)
       hDen.SetName(str(dhName)+"D")
@@ -371,28 +373,6 @@ for samples in hists:
       drawText = drawText, text = text, textCoords = textCoords, extraText = extraText,
       doClosureStyle = doClosureStyle, markerSize=0.8
       )
-    # For 174-bin plot
-    # canvas = RA2bUtils.getPlotAndRatio(
-    #   numHists=hNumer, denomHists=hDen, doRatio=True,
-    #   doLogy=doLogy, doCMSlumi=True, iPeriod=iPeriod, drawHorizontalLine=True,
-    #   ratioMin=ratioMin, ratioMax=ratioMax, ratioTitle="#frac{Direct}{Prediction} ",
-    #   # legList = legList
-    #   # doClosureStyle=True
-    #   errorBandFillStyle=3144,
-    #   # errorBandColor = ROOT.kRed-10
-    #   errorBandColor = 632-10,
-    #   ratioTitle = "#frac{Expectation}{Prediction} ",
-    #   extraText = "Preliminary",
-    #   xTitle = "Search region bin number",
-    #   yTitle = "Events",
-    #   #legCoords = [.65, .95, .54, .79],
-    #   legHeader = "Z #rightarrow #nu#bar{#nu} background",
-    #   ratioMax=2.15,
-    #   ratioMin=0.001,
-    #   nDivRatio=505,
-    #   markerSize=1.1,
-    #   legList = ['Expectation from simulation','Prediction from data']
-    #   )
 
     if (singleOutFile):
       canvTuple[0].Print("ratioPlots.pdf")
