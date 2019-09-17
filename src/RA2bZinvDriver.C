@@ -4,7 +4,7 @@
   or
   root -l -b RA2bZinvLoadClasses.C RA2bZinvDriver.C\(\"2018AB\"\)
   or
-  root -l -b RA2bZinvLoadClasses.C RA2bZinvDriver.C\(\"2018AB,1\")
+  root -l -b RA2bZinvLoadClasses.C RA2bZinvDriver.C\(\"2018AB\",1\)
 */
 
 #include "TROOT.h"
