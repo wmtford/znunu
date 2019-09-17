@@ -73,17 +73,17 @@ def purityFits(dataFileName, MCFileName):
         else:
           continue
       else:
-        histNameRoot = "hZmass_"+str(jbin)+str(bbin)+"_"
-        plotNameRoot = "fitZmass_"+str(jbin)+str(bbin)+"_"
+        histNameRoot = "hZmass_"+jbin+bbin+"_"
+        plotNameRoot = "fitZmass_"+jbin+bbin+"_"
   
       hData = []
       hsMC = []
   
-      d1["sig"] = DataFileM.Get(str(histNameRoot)+"zmm")
+      d1["sig"] = DataFileM.Get(histNameRoot+"zmm")
       hData.append(d1)
       hsMM = ROOT.THStack("hsMM","dimuon mass [GeV]")
       for proc in reactions:
-        hName = str(histNameRoot)+str(proc)+"mm"
+        hName = histNameRoot+proc+"mm"
         if (removeDYkfactor and 'dy' in hName):
           MCfile.Get(hName).Scale(MCscaleM/1.23)
         else:
@@ -91,11 +91,11 @@ def purityFits(dataFileName, MCFileName):
         hsMM.Add(MCfile.Get(hName))
       hsMC.append(hsMM)
   
-      d2["sig"] = DataFileE.Get(str(histNameRoot)+"zee")
+      d2["sig"] = DataFileE.Get(histNameRoot+"zee")
       hData.append(d2)
       hsEE = ROOT.THStack("hsEE","dielectron mass [GeV]")
       for proc in reactions:
-        hName = str(histNameRoot)+str(proc)+"ee"
+        hName = histNameRoot+proc+"ee"
         if (removeDYkfactor and 'dy' in hName):
           MCfile.Get(hName).Scale(MCscaleE/1.23)
         else:
@@ -104,7 +104,7 @@ def purityFits(dataFileName, MCFileName):
       hsMC.append(hsEE)
   
       print ''
-      print 'histNameRoot = '+str(histNameRoot)
+      print 'histNameRoot = '+histNameRoot
       for i in range(len(hData)):
         hData[i]["loose"].Print()
         hData[i]["sig"].Print()
@@ -130,11 +130,11 @@ def purityFits(dataFileName, MCFileName):
             canv.Print("ZmassFitPlots.pdf")
           else:
             if (i == 2):
-              canv.SaveAs(str(plotNameRoot)+"mm.pdf")
-              canv.SaveAs(str(plotNameRoot)+"mm.png")
+              canv.SaveAs(plotNameRoot+"mm.pdf")
+              canv.SaveAs(plotNameRoot+"mm.png")
             elif (i == 4):
-              canv.SaveAs(str(plotNameRoot)+"ee.pdf")
-              canv.SaveAs(str(plotNameRoot)+"ee.png")
+              canv.SaveAs(plotNameRoot+"ee.pdf")
+              canv.SaveAs(plotNameRoot+"ee.png")
             elif (cIter == 1):
               canv.SaveAs("fitZmass_allloose_mm.pdf")
               canv.SaveAs("fitZmass_allloose_mm.png")
