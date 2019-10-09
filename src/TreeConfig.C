@@ -23,30 +23,30 @@ TreeConfig::DSkey(const char* dataSet, bool& isMC) {
   TString theSample = dataSet;
   TString key;
   isMC_ = true;  // Depends on dataSet
-  if      (theSample.Contains("zinv")) key = TString("zinv");
-  else if (theSample.Contains("ttzvv")) key = TString("ttzvv");
-  else if (theSample.Contains("dymm")) key = TString("dymm");
-  else if (theSample.Contains("dyee")) key = TString("dyee");
-  else if (theSample.Contains("ttzmm")) key = TString("ttzmm");
-  else if (theSample.Contains("ttzee")) key = TString("ttzee");
-  else if (theSample.Contains("VVmm")) key = TString("VVmm");
-  else if (theSample.Contains("VVee")) key = TString("VVee");
-  else if (theSample.Contains("ttmm")) key = TString("ttmm");
-  else if (theSample.Contains("ttee")) key = TString("ttee");
+  if      (theSample.Contains("zinv")) key = "zinv";
+  else if (theSample.Contains("ttzvv")) key = "ttzvv";
+  else if (theSample.Contains("dymm")) key = "dymm";
+  else if (theSample.Contains("dyee")) key = "dyee";
+  else if (theSample.Contains("ttzmm")) key = isSkim_ ? "ttzmm" : "ttz";  
+  else if (theSample.Contains("ttzee")) key = isSkim_ ? "ttzee" : "ttz";
+  else if (theSample.Contains("VVmm")) key = "VVmm";
+  else if (theSample.Contains("VVee")) key = "VVee";
+  else if (theSample.Contains("ttmm")) key = "ttmm";
+  else if (theSample.Contains("ttee")) key = "ttee";
   else if (theSample.Contains("zmm")) {
-    key = TString("zmm");  // ( and not "tt")
+    key = "zmm";  // ( and not "tt")
     isMC_ = false;
   }
   else if (theSample.Contains("zee")) {
-    key = TString("zee");  // ( and not "tt")
+    key = "zee";  // ( and not "tt")
     isMC_ = false;
   }
   else if (theSample.Contains("photon")) {
-    key = TString("photon");
+    key = "photon";
     isMC_ = false;
   }
-  else if (theSample.Contains("gjetsqcd")) key = TString("gjetsqcd");
-  else if (theSample.Contains("gjets")) key = TString("gjets");  // ( and not "qcd")
+  else if (theSample.Contains("gjetsqcd")) key = "gjetsqcd";
+  else if (theSample.Contains("gjets")) key = "gjets";  // ( and not "qcd")
   else {
     cout << "DSkey:  unknown dataSet '" << dataSet << "'" << endl;
     return nullptr;

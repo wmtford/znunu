@@ -61,11 +61,13 @@ CutManager::CutManager(const TString sample, const TString ntupleVersion, bool i
   commonCuts_ += " && " + EcalNoiseJetFilterCut;
   if (!isSkim_) {
     commonCuts_ += " && JetIDclean";
-    commonCuts_ += " && PFCaloMETRatio < 5";
+    commonCuts_ += " && PFCaloMETRatio < 5";  // METRatioFilter in skims
     if (era_ == "2016")
-      commonCuts_ += " && HT5clean/HTclean <= 2";
+      commonCuts_ += " && HT5clean/HTclean <= 2";  // HTRatioFilter
     else
-      commonCuts_ += " && HT5clean/HTclean <= (DeltaPhi1clean - (-0.5875))/1.025";
+      // HTRatioDPhiFilter:
+      commonCuts_ += " && ((HT5clean/HTclean < 1.2) || (HT5clean/HTclean <= (DeltaPhi1clean - (-0.5875))/1.025))";
+    // FIXME:  For !isSkim && !isMC_, need to define EcalNoiseJetFilter
     // commonCuts_ += " && noMuonJet";  // Defined in loop, applied in skimming (xV16), single lepton
     // commonCuts_ += " && noFakeJet";  // Defined in loop, applied in skimming FastSim
   }
@@ -238,10 +240,10 @@ CutManager::fillCutMaps() {
     minDphiCutMap_["ldp"] = "(DeltaPhi1clean<0.5 || DeltaPhi2clean<0.5 || DeltaPhi3clean<0.3 || DeltaPhi4clean<0.3)";
     minDphiCutMap_["ldpnominal"] = "(DeltaPhi1clean<0.5 || DeltaPhi2clean<0.5 || DeltaPhi3clean<0.3 || DeltaPhi4clean<0.3)";
 
-    MHTCutMap_["nominal"] = "MHTclean>=300";
-    MHTCutMap_["hdp"] = "MHTclean>=250";
-    MHTCutMap_["ldp"] = "MHTclean>=250";
-    MHTCutMap_["ldpnominal"] = "MHTclean>=300";
+    MHTCutMap_["nominal"] = "MHTclean>=300 && MHTclean<=HTclean";
+    MHTCutMap_["hdp"] = "MHTclean>=250 && MHTclean<=HTclean";
+    MHTCutMap_["ldp"] = "MHTclean>=250 && MHTclean<=HTclean";
+    MHTCutMap_["ldpnominal"] = "MHTclean>=300 && MHTclean<=HTclean";
   }
 
   triggerMapByName_["zmm"] = {

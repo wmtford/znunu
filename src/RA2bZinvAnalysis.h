@@ -174,6 +174,7 @@ private:
     Tupl->Jets = Tupl->Jetsclean;
     Tupl->Jets_hadronFlavor = Tupl->Jetsclean_hadronFlavor;
     Tupl->Jets_HTMask = Tupl->Jetsclean_HTMask;
+    Tupl->Jets_bDiscriminatorCSV = Tupl->Jetsclean_bDiscriminatorCSV;
     Tupl->isoElectronTracks = Tupl->isoElectronTracksclean;
     Tupl->isoMuonTracks = Tupl->isoMuonTracksclean;
     Tupl->isoPionTracks = Tupl->isoPionTracksclean;
@@ -202,6 +203,8 @@ private:
   void fillElectronEta(TH1D* h, double wt) {for (auto & theE : *(Tupl->Electrons)) h->Fill(theE.Eta(), wt);}
   void fillJetDphi(TH1D* h, double wt) {bool passHEM = passHEMjetVeto(30, 1, h, wt);}
   void fillPhotonEta(TH1D* h, double wt) {for (auto & theG : *(Tupl->Photons)) h->Fill(theG.Eta(), wt);}
+  void fillttZpt(TH1D* h, double wt) {for (auto & theZ : *(Tupl->ZCandidates))
+      if (Tupl->NJets >= 4 && Tupl->BTags >= 2) h->Fill(theZ.Pt(), wt);}
   void fillGpt(TH1D* h, double wt) {for (auto & theG : *(Tupl->Photons)) h->Fill(theG.Pt(), wt);}
   void fillZGmass(TH1D* h, double wt);
   void fillGJdR(TH1D* h, double wt);

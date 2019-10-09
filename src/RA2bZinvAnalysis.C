@@ -567,6 +567,16 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 
   // Special studies
 
+  // histConfig httZpt;
+  // httZpt.name = TString("httZpt_") + sample;  httZpt.title = "Z Pt, ttZ candidates";
+  // httZpt.NbinsX = 60;  httZpt.rangeX.first = 0;  httZpt.rangeX.second = 3000;
+  // httZpt.axisTitles.first = "Pt(Z) [GeV]";  httZpt.axisTitles.second = "Events / 50 GeV";
+  // httZpt.filler1D = &RA2bZinvAnalysis::fillttZpt;
+  // httZpt.omitCuts.push_back(&(evSelector_->ptCut()));
+  // httZpt.omitCuts.push_back(&(evSelector_->MHTcut()));
+  // httZpt.omitCuts.push_back(&(evSelector_->HTcut()));
+  // if (isZll) histograms.push_back(&httZpt);
+
   // histConfig hZmass_sfLepTksVeto(hZmass);
   // hZmass_sfLepTksVeto.name = TString("hZmass_sfLepTksVeto_") + sample;  hZmass_sfLepTksVeto.title = "Z mass, SF lepton vetoed";
   // hZmass_sfLepTksVeto.omitCuts.push_back(&(evSelector_->isoSFlepTksCut()));
@@ -733,6 +743,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       // cout << "First event, new file setup " << endl;  Show();
       int theYear = -1;
       if (isMC_) {
+	// FIXME:  This year accounting doesn't work for raw ntuples
 	if      (path.Contains("MC2016")) theYear = EfficWt::Year2016;
 	else if (path.Contains("MC2017")) theYear = EfficWt::Year2017;
 	else if (path.Contains("MC2018")) theYear = EfficWt::Year2018;
@@ -895,7 +906,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       if (CCbin == -2) {
 	CCbin = CCbins_->jbk(CCbins_->jbin(Tupl->NJets), CCbins_->bbin(Tupl->NJets, Tupl->BTags),
 			     CCbins_->kinBin(Tupl->HT, Tupl->MHT));
-	if ((UInt_t) CCbin != Tupl->RA2bin && !(CCbin == -1 && Tupl->RA2bin == 0)) {
+	if (isSkim_ && (UInt_t) CCbin != Tupl->RA2bin && !(CCbin == -1 && Tupl->RA2bin == 0)) {
 	  cout << "CCbin = " << CCbin << ", != RA2bin = " << Tupl->RA2bin
 	       << ", NJets = " << Tupl->NJets << ", j = " << CCbins_->jbin(Tupl->NJets)
 	       << ", Nb = " << Tupl->BTags << ", b = " << CCbins_->bbin(Tupl->NJets, Tupl->BTags)
@@ -1057,11 +1068,16 @@ RA2bZinvAnalysis::fillFilterCuts(TH1D* h, double wt) {
   if (!isMC_ && !(Tupl->ecalBadCalibFilter==1)) h->Fill(10.5, wt);
   if (!(Tupl->JetID)) h->Fill(12.5, wt);
   if (!(Tupl->PFCaloMETRatio < 5)) h->Fill(13.5, wt);
-  if (era_ == "2016" && !(Tupl->HT5 / Tupl->HT <= 2))
-    h->Fill(14.5, wt);
-  // else if (!(Tupl->DeltaPhi1 >= 1.025 * Tupl->HT5 / Tupl->HT - 0.5875))
-  else if (!Tupl->HTRatioDPhiFilter)
-    h->Fill(14.5, wt);
+
+  bool fillHTRatioDPhi;
+  if (era_ == "2016") {
+    fillHTRatioDPhi = Tupl->HT5 / Tupl->HT <= 2;
+  } else {
+    fillHTRatioDPhi = isSkim_ ? Tupl->HTRatioDPhiFilter : 
+      Tupl->HT5 / Tupl->HT < 1.2 ? true : (Tupl->DeltaPhi1 >= 1.025 * Tupl->HT5 / Tupl->HT - 0.5875);
+  }
+  if (!fillHTRatioDPhi) h->Fill(14.5, wt);
+
   if (!isMC_ && Tupl->RunNum >= CutManager::Start2017 && Tupl->RunNum < CutManager::Start2018) {
     if (!(Tupl->EcalNoiseJetFilter)) h->Fill(15.5, wt);
   }
