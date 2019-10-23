@@ -72,7 +72,7 @@ public:
     cutHistos(Ntuple* tuple, CutManager* selector);
     ~cutHistos() {};
     void setAxisLabels(TH1D* hcf);
-    void fill(TH1D* hcf, Double_t wt, bool passTrg, bool passHEM);
+    void fill(TH1D* hcf, Double_t wt, bool zeroChg, bool passTrg, bool passHEM, bool passEcalNoiseJetFilter);
   private:
     Ntuple* tuple_;
     CutManager* selector_;
@@ -111,8 +111,16 @@ private:
   double effWt_, effSys_;
 
   void Config(const std::string& cfg_filename="");
-  void bookAndFillHistograms(const char* sample, std::vector<histConfig*>& histograms);
+  void bookAndFillHistograms(const char* sample,
+			     vector<histConfig*>& histograms,
+			     vector<histConfig*>& cutHistograms);
+  void bookHistograms(vector<histConfig*>& histoList, TCut baselineCuts, cutHistos cutHistFiller);
   Int_t setBTags(int runYear);
+  bool diLepton(Int_t NLeptons, vector<TLorentzVector>* Leptons, vector<bool>* Leptons_mediumID,
+		vector<bool>* Leptons_passIso, vector<int>* Leptons_charge,
+		vector<TLorentzVector>* Photons, vector<bool>* Photons_fullID,
+		vector<bool>* Photons_hasPixelSeed);
+  bool ecalNoiseJetFilter();
   void fillCutFlow(TH1D* hcf, Double_t wt);
   double get_cpu_time() {return (double)clock() / CLOCKS_PER_SEC;};
 

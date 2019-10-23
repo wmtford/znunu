@@ -67,7 +67,7 @@ CutManager::CutManager(const TString sample, const TString ntupleVersion, bool i
     else
       // HTRatioDPhiFilter:
       commonCuts_ += " && ((HT5clean/HTclean < 1.2) || (HT5clean/HTclean <= (DeltaPhi1clean - (-0.5875))/1.025))";
-    // FIXME:  For !isSkim && !isMC_, need to define EcalNoiseJetFilter
+    // For !isSkim && !isMC_, EcalNoiseJetFilter is computed and applied in the loop
     // commonCuts_ += " && noMuonJet";  // Defined in loop, applied in skimming (xV16), single lepton
     // commonCuts_ += " && noFakeJet";  // Defined in loop, applied in skimming FastSim
   }

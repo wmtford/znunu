@@ -159,6 +159,10 @@ TreeConfig::activeBranchList() {
   activeBranches->push_back("DeltaPhi4");
   if (isSkim_) {
     activeBranches->push_back("RA2bin");
+    activeBranches->push_back("METRatioFilter");
+    activeBranches->push_back("EcalNoiseJetFilter");
+    activeBranches->push_back("HTRatioDPhiFilter");
+    activeBranches->push_back("HTRatioFilter");
   } else {
     activeBranches->push_back("NJetsclean");
     activeBranches->push_back("BTagsclean");
@@ -189,7 +193,13 @@ TreeConfig::activeBranchList() {
   activeBranches->push_back("EvtNum");
   activeBranches->push_back("Jets_bDiscriminatorCSV");
   activeBranches->push_back("Muons");
+  activeBranches->push_back("Muons_passIso");
+  activeBranches->push_back("Muons_mediumID");
+  activeBranches->push_back("Muons_charge");
   activeBranches->push_back("Electrons");
+  activeBranches->push_back("Electrons_passIso");
+  activeBranches->push_back("Electrons_mediumID");
+  activeBranches->push_back("Electrons_charge");
   activeBranches->push_back("ZCandidates");
   activeBranches->push_back("Photons");
   activeBranches->push_back("Photons_nonPrompt");
@@ -209,10 +219,6 @@ TreeConfig::activeBranchList() {
   activeBranches->push_back("BadChargedCandidateFilter");
   activeBranches->push_back("BadPFMuonFilter");
   activeBranches->push_back("PFCaloMETRatio");
-  activeBranches->push_back("METRatioFilter");
-  activeBranches->push_back("EcalNoiseJetFilter");
-  activeBranches->push_back("HTRatioDPhiFilter");
-  activeBranches->push_back("HTRatioFilter");
   activeBranches->push_back("nAllVertices");
   if (isMC_) {
     activeBranches->push_back("puWeight");

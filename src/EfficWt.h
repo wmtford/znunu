@@ -15,6 +15,7 @@
 #include <TEfficiency.h>
 #include <TF1.h>
 #include <TLorentzVector.h>
+#include "Ntuple.h"
 
 #include <TMath.h>
 using namespace TMath;
@@ -32,15 +33,7 @@ class EfficWt {
 
   void openFiles();
   void getHistos(const char* sample, int currentYear);
-  pair<double, double> weight(CCbinning* CCbins,
-			      Int_t NJets, Int_t BTags, Double_t MHT, Double_t HT,
-			      vector<TLorentzVector> ZCandidates,
-			      vector<TLorentzVector> Photons,
-			      vector<TLorentzVector> Electrons,
-			      vector<TLorentzVector> Muons,
-			      vector<double> EBphoton,
-			      bool applyDRfitWt,
-			      int currentYear);
+  pair<double, double> weight(Ntuple* Tupl, CCbinning* CCbins, bool applyDRfitWt, int currentYear);
 
   double prefiring_weight_photon(vector<TLorentzVector>* Photons, unsigned p){
     if (hPrefiring_photon_ == nullptr) return 1;

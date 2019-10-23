@@ -221,42 +221,33 @@ EfficWt::getHistos(const char* sample, int currentYear) {
 }  // ======================================================================================
 
 pair<double, double>
-EfficWt::weight(CCbinning* CCbins,
-					      Int_t NJets, Int_t BTags,
-					      Double_t MHT, Double_t HT,
-					      vector<TLorentzVector> ZCandidates,
-					      vector<TLorentzVector> Photons,
-					      vector<TLorentzVector> Electrons,
-					      vector<TLorentzVector> Muons,
-					      vector<double> EBphoton,
-					      bool applyDRfitWt,
-					      int currentYear) {
+EfficWt::weight(Ntuple* Tupl, CCbinning* CCbins, bool applyDRfitWt, int currentYear) {
   // For double ratio, apply weights for purity, Fdir, trigger eff, reco eff.
   // Systematic error is relative.
   double effWt = 1, effSys = 0;
 
   if ((theSample_.Contains("zmm") || theSample_.Contains("zee")) && !theSample_.Contains("tt")) {
-    int binCCjb = CCbins->jb(CCbins->jbin(NJets), CCbins->bbin(NJets, BTags));
+    int binCCjb = CCbins->jb(CCbins->jbin(Tupl->NJets), CCbins->bbin(Tupl->NJets, Tupl->BTags));
     if (hPurity_[0] != nullptr) {
       double eff = hPurity_[0]->GetBinContent(binCCjb);
       effWt *= eff;
       effSys = eff > 0 ? hPurity_[0]->GetBinError(binCCjb) / eff : 0;
     }
 
-  } else if (theSample_.Contains("photon")) {
-    if(EBphoton.at(0) == 1 && hPurity_[0] != nullptr) {
-      int bin = hPurity_[0]->GetNbinsX();  while (MHT < hPurity_[0]->GetBinLowEdge(bin)) bin--;
+  } else if (theSample_.Contains("photon") && Tupl->Photons->size() == 1) {
+    if(Tupl->Photons_isEB->at(0) == 1 && hPurity_[0] != nullptr) {
+      int bin = hPurity_[0]->GetNbinsX();  while (Tupl->MHT < hPurity_[0]->GetBinLowEdge(bin)) bin--;
       double eff = hPurity_[0]->GetBinContent(bin);
       effWt *= eff;
       effSys = eff > 0 ? hPurity_[0]->GetBinError(bin) / eff : 0;
     }
-    if(EBphoton.at(0) == 0 && hPurity_[1] != nullptr) {
-      int bin = hPurity_[1]->GetNbinsX();  while (MHT < hPurity_[1]->GetBinLowEdge(bin)) bin--;
+    if(Tupl->Photons_isEB->at(0) == 0 && hPurity_[1] != nullptr) {
+      int bin = hPurity_[1]->GetNbinsX();  while (Tupl->MHT < hPurity_[1]->GetBinLowEdge(bin)) bin--;
       double eff = hPurity_[1]->GetBinContent(bin);
       effWt *= eff;
       effSys = eff > 0 ? hPurity_[1]->GetBinError(bin) / eff : 0;
     }
-    int CCbinjk = CCbins->jk(CCbins->jbin(NJets), CCbins->kinBin(HT, MHT));
+    int CCbinjk = CCbins->jk(CCbins->jbin(Tupl->NJets), CCbins->kinBin(Tupl->HT, Tupl->MHT));
     if (CCbinjk > 0 && FdirGraph_ != nullptr && CCbinjk < FdirGraph_->GetN()) {
       double eff = FdirGraph_->GetY()[CCbinjk-1];
       effWt *= eff;
@@ -268,8 +259,8 @@ EfficWt::weight(CCbinning* CCbins,
 	     theSample_.Contains("ttmm") || theSample_.Contains("ttee") ||
 	     theSample_.Contains("ttzmm") || theSample_.Contains("ttzee") ||
 	     theSample_.Contains("VVmm") || theSample_.Contains("VVee")) {
-    if (hTrigEff_[0] != nullptr) {
-      Double_t zpt = ZCandidates.at(0).Pt();  zpt = max(hTrigEff_[0]->GetBinLowEdge(1), zpt);
+    if (hTrigEff_[0] != nullptr && Tupl->ZCandidates->size() == 1) {
+      Double_t zpt = Tupl->ZCandidates->at(0).Pt();  zpt = max(hTrigEff_[0]->GetBinLowEdge(1), zpt);
       int bin = hTrigEff_[0]->GetNbinsX();  while (zpt < hTrigEff_[0]->GetBinLowEdge(bin)) bin--;
       double eff = hTrigEff_[0]->GetBinContent(bin);
       effWt *= eff;
@@ -282,10 +273,10 @@ EfficWt::weight(CCbinning* CCbins,
       double sysCorr = 0;  // Errors are correlated between Z daughter leptons
       if (theSample_.Contains("ee") && hSFeff_[2]!=nullptr) {
 	int globalbin_RECO = 0;
-	int numElectrons = Electrons.size();
+	int numElectrons = Tupl->Electrons->size();
 	for (int i=0; i<numElectrons; i++){
-	  pt  = Electrons.at(i).Pt(); if (pt>500) pt=499.9;
-	  eta = Electrons.at(i).Eta();
+	  pt  = Tupl->Electrons->at(i).Pt(); if (pt>500) pt=499.9;
+	  eta = Tupl->Electrons->at(i).Eta();
 	  globalbin_ID  = hSFeff_[0]->FindBin(eta,pt); globalbin_ISO = hSFeff_[1]->FindBin(eta,pt);
 	  double effID = hSFeff_[0]->GetBinContent(globalbin_ID);
 	  double effISO = hSFeff_[1]->GetBinContent(globalbin_ISO);
@@ -319,15 +310,15 @@ EfficWt::weight(CCbinning* CCbins,
 
       else if (theSample_.Contains("mm")) {
 	double muIDISOsys = 0.003;  //  Hard-wired based on _syst histo for 2017 from POG
-	int numMuons = Muons.size();
+	int numMuons = Tupl->Muons->size();
 	for (int i=0; i<numMuons; i++){
-	  pt = Muons.at(i).Pt(); if (pt>120) pt=119.9;
+	  pt = Tupl->Muons->at(i).Pt(); if (pt>120) pt=119.9;
 	  if (currentYear == Year2016) {
-	    eta = Muons.at(i).Eta();
+	    eta = Tupl->Muons->at(i).Eta();
 	    globalbin_ID = hSFeff_[0]->FindBin(eta,pt); globalbin_ISO = hSFeff_[1]->FindBin(eta,pt);
 	  }
 	  else { //2017 and 2018 have abs(eta), and the x- and y-axis are swapped compared to 2016
-	    eta = abs(Muons.at(i).Eta());
+	    eta = abs(Tupl->Muons->at(i).Eta());
 	    globalbin_ID = hSFeff_[0]->FindBin(pt,eta); globalbin_ISO = hSFeff_[1]->FindBin(pt,eta);
 	  }
 	  double effSF = hSFeff_[0]->GetBinContent(globalbin_ID);
@@ -336,41 +327,38 @@ EfficWt::weight(CCbinning* CCbins,
 	  sysCorr += quadSum(effSF > 0 ? hSFeff_[0]->GetBinError(globalbin_ID)/effSF : 0,
 			     effISO > 0 ? hSFeff_[1]->GetBinError(globalbin_ISO)/effISO : 0,
 			     muIDISOsys);
-	}
+	} //loop over all muons (should be two)
       }
       effSys = quadSum(effSys, sysCorr);
 
     }
 
-  } else if (theSample_.Contains("gjets")) {
-    if(EBphoton.at(0) == 1 && eTrigEff_[0] != nullptr) {
+  } else if (theSample_.Contains("gjets") && Tupl->Photons->size() == 1) {
+    if(Tupl->Photons_isEB->at(0) == 1 && eTrigEff_[0] != nullptr) {
       TH1F* htot = (TH1F*) eTrigEff_[0]->GetTotalHistogram();
-      Int_t bin = min(htot->GetNbinsX(), htot->FindBin(Photons.at(0).Pt()));
+      Int_t bin = min(htot->GetNbinsX(), htot->FindBin(Tupl->Photons->at(0).Pt()));
       double eff = eTrigEff_[0]->GetEfficiency(bin);
       effWt *= eff;
       effSys = eff > 0 ? eTrigEff_[0]->GetEfficiencyErrorLow(bin) / eff : 0;
-    } else if(EBphoton.at(0) == 0 && eTrigEff_[1] != nullptr) {
+    } else if(Tupl->Photons_isEB->at(0) == 0 && eTrigEff_[1] != nullptr) {
       TH1F* htot = (TH1F*) eTrigEff_[1]->GetTotalHistogram();
-      Int_t bin = min(htot->GetNbinsX(), htot->FindBin(Photons.at(0).Pt()));
+      Int_t bin = min(htot->GetNbinsX(), htot->FindBin(Tupl->Photons->at(0).Pt()));
       double eff = eTrigEff_[1]->GetEfficiency(bin);
       effWt *= eff;
       effSys = eff > 0 ? eTrigEff_[1]->GetEfficiencyErrorLow(bin) / eff : 0;
     }
 
-    if (applyDRfitWt) effWt /= DRfun_->Eval(HT);
+    if (applyDRfitWt) effWt /= DRfun_->Eval(Tupl->HT);
 
-    if (hSFeff_[0] != nullptr) {
+    if (hSFeff_[0] != nullptr && Tupl->Photons->size() == 1) {
       float photon_pt = 0; float photon_eta = 0;
       int globalbin_photon = 0;
-      int numPhotons = Photons.size();
-      for (int i=0; i<numPhotons; i++){
-	photon_pt = Photons.at(i).Pt(); photon_eta = Photons.at(i).Eta();
-	if (photon_pt>500) photon_pt=499.9;
-	globalbin_photon  = hSFeff_[0]->FindBin(photon_eta, photon_pt);
-	double eff = hSFeff_[0]->GetBinContent(globalbin_photon);
-	effWt *= eff;
-	effSys = eff > 0 ? quadSum(effSys, hSFeff_[0]->GetBinError(globalbin_photon)/eff) : effSys;
-      }
+      photon_pt = Tupl->Photons->at(0).Pt(); photon_eta = Tupl->Photons->at(0).Eta();
+      if (photon_pt>500) photon_pt=499.9;
+      globalbin_photon  = hSFeff_[0]->FindBin(photon_eta, photon_pt);
+      double eff = hSFeff_[0]->GetBinContent(globalbin_photon);
+      effWt *= eff;
+      effSys = eff > 0 ? quadSum(effSys, hSFeff_[0]->GetBinError(globalbin_photon)/eff) : effSys;
     }
   }
   return pair<double, double>(effWt, effSys);

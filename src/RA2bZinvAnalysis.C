@@ -8,6 +8,7 @@
 #include <TROOT.h>
 #include <TFile.h>
 #include <TTreeCache.h>
+#include "../../Analysis/KCode/KMath.h"
 
 #include <iostream>
 using std::cout;
@@ -163,25 +164,25 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   bool isZll = (sampleKey == "zmm" || sampleKey == "zee" || sampleKey == "zll");
   bool isPhoton = (sampleKey == "photon" || sampleKey =="photonqcd");
 
-  std::vector<histConfig*> histograms;
+  std::vector<histConfig*> histograms, cutHistograms;
 
   histConfig hCutFlow;
   hCutFlow.name = TString("hCutFlow_") + sample;  hCutFlow.title = "Cut flow unweighted";
   hCutFlow.NbinsX = 12;  hCutFlow.rangeX.first = 0;  hCutFlow.rangeX.second = 12;
   hCutFlow.axisTitles.first = "";  hCutFlow.axisTitles.second = "Events surviving";
-  histograms.push_back(&hCutFlow);
+  cutHistograms.push_back(&hCutFlow);
 
   histConfig hCutFlowWt;
   hCutFlowWt.name = TString("hCutFlowWt_") + sample;  hCutFlowWt.title = "Cut flow with weights";
   hCutFlowWt.NbinsX = 12;  hCutFlowWt.rangeX.first = 0;  hCutFlowWt.rangeX.second = 12;
   hCutFlowWt.axisTitles.first = "";  hCutFlowWt.axisTitles.second = "Weighted events surviving";
-  histograms.push_back(&hCutFlowWt);
+  cutHistograms.push_back(&hCutFlowWt);
 
   histConfig hCuts;
   hCuts.name = TString("hCuts_") + sample;  hCuts.title = "Cuts passed";
   hCuts.NbinsX = 12;  hCuts.rangeX.first = 0;  hCuts.rangeX.second = 12;
   hCuts.axisTitles.first = "";  hCuts.axisTitles.second = "Events passing";
-  histograms.push_back(&hCuts);
+  cutHistograms.push_back(&hCuts);
   // These hCut* histograms are filled before the trigger cut.
 
   histConfig hFilterCuts;
@@ -638,11 +639,12 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   // hGLdRpixelSeed.omitCuts.push_back(&(evSelector_->photonVeto()));  hGLdRpixelSeed.addCuts = evSelector_->photonCut().Data();
   // histograms.push_back(&hGLdRpixelSeed);
 
-  bookAndFillHistograms(sample, histograms);
+  bookAndFillHistograms(sample, histograms, cutHistograms);
   double cpu1  = get_cpu_time();
   cout << endl << "CPU Time  = " << cpu1  - cpu0  << endl << endl;
 
   std::vector<TH1*> theHists;
+  for (auto & thisHist : cutHistograms) theHists.push_back(thisHist->hist);
   for (auto & thisHist : histograms) theHists.push_back(thisHist->hist);
 
   delete Tupl;
@@ -653,7 +655,9 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 }  // ======================================================================================
 
 void
-RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConfig*>& histograms) {
+RA2bZinvAnalysis::bookAndFillHistograms(const char* sample,
+					vector<histConfig*>& histograms,
+					vector<histConfig*>& cutHistograms) {
   //
   // Define N - 1 (or N - multiple) cuts, book histograms.  Traverse the chain and fill.
   //
@@ -679,40 +683,9 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 
   cutHistos cutHistFiller(Tupl, evSelector_);  // for cutFlow histograms
 
-  // Book histograms
-  if (verbosity_ >= 1) cout << endl << "baseline = " << endl << baselineCuts << endl << endl;
-  for (auto & hg : histograms) {
-    if (hg->NbinsY > 0) {
-      hg->hist = new TH2F(hg->name, hg->title, hg->NbinsX, hg->rangeX.first, hg->rangeX.second,
-			  hg->NbinsY, hg->rangeY.first, hg->rangeY.second);
-      hg->hist->SetOption("colz");
-    } else {
-      if (hg->binsX == nullptr)
-	hg->hist = new TH1D(hg->name, hg->title, hg->NbinsX, hg->rangeX.first, hg->rangeX.second);
-      else
-	hg->hist = new TH1D(hg->name, hg->title, hg->NbinsX, hg->binsX);
-      hg->hist->SetOption("hist");
-      hg->hist->SetMarkerSize(0);
-    }
-    hg->hist->Sumw2();
-    hg->hist->GetXaxis()->SetTitle(hg->axisTitles.first);
-    hg->hist->GetYaxis()->SetTitle(hg->axisTitles.second);
-    if (hg->name.Contains(TString("Cut"))) cutHistFiller.setAxisLabels((TH1D*) hg->hist);
-    if (hg->name.Contains(TString("hCut")) || hg->name.Contains(TString("hgen"))) {
-      hg->NminusOneCuts = "1";
-    } else {
-      hg->NminusOneCuts = baselineCuts;
-      for (auto cutToOmit : hg->omitCuts) hg->NminusOneCuts(*cutToOmit) = "1";
-      if (strlen(hg->addCuts) != 0) hg->NminusOneCuts += TString(" && ") + hg->addCuts;
-    }
-    if (verbosity_ >= 1) {
-      cout << "\n For sample " << sample << ", histo " << hg->name << ", hg->omitCuts = ";
-      for (auto cutToOmit : hg->omitCuts) cout << *cutToOmit << " ";
-      cout << "; hg->addCuts = " << hg->addCuts;
-      cout << ", cuts = " << endl << hg->NminusOneCuts << endl;
-    }
-    Tupl->setTF(hg->name, hg->NminusOneCuts);
-  }
+  if (verbosity_ >= 1) cout << "\nFor sample " << sample << ", baseline = " << endl << baselineCuts << endl << endl;
+  bookHistograms(cutHistograms, baselineCuts, cutHistFiller);
+  bookHistograms(histograms, baselineCuts, cutHistFiller);
   Tupl->setNotify();
 
   // Traverse the tree and fill histograms
@@ -721,7 +694,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
   double MCwtCorr = 1.;
   int count = 0, countInFile = 0, countInSel = 0, countNegWt = 0;
   Long64_t Nentries = Tupl->fChain->GetEntries();
-  if (verbosity_ >= 1) cout << "Nentries in tree = " << Nentries << endl;
+  if (verbosity_ >= 1) cout << endl << "Nentries in tree = " << Nentries << endl << endl;
   for (Long64_t entry = 0; entry < Nentries; ++entry) {
     count++;
     if (verbosity_ >= 1 && count % 100000 == 0) cout << "Entry number " << count << endl;
@@ -743,10 +716,10 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       // cout << "First event, new file setup " << endl;  Show();
       int theYear = -1;
       if (isMC_) {
-	// FIXME:  This year accounting doesn't work for raw ntuples
-	if      (path.Contains("MC2016")) theYear = EfficWt::Year2016;
-	else if (path.Contains("MC2017")) theYear = EfficWt::Year2017;
-	else if (path.Contains("MC2018")) theYear = EfficWt::Year2018;
+	// Look for strings in root filenames that indicate the running year
+	if      (path.Contains("MC2016") || path.Contains("Summer16v3")) theYear = EfficWt::Year2016;
+	else if (path.Contains("MC2017") || path.Contains("Fall17")) theYear = EfficWt::Year2017;
+	else if (path.Contains("MC2018") || path.Contains("Autumn18")) theYear = EfficWt::Year2018;
       } else {
 	if      (Tupl->RunNum < CutManager::Start2017) theYear = EfficWt::Year2016;
 	else if (Tupl->RunNum < CutManager::Start2018) theYear = EfficWt::Year2017;
@@ -777,7 +750,8 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       // Set MCwtCorr for this file
       if (isMC_ && isSkim_ &&
 	  (path.Contains("V16") || path.Contains("V17")) &&
-	  (path.Contains("MC2017") || path.Contains("MC2018")) &&
+	  (currentYear == EfficWt::Year2017 || currentYear == EfficWt::Year2018) &&
+	  // (path.Contains("MC2017") || path.Contains("MC2018")) &&
 	  (path.Contains("DYJetsToLL") || path.Contains("ZJetsToNuNu"))) {
 	if (applyZptWt_) {
 	  if      (path.Contains("HT-100to200")) MCwtCorr = 1.05713;
@@ -831,21 +805,21 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       }
 
       if (currentYear == EfficWt::Year2016 || currentYear == EfficWt::Year2017) {
-	// Apply L1 prefire weight for 2016 and 2017
-	if (sampleKey.Contains("ee")) {
-	  for (unsigned j = 0; j < Tupl->Jets->size(); ++j) {
-	    NoPrefireWt *= effPurCorr_->prefiring_weight_jet(Tupl->Jets, j);
-	  }
-	  double eeNoPFwt = 1;
-	  for (unsigned e = 0; e < Tupl->Electrons->size(); ++e) {
-	    double w = effPurCorr_->prefiring_weight_electron(Tupl->Electrons, e);
-	    if (w < eeNoPFwt) eeNoPFwt = w;
-	  }
-	  NoPrefireWt *= eeNoPFwt;
-	} else {
-	  NoPrefireWt = Tupl->NonPrefiringProb;
-	}
-	MCwt *= NoPrefireWt;
+      	// Apply L1 prefire weight for 2016 and 2017
+      	if (sampleKey.Contains("ee")) {
+      	  for (unsigned j = 0; j < Tupl->Jets->size(); ++j) {
+      	    NoPrefireWt *= effPurCorr_->prefiring_weight_jet(Tupl->Jets, j);
+      	  }
+      	  double eeNoPFwt = 1;
+      	  for (unsigned e = 0; e < Tupl->Electrons->size(); ++e) {
+      	    double w = effPurCorr_->prefiring_weight_electron(Tupl->Electrons, e);
+      	    if (w < eeNoPFwt) eeNoPFwt = w;
+      	  }
+      	  NoPrefireWt *= eeNoPFwt;
+      	} else {
+      	  NoPrefireWt = Tupl->NonPrefiringProb;
+      	}
+      	MCwt *= NoPrefireWt;
       }  // 2016 or 2017
 
       if (applyZptWt_ && (TString(sample).Contains("dy") || TString(sample).Contains("zinv"))
@@ -866,12 +840,28 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
       eventWt *= MCwt;
     }  // isMC_
 
-    pair<double, double> efficiency = effPurCorr_->weight(CCbins_,
-							  Tupl->NJets, Tupl->BTags, Tupl->MHT, Tupl->HT,
-							  *(Tupl->ZCandidates), *(Tupl->Photons),
-							  *(Tupl->Electrons), *(Tupl->Muons),
-							  *(Tupl->Photons_isEB), applyDRfitWt_, currentYear);
+    effWt_ = 1;  effSys_ = 0;
+    pair<double, double> efficiency = effPurCorr_->weight(Tupl, CCbins_, applyDRfitWt_, currentYear);
     effWt_ = efficiency.first;  effSys_ = efficiency.second;
+
+    // Skim cuts not in unskimmed ntuples
+    bool DiMuon = true, DiElectron = true, passEcalNoiseJetFilter = true;
+
+    if (!isSkim_ && ntupleVersion_ != "V12" && ntupleVersion_ != "V15" ) {
+      Tupl->EcalNoiseJetFilter = !isMC_ && currentYear == EfficWt::Year2017 ?
+	Tupl->EcalNoiseJetFilter = ecalNoiseJetFilter() : true;
+      passEcalNoiseJetFilter = Tupl->EcalNoiseJetFilter;
+
+      // Dilepton requirement:  2 iso, medium ID, opposite-charge leptons, no photons (skim cut)
+      if (TString(sample).Contains("zmm")) {
+	DiMuon = diLepton(Tupl->NMuons, Tupl->Muons, Tupl->Muons_mediumID, Tupl->Muons_passIso, Tupl->Muons_charge,
+			  Tupl->Photons, Tupl->Photons_fullID, Tupl->Photons_hasPixelSeed);
+      }
+      if (TString(sample).Contains("zee")) {
+	DiElectron = diLepton(Tupl->NElectrons, Tupl->Electrons, Tupl->Electrons_mediumID, Tupl->Electrons_passIso, Tupl->Electrons_charge,
+			      Tupl->Photons, Tupl->Photons_fullID, Tupl->Photons_hasPixelSeed);
+      }
+    }
 
     // Trigger requirements
     bool passTrg = true;
@@ -885,24 +875,31 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
     bool passHEM = true;
     if (applyHEMjetVeto_ && !passHEMjetVeto()) passHEM = false;
 
+    // Fill cut flow histograms before imposing inline requirements
+    for (auto & hg : cutHistograms) {
+      double cutHistWt = 1;
+      if (hg->name.Contains(TString("Wt"))) {
+	cutHistWt = eventWt;
+	if (applySFwtToMC_ && isMC_) cutHistWt *= effWt_;
+      }
+      bool zeroChg = true;
+      if (TString(sample).Contains("zmm") && !DiMuon) zeroChg = false;
+      if (TString(sample).Contains("zee") && !DiElectron) zeroChg = false;
+      cutHistFiller.fill((TH1D*) hg->hist, cutHistWt, zeroChg, passTrg, passHEM, passEcalNoiseJetFilter);
+      continue;
+    }
+
+    if (TString(sample).Contains("zmm") && !DiMuon) continue;
+    if (TString(sample).Contains("zee") && !DiElectron) continue;
+    if (!passTrg) continue;
+    if (!passHEM) continue;
+    if (!passEcalNoiseJetFilter) continue;
+    // (For a test) select events with electron (photon) in HEM region
+    // bool keep = false; for (auto & theE : *(Tupl->Electrons)) {if (!passHEMobjVeto(theE, 30, false)) keep = true;}  if (!keep) continue;
+    // bool keep = false; for (auto & theG : *(Tupl->Photons)) {if (!passHEMobjVeto(theG, 30, false)) keep = true;}  if (!keep) continue;
+
     int CCbin = -2;
     for (auto & hg : histograms) {
-      if (hg->name.Contains(TString("hCut"))) {
-	// Fill cut flow histograms before imposing trigger, HEM requirements
-	double cutHistWt = 1;
-	if (hg->name.Contains(TString("Wt"))) {
-	  cutHistWt = eventWt;
-	  if (applySFwtToMC_ && isMC_) cutHistWt *= effWt_;
-	}
-	cutHistFiller.fill((TH1D*) hg->hist, cutHistWt, passTrg, passHEM);
-	continue;
-      }
-      if (!passTrg) break;
-      if (!passHEM) break;
-      // (For a test) select events with electron (photon) in HEM region
-      // bool keep = false; for (auto & theE : *(Tupl->Electrons)) {if (!passHEMobjVeto(theE, 30, false)) keep = true;}  if (!keep) break;
-      // bool keep = false; for (auto & theG : *(Tupl->Photons)) {if (!passHEMobjVeto(theG, 30, false)) keep = true;}  if (!keep) break;
-
       if (CCbin == -2) {
 	CCbin = CCbins_->jbk(CCbins_->jbin(Tupl->NJets), CCbins_->bbin(Tupl->NJets, Tupl->BTags),
 			     CCbins_->kinBin(Tupl->HT, Tupl->MHT));
@@ -951,6 +948,43 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample, std::vector<histConf
 
 }  // ======================================================================================
 
+void
+RA2bZinvAnalysis::bookHistograms(vector<histConfig*>& histoList, TCut baselineCuts, cutHistos cutHistFiller) {
+  // Book histograms from configuration histoList
+  for (auto & hg : histoList) {
+    if (hg->NbinsY > 0) {
+      hg->hist = new TH2F(hg->name, hg->title, hg->NbinsX, hg->rangeX.first, hg->rangeX.second,
+			  hg->NbinsY, hg->rangeY.first, hg->rangeY.second);
+      hg->hist->SetOption("colz");
+    } else {
+      if (hg->binsX == nullptr)
+	hg->hist = new TH1D(hg->name, hg->title, hg->NbinsX, hg->rangeX.first, hg->rangeX.second);
+      else
+	hg->hist = new TH1D(hg->name, hg->title, hg->NbinsX, hg->binsX);
+      hg->hist->SetOption("hist");
+      hg->hist->SetMarkerSize(0);
+    }
+    hg->hist->Sumw2();
+    hg->hist->GetXaxis()->SetTitle(hg->axisTitles.first);
+    hg->hist->GetYaxis()->SetTitle(hg->axisTitles.second);
+    if (hg->name.Contains(TString("Cut"))) cutHistFiller.setAxisLabels((TH1D*) hg->hist);
+    if (hg->name.Contains(TString("hCut")) || hg->name.Contains(TString("hgen"))) {
+      hg->NminusOneCuts = "1";
+    } else {
+      hg->NminusOneCuts = baselineCuts;
+      for (auto cutToOmit : hg->omitCuts) hg->NminusOneCuts(*cutToOmit) = "1";
+      if (strlen(hg->addCuts) != 0) hg->NminusOneCuts += TString(" && ") + hg->addCuts;
+    }
+    if (verbosity_ >= 1) {
+      cout << hg->name << ", omitCuts = ";
+      for (auto cutToOmit : hg->omitCuts) cout << *cutToOmit << " ";
+      cout << "; addCuts = " << hg->addCuts;
+      cout << ", cuts = " << endl << hg->NminusOneCuts << endl << endl;
+    }
+    Tupl->setTF(hg->name, hg->NminusOneCuts);
+  }
+}  // ======================================================================================
+
 Int_t
 RA2bZinvAnalysis::setBTags(int runYear) {
   Int_t BTagsOrig = Tupl->BTags;
@@ -966,6 +1000,52 @@ RA2bZinvAnalysis::setBTags(int runYear) {
   }
   // From Rishi email of 20 Feb 2019, DeepCSV 2018 WP: 0.4184 and the 2017 WP: 0.4941
   return BTagsOrig;
+}  // ======================================================================================
+
+bool
+RA2bZinvAnalysis::diLepton(Int_t NLeptons, vector<TLorentzVector>* Leptons, vector<bool>* Leptons_mediumID,
+			   vector<bool>* Leptons_passIso, vector<int>* Leptons_charge,
+			   vector<TLorentzVector>* Photons, vector<bool>* Photons_fullID,
+			   vector<bool>* Photons_hasPixelSeed) {
+  if (NLeptons != 2) return false;
+  bool DiLepton = false;
+  for (size_t m1 = 0; m1 < Leptons->size(); ++m1) {
+    if (m1+1 < Leptons->size() && Leptons_mediumID->at(m1) && Leptons_passIso->at(m1)) {
+      for (size_t m2 = m1+1; m2 < Leptons->size(); ++m2) {
+	if (Leptons_mediumID->at(m2) && Leptons_passIso->at(m2)
+	    && Leptons_charge->at(m1) != Leptons_charge->at(m2)) {
+	  DiLepton = true;
+	  break;
+	}
+      }
+    }
+    if (DiLepton) break;
+  }
+  if (DiLepton) {
+    // Photon veto
+    int NumPhotons = 0;
+    for (unsigned p = 0; p < Photons->size(); ++p) {
+      if(Photons_hasPixelSeed->at(p) == 0. && Photons_fullID->at(p) && Photons->at(p).Pt() > 100) ++NumPhotons;
+    }
+    if (NumPhotons > 0) DiLepton = false;
+  }
+  return DiLepton;
+}  // ======================================================================================
+
+bool
+RA2bZinvAnalysis::ecalNoiseJetFilter() {
+  int counter = 0;
+  bool goodJet[2] = {true, true};
+  for (unsigned j = 0; j < Tupl->Jets->size(); ++j){
+    if (counter >= 2) break;
+    const auto& Jet = Tupl->Jets->at(j);
+    if (Jet.Pt() > 30 && abs(Jet.Eta()) < 5.0 && abs(Jet.Eta()) > 2.4) {
+      double dphi = abs(KMath::DeltaPhi(Jet.Phi(), Tupl->MHTPhi));
+      if (Jet.Pt() > 250 && (dphi > 2.6 or dphi < 0.1)) goodJet[counter] = false;
+      ++counter;
+    }
+  }
+  return goodJet[0] && goodJet[1];
 }  // ======================================================================================
 
 void
@@ -1078,8 +1158,10 @@ RA2bZinvAnalysis::fillFilterCuts(TH1D* h, double wt) {
   }
   if (!fillHTRatioDPhi) h->Fill(14.5, wt);
 
+  bool fillEcalNoiseJetFilter = true;
   if (!isMC_ && Tupl->RunNum >= CutManager::Start2017 && Tupl->RunNum < CutManager::Start2018) {
-    if (!(Tupl->EcalNoiseJetFilter)) h->Fill(15.5, wt);
+    fillEcalNoiseJetFilter = Tupl->EcalNoiseJetFilter;
+    if (!fillEcalNoiseJetFilter) h->Fill(15.5, wt);
   }
 
 }  // ======================================================================================
@@ -1226,7 +1308,7 @@ RA2bZinvAnalysis::cutHistos::setAxisLabels(TH1D* hcf) {
 }  // ======================================================================================
 
 void
-RA2bZinvAnalysis::cutHistos::fill(TH1D* hcf, Double_t wt, bool passTrg, bool passHEM) {
+RA2bZinvAnalysis::cutHistos::fill(TH1D* hcf, Double_t wt, bool zeroChg, bool passTrg, bool passHEM, bool passEcalNoiseJetFilter) {
   // Fill cut and cut flow histograms.  If null histogram pointer passed, just print cut value.
 
   bool pass = false;
@@ -1244,6 +1326,8 @@ RA2bZinvAnalysis::cutHistos::fill(TH1D* hcf, Double_t wt, bool passTrg, bool pas
     } else {
       cutName = cutNames_.at(j);
       pass = tuple_->TFvalue(cutName) > 0;
+      if (cutName == "objcut" && !zeroChg) pass = false;
+      if (cutName == "commonCuts" && !passEcalNoiseJetFilter) pass = false;
       j++;
     }
     if (hcf == nullptr) {
@@ -1364,7 +1448,7 @@ RA2bZinvAnalysis::dumpSelEvIDs(const char* sample, const char* idFileName) {
     Int_t BTagsOrig = setBTags(currentYear);
 
     cout << "baseline = " << Tupl->TFvalue("baseline") << endl;
-    cutHistFiller.fill(nullptr, 1, true, true);  // FIXME evaluate trigger, HEM selections
+    cutHistFiller.fill(nullptr, 1, true, true, true, true);  // FIXME evaluate zeroChg, trigger, HEM, EcalNoiseJet selections
     cout << "globalTightHalo2016Filter = " << Tupl->globalTightHalo2016Filter << endl;
     cout << "globalSuperTightHalo2016Filter = " << Tupl->globalTightHalo2016Filter << endl;
     cout << "HBHENoiseFilter = " << Tupl->HBHENoiseFilter << endl;
