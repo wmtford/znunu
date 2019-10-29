@@ -271,10 +271,13 @@ EfficWt::weight(Ntuple* Tupl, CCbinning* CCbins, bool applyDRfitWt, int currentY
       int globalbin_ID = 0; int globalbin_ISO = 0;
       
       double sysCorr = 0;  // Errors are correlated between Z daughter leptons
-      if (theSample_.Contains("ee") && hSFeff_[2]!=nullptr) {
+      if (theSample_.Contains("ee") && hSFeff_[2]!=nullptr && Tupl->NElectrons == 2) {
 	int globalbin_RECO = 0;
 	int numElectrons = Tupl->Electrons->size();
 	for (int i=0; i<numElectrons; i++){
+	  // The following line was absent for SUS-19-006
+	  if (!(Tupl->Electrons_mediumID->at(i) && Tupl->Electrons_passIso->at(i))) continue;
+
 	  pt  = Tupl->Electrons->at(i).Pt(); if (pt>500) pt=499.9;
 	  eta = Tupl->Electrons->at(i).Eta();
 	  globalbin_ID  = hSFeff_[0]->FindBin(eta,pt); globalbin_ISO = hSFeff_[1]->FindBin(eta,pt);
@@ -312,6 +315,9 @@ EfficWt::weight(Ntuple* Tupl, CCbinning* CCbins, bool applyDRfitWt, int currentY
 	double muIDISOsys = 0.003;  //  Hard-wired based on _syst histo for 2017 from POG
 	int numMuons = Tupl->Muons->size();
 	for (int i=0; i<numMuons; i++){
+	  // The following line was absent for SUS-19-006
+	  if (!(Tupl->Muons_mediumID->at(i) && Tupl->Muons_passIso->at(i))) continue;
+
 	  pt = Tupl->Muons->at(i).Pt(); if (pt>120) pt=119.9;
 	  if (currentYear == Year2016) {
 	    eta = Tupl->Muons->at(i).Eta();
