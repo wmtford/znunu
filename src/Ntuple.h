@@ -46,7 +46,8 @@ public:
   // User reset new file status:
   void setNewFileInChain(const Bool_t newFile) {newFileInChain_ = newFile;};
   // User register a new TTreeFormula:
-  void setTF(const TString name, const TString formula) {
+  template <typename T>
+  void setTF(const TString name, const T formula) {
     TTreeFormula* theTF = new TTreeFormula(name, formula, fChain);
     TFmap_[name] = theTF;
     forNotify_->Add(theTF);
