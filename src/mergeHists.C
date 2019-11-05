@@ -36,15 +36,11 @@ void mergeHists() {
 
   // // DY MC (mm and ee combined in each file)
   // std::vector<const char*> mmFiles = {
-  //   // "../outputs/histsDYMC_2016v16_noPU.root",
-  //   // "../outputs/histsDYMC_2017v16_noZptWt.root",
-  //   // "../outputs/histsDYMC_2018v17_noZptWt.root"
-  //   "../outputs/histsDYMC_2016v17_Jbins.root",
-  //   "../outputs/histsDYMC_2017v17_Jbins.root",
-  //   "../outputs/histsDYMC_2018v17_Jbins.root",
-  //   // "../outputs/histsDYMC_2018HEMv16_HT17wt_ZptWt.root",
+  //   "../outputs/histsDYMC_2016v17_corrSF.root",
+  //   "../outputs/histsDYMC_2017v17_corrSF.root",
+  //   "../outputs/histsDYMC_2018v17_corrSF.root",
   // };
-  // // Consider mulitplying DYMC by 2017 k factor instead of old 2016:  scale = 1.165/1.23
+  // // Consider multiplying DYMC by 2017 k factor instead of old 2016:  scale = 1.165/1.23
   // // To update 2016, scale = 1.257/1.23
   // // scale = {1, 21.0/59.2, 38.2/59.2, 1};
   // // addLinearXlast = true;

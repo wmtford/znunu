@@ -9,28 +9,35 @@
 
 #include <map>
 #include <TString.h>
+#include <TRegexp.h>
 #include <TCut.h>
 #include "CCbinning.h"
 
 #include <iostream>
-using std::cout;
-using std::endl;
 
 class CutManager {
 
  public:
-  CutManager(const TString sample, const TString ntupleVersion, bool isSkim, bool isMC, int verbosity,
-	     std::string era, string deltaPhi, bool applyMassCut, bool applyPtCut, CCbinning* CCbins);
+  CutManager(const TString sample, const TString ntupleVersion, bool isSkim, bool isMC,
+	     int verbosity, string era, string deltaPhi, bool applyMassCut,
+	     bool applyPtCut, bool restrictClean, CCbinning* CCbins);
   virtual ~CutManager() {};
 
   enum yearFirstRun {Start2016 = 271036, Start2017 = 294645, Start2018 = 315252, StartHEM = 319077, Start2018C = 319313};
-  typedef std::map<TString, TString> string_map;
-  typedef std::map<TString, std::vector<TString> > vstring_map;
+  typedef map<TString, TString> string_map;
+  typedef map<TString, vector<TString> > vstring_map;
 
   void setTriggerIndexList(const char* sample, vector<unsigned>* triggerIndexList,
 			   vector<string>* TriggerNames, vector<int>* TriggerPrescales);
   const string_map& sampleKeyMap() const {return sampleKeyMap_;};
   const vstring_map& triggerMapByName() const {return triggerMapByName_;};
+  const TString skimCut(const char* cutStringClean, bool restrictClean = false) const {
+    TString cutClean = cutStringClean;
+    if (!(restrictClean || restrictClean_)) return (cutClean);
+    TString cut = cutClean;
+    while (cut.Index("clean") != -1) cut("clean") = "";
+    return("((@Jetsclean.size()!=0 && " + cutClean + ") || (@Jetsclean.size()==0 && " + cut + "))");
+  };
   const TCut baseline() const {return cuts_;};
   const TString& HTcut() const {return HTcut_;};
   const TString& MHTcut() const {return MHTcut_;};
@@ -45,6 +52,17 @@ class CutManager {
   const TString& isoSFlepTksCut() const {return isoSFlepTksCut_;};
   const TString& photonVeto() const {return photonVeto_;};
   const TString& photonCut() const {return photonCut_;};
+  const TString& NJetSkimCut() const {return NJetSkimCut_;};
+  const TString& HTSkimCut() const {return HTSkimCut_;};
+  const TString& MHTSkimCut() const {return MHTSkimCut_;};
+  const TString& MHTHTRatioSkimCut() const {return MHTHTRatioSkimCut_;};
+  /* const TString& DiMuonSkimCut() const {return DiMuonSkimCut_;}; */
+  const TString& ElectronVetoSkimCut() const {return ElectronVetoSkimCut_;};
+  const TString& IsoElectronTrackVetoSkimCut() const {return IsoElectronTrackVetoSkimCut_;};
+  const TString& IsoPionTrackVetoSkimCut() const {return IsoPionTrackVetoSkimCut_;};
+  /* const TString& PhotonSkimCut() const {return PhotonSkimCut_;}; */
+  const TString& DeltaPhiSkimCut() const {return DeltaPhiSkimCut_;};
+  const TString& JetIDSkimCut() const {return JetIDSkimCut_;};
 
  private:
   void fillCutMaps();
@@ -52,10 +70,11 @@ class CutManager {
   bool isSkim_;
   bool isMC_;
   int verbosity_;
-  std::string era_;  // "2016", "Run2"
+  string era_;  // "2016", "Run2"
   string deltaPhi_;  // "nominal", "hdp", "ldp", "ldpnominal"
   bool applyMassCut_;
   bool applyPtCut_;
+  bool restrictClean_;
   CCbinning* CCbins_;
   vstring_map triggerMapByName_;
   string_map objCutMap_;
@@ -72,6 +91,20 @@ class CutManager {
   TString ptCut_;
   TString massCut_;
   TString photonDeltaRcut_;
+
+  // Following are cuts used when skims are made, DiMuon sample
+  TString NJetSkimCut_;
+  TString HTSkimCut_;
+  TString MHTSkimCut_;
+  TString MHTHTRatioSkimCut_;
+  /* TString DiMuonSkimCut_; */
+  TString ElectronVetoSkimCut_;
+  TString IsoElectronTrackVetoSkimCut_;
+  TString IsoPionTrackVetoSkimCut_;
+  /* TString PhotonSkimCut_; */
+  TString DeltaPhiSkimCut_;
+  TString JetIDSkimCut_;
+
   // Following 4 cuts for special studies
   TString isoSFlepTksVeto_;
   TString isoSFlepTksCut_;

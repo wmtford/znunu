@@ -67,6 +67,7 @@ RA2bZinvAnalysis::Config(const string& cfg_filename) {
     ("apply Z Pt weight", po::value<bool>(&applyZptWt_))
     ("apply double-ratio fit weight", po::value<bool>(&applyDRfitWt_))
     ("apply scale factors to MC", po::value<bool>(&applySFwtToMC_))
+    ("restrict cleanVars for raw ntuple", po::value<bool>(&restrictClean_))
 
     ;
   po::variables_map vm;
@@ -104,7 +105,7 @@ RA2bZinvAnalysis::Config(const string& cfg_filename) {
   if (ntupleVersion_ == "V12") useDeepCSV_ = false;
 
   treeConfig_ = new TreeConfig(era_, ntupleVersion_, isSkim_, deltaPhi_, verbosity_, treeName,
-			       treeLoc, fileListsFile, runBlock_);
+                               treeLoc, fileListsFile, runBlock_);
   CCbins_ = new CCbinning(era_, deltaPhi_);
   effPurCorr_ = new EfficWt(deltaPhi_);
 
@@ -120,6 +121,7 @@ RA2bZinvAnalysis::Config(const string& cfg_filename) {
   cout << "Apply Z/gamma Pt cut is " << applyPtCut_ << endl;
   cout << "Use DeepCSV is " << useDeepCSV_ << endl;
   cout << "Apply HEM jet veto for 2018HEM is " << applyHEMjetVeto_ << endl;
+  cout << "Restrict cleanVars for raw ntuple is " << restrictClean_ << endl;
 
 }  // ======================================================================================
 
@@ -158,7 +160,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   }
 
   evSelector_ = new CutManager(sample, ntupleVersion_, isSkim_, isMC_, verbosity_,
-			       era_, deltaPhi_, applyMassCut_, applyPtCut_, CCbins_);
+                               era_, deltaPhi_, applyMassCut_, applyPtCut_, restrictClean_, CCbins_);
   CutManager::string_map sampleMap = evSelector_->sampleKeyMap();
   TString sampleKey = sampleMap.count(sample) > 0 ? sampleMap.at(sample) : "none";
   bool isZll = (sampleKey == "zmm" || sampleKey == "zee" || sampleKey == "zll");
@@ -178,12 +180,26 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hCutFlowWt.axisTitles.first = "";  hCutFlowWt.axisTitles.second = "Weighted events surviving";
   cutHistograms.push_back(&hCutFlowWt);
 
+  histConfig hCutFlowSkim;
+  hCutFlowSkim.name = TString("hCutFlowSkim_") + sample;  hCutFlowSkim.title = "Skim cut flow unweighted";
+  hCutFlowSkim.NbinsX = 12;  hCutFlowSkim.rangeX.first = 0;  hCutFlowSkim.rangeX.second = 12;
+  hCutFlowSkim.axisTitles.first = "";  hCutFlowSkim.axisTitles.second = "Events surviving";
+  if (!isSkim_) cutHistograms.push_back(&hCutFlowSkim);
+
   histConfig hCuts;
   hCuts.name = TString("hCuts_") + sample;  hCuts.title = "Cuts passed";
   hCuts.NbinsX = 12;  hCuts.rangeX.first = 0;  hCuts.rangeX.second = 12;
   hCuts.axisTitles.first = "";  hCuts.axisTitles.second = "Events passing";
   cutHistograms.push_back(&hCuts);
   // These hCut* histograms are filled before the trigger cut.
+
+  histConfig hFilterCutsNoWt;
+  hFilterCutsNoWt.name = TString("hFilterCutsNoWt_") + sample;  hFilterCutsNoWt.title = "Filter cuts, unweighted";
+  hFilterCutsNoWt.NbinsX = 16;  hFilterCutsNoWt.rangeX.first = 0;  hFilterCutsNoWt.rangeX.second = 16;
+  hFilterCutsNoWt.axisTitles.first = "";  hFilterCutsNoWt.axisTitles.second = "Events failing";
+  hFilterCutsNoWt.filler1D = &RA2bZinvAnalysis::fillFilterCuts;
+  hFilterCutsNoWt.omitCuts.push_back(&(evSelector_->commonCuts()));
+  histograms.push_back(&hFilterCutsNoWt);
 
   histConfig hFilterCuts;
   hFilterCuts.name = TString("hFilterCuts_") + sample;  hFilterCuts.title = "Filter cuts";
@@ -242,7 +258,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hgenHT.name = TString("hgenHT_") + sample;  hgenHT.title = "Generated HT";
   hgenHT.NbinsX = 60;  hgenHT.rangeX.first = 0;  hgenHT.rangeX.second = 3000;
   hgenHT.axisTitles.first = "HT [GeV]";  hgenHT.axisTitles.second = "Events / 50 GeV";
-  hgenHT.dvalue = &(Tupl->HT);
+  hgenHT.dvalue = &(Tupl->GenHT);
   if (isMC_) histograms.push_back(&hgenHT);
 
   histConfig hPrefire;
@@ -656,8 +672,8 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
 
 void
 RA2bZinvAnalysis::bookAndFillHistograms(const char* sample,
-					vector<histConfig*>& histograms,
-					vector<histConfig*>& cutHistograms) {
+                                        vector<histConfig*>& histograms,
+                                        vector<histConfig*>& cutHistograms) {
   //
   // Define N - 1 (or N - multiple) cuts, book histograms.  Traverse the chain and fill.
   //
@@ -666,7 +682,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample,
   TString sampleKey = sampleMap.count(sample) > 0 ? sampleMap.at(sample) : "none";
 
   TCut baselineCuts = evSelector_->baseline();
-  Tupl->setTF("baselineCuts", (const char*) baselineCuts);
+  Tupl->setTF("baseline", baselineCuts);
 
   // For B-tagging corrections
   if (isMC_ && applyBTagSF_) {
@@ -684,6 +700,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample,
   cutHistos cutHistFiller(Tupl, evSelector_);  // for cutFlow histograms
 
   if (verbosity_ >= 1) cout << "\nFor sample " << sample << ", baseline = " << endl << baselineCuts << endl << endl;
+  if (verbosity_ >= 1) cout << "commonCuts = " << evSelector_->commonCuts() << endl << endl;
   bookHistograms(cutHistograms, baselineCuts, cutHistFiller);
   bookHistograms(histograms, baselineCuts, cutHistFiller);
   Tupl->setNotify();
@@ -716,75 +733,80 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample,
       // cout << "First event, new file setup " << endl;  Show();
       int theYear = -1;
       if (isMC_) {
-	// Look for strings in root filenames that indicate the running year
-	if      (path.Contains("MC2016") || path.Contains("Summer16v3")) theYear = EfficWt::Year2016;
-	else if (path.Contains("MC2017") || path.Contains("Fall17")) theYear = EfficWt::Year2017;
-	else if (path.Contains("MC2018") || path.Contains("Autumn18")) theYear = EfficWt::Year2018;
+        // Look for strings in root filenames that indicate the running year
+        if      (path.Contains("MC2016") || path.Contains("Summer16v3")) theYear = EfficWt::Year2016;
+        else if (path.Contains("MC2017") || path.Contains("Fall17")) theYear = EfficWt::Year2017;
+        else if (path.Contains("MC2018") || path.Contains("Autumn18")) theYear = EfficWt::Year2018;
       } else {
-	if      (Tupl->RunNum < CutManager::Start2017) theYear = EfficWt::Year2016;
-	else if (Tupl->RunNum < CutManager::Start2018) theYear = EfficWt::Year2017;
-	else                                           theYear = EfficWt::Year2018;
+        if      (Tupl->RunNum < CutManager::Start2017) theYear = EfficWt::Year2016;
+        else if (Tupl->RunNum < CutManager::Start2018) theYear = EfficWt::Year2017;
+        else                                           theYear = EfficWt::Year2018;
       }
       if (theYear != currentYear) {
-	currentYear = theYear;
-	cout << "currentYear = " << currentYear << endl;
-	// Load the year-dependent correction factors.
-	effPurCorr_->getHistos(sample, currentYear);  // For purity, Fdir, trigger eff, reco eff
-	if (ntupleVersion_ == "V15" && currentYear != EfficWt::Year2016) csvMthreshold_ = 0.8838;
-	if (isMC_) {
-	  if (currentYear == EfficWt::Year2016) {
-	    // For now we have only 2016 pileup correction files
-	    if (applyPuWeight_ && customPuWeight_) {
-	      TFile* pufile = TFile::Open("../../Analysis/corrections/PileupHistograms_0121_69p2mb_pm4p6.root", "READ");
-	      puHist_ = (TH1*) pufile->Get("pu_weights_down");
-	    }
-	    BTagSFfile_ = useDeepCSV_ ? "../datFiles/DeepCSV_2016LegacySF_WP_V1.csv" :
-	      "../../Analysis/btag/CSVv2_Moriond17_B_H_mod.csv";
-	  } else if (currentYear == EfficWt::Year2017) {
-	    BTagSFfile_ = "../datFiles/DeepCSV_94XSF_WP_V4_B_F.csv";
-	  } else if (currentYear == EfficWt::Year2018) {
-	    BTagSFfile_ = "../datFiles/DeepCSV_102XSF_WP_V1.csv";
-	  }
-	}
+        currentYear = theYear;
+        cout << "currentYear = " << currentYear << endl;
+        // Load the year-dependent correction factors.
+        effPurCorr_->getHistos(sample, currentYear);  // For purity, Fdir, trigger eff, reco eff
+        if (ntupleVersion_ == "V15" && currentYear != EfficWt::Year2016) csvMthreshold_ = 0.8838;
+        if (isMC_) {
+          if (currentYear == EfficWt::Year2016) {
+            // For now we have only 2016 pileup correction files
+            if (applyPuWeight_ && customPuWeight_) {
+              TFile* pufile = TFile::Open("../../Analysis/corrections/PileupHistograms_0121_69p2mb_pm4p6.root", "READ");
+              puHist_ = (TH1*) pufile->Get("pu_weights_down");
+            }
+            BTagSFfile_ = useDeepCSV_ ? "../datFiles/DeepCSV_2016LegacySF_WP_V1.csv" :
+              "../../Analysis/btag/CSVv2_Moriond17_B_H_mod.csv";
+          } else if (currentYear == EfficWt::Year2017) {
+            BTagSFfile_ = "../datFiles/DeepCSV_94XSF_WP_V4_B_F.csv";
+          } else if (currentYear == EfficWt::Year2018) {
+            BTagSFfile_ = "../datFiles/DeepCSV_102XSF_WP_V1.csv";
+          }
+        }
       }
       // Set MCwtCorr for this file
       if (isMC_ && isSkim_ &&
-	  (path.Contains("V16") || path.Contains("V17")) &&
-	  (currentYear == EfficWt::Year2017 || currentYear == EfficWt::Year2018) &&
-	  // (path.Contains("MC2017") || path.Contains("MC2018")) &&
-	  (path.Contains("DYJetsToLL") || path.Contains("ZJetsToNuNu"))) {
-	if (applyZptWt_) {
-	  if      (path.Contains("HT-100to200")) MCwtCorr = 1.05713;
-	  else if (path.Contains("HT-200to400")) MCwtCorr = 1.20695;
-	  else if (path.Contains("HT-400to600")) MCwtCorr = 1.30533;
-	  else if (path.Contains("HT-600to800")) MCwtCorr = 1.38453;
-	  else if (path.Contains("HT-800to1200")) MCwtCorr = 1.40301;
-	  else if (path.Contains("HT-1200to2500")) MCwtCorr = 1.42145;
-	  else if (path.Contains("HT-2500toInf")) MCwtCorr = 1.11697;
-	} else {
-	  if      (path.Contains("HT-100to200")) MCwtCorr = 1.09226;
-	  else if (path.Contains("HT-200to400")) MCwtCorr = 1.18517;
-	  else if (path.Contains("HT-400to600")) MCwtCorr = 1.22966;
-	  else if (path.Contains("HT-600to800")) MCwtCorr = 1.27798;
-	  else if (path.Contains("HT-800to1200")) MCwtCorr = 1.27728;
-	  else if (path.Contains("HT-1200to2500")) MCwtCorr = 1.27279;
-	  else if (path.Contains("HT-2500toInf")) MCwtCorr = 0.975599;
-	}
+          (path.Contains("V16") || path.Contains("V17")) &&
+          (currentYear == EfficWt::Year2017 || currentYear == EfficWt::Year2018) &&
+          // (path.Contains("MC2017") || path.Contains("MC2018")) &&
+          (path.Contains("DYJetsToLL") || path.Contains("ZJetsToNuNu"))) {
+        if (applyZptWt_) {
+          if      (path.Contains("HT-100to200")) MCwtCorr = 1.05713;
+          else if (path.Contains("HT-200to400")) MCwtCorr = 1.20695;
+          else if (path.Contains("HT-400to600")) MCwtCorr = 1.30533;
+          else if (path.Contains("HT-600to800")) MCwtCorr = 1.38453;
+          else if (path.Contains("HT-800to1200")) MCwtCorr = 1.40301;
+          else if (path.Contains("HT-1200to2500")) MCwtCorr = 1.42145;
+          else if (path.Contains("HT-2500toInf")) MCwtCorr = 1.11697;
+        } else {
+          if      (path.Contains("HT-100to200")) MCwtCorr = 1.09226;
+          else if (path.Contains("HT-200to400")) MCwtCorr = 1.18517;
+          else if (path.Contains("HT-400to600")) MCwtCorr = 1.22966;
+          else if (path.Contains("HT-600to800")) MCwtCorr = 1.27798;
+          else if (path.Contains("HT-800to1200")) MCwtCorr = 1.27728;
+          else if (path.Contains("HT-1200to2500")) MCwtCorr = 1.27279;
+          else if (path.Contains("HT-2500toInf")) MCwtCorr = 0.975599;
+        }
       }
       if (isMC_ && verbosity_ >= 1) cout << "MC weight for this file is " << Tupl->Weight
-					 << " times correction " << MCwtCorr << endl;
+                                         << " times correction " << MCwtCorr << endl;
       if (btagcorr_) btagcorr_->SetEffs(thisFile);
       evSelector_->setTriggerIndexList(sample, &triggerIndexList, Tupl->TriggerNames, Tupl->TriggerPrescales);
     }  // newFileInChain
 
     countInFile++;
     // if (countInFile == 1) cout << "After get first entry in file, status of HT = " << Tupl->fChain->GetBranchStatus("HT")
-    // 			       << ", JetIDAK8 = " << Tupl->fChain->GetBranchStatus("JetIDAK8") << endl;
+    //                         << ", JetIDAK8 = " << Tupl->fChain->GetBranchStatus("JetIDAK8") << endl;
 
+    if (!isSkim_ && !restrictClean_) {
+      if (TString(sample).Contains("mm") && Tupl->NMuons != 2) continue;
+      if (TString(sample).Contains("ee") && Tupl->NElectrons != 2) continue;
+      if ((TString(sample).Contains("photon") || TString(sample).Contains("gjets")) && Tupl->Photons->size() == 0) continue;
+    }
     cleanVars();  // If unskimmed input, copy <var>clean to <var>
     Int_t BTagsOrig = setBTags(currentYear);
     // if (countInFile <= 100) cout << "BTagsOrig, BTags, BTagsDeepCSV = " << BTagsOrig
-    // 				 << ", " << Tupl->BTags << ", " << Tupl->BTagsDeepCSV << endl;
+    //                           << ", " << Tupl->BTags << ", " << Tupl->BTagsDeepCSV << endl;
 
     if (Tupl->ZCandidates->size() > 1 && verbosity_ >= 2) cout << Tupl->ZCandidates->size() << " Z candidates found" << endl;
     // double baselineWt = Tupl->TFvalue("baseline");
@@ -794,81 +816,88 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample,
     if (isMC_) {
       MCwt = 1000*intLumi_*Tupl->Weight*MCwtCorr;  // MCwtCorr for 2017 MC
       if (applyPuWeight_) {
-	// Pileup weight for 2016
-	if (customPuWeight_ && puHist_ != nullptr) {
-	  // This PU weight recipe from Kevin Pedro, https://twiki.cern.ch/twiki/bin/viewauth/CMS/RA2b13TeVProduction
-	  PUweight = puHist_->GetBinContent(puHist_->GetXaxis()->FindBin(min(Tupl->TrueNumInteractions,
-									     puHist_->GetBinLowEdge(puHist_->GetNbinsX()+1))));
-	} else
-	  PUweight = Tupl->puWeight;  // Take puWeight directly from the tree
-	MCwt *= PUweight;
+        // Pileup weight for 2016
+        if (customPuWeight_ && puHist_ != nullptr) {
+          // This PU weight recipe from Kevin Pedro, https://twiki.cern.ch/twiki/bin/viewauth/CMS/RA2b13TeVProduction
+          PUweight = puHist_->GetBinContent(puHist_->GetXaxis()->FindBin(min(Tupl->TrueNumInteractions,
+                                                                             puHist_->GetBinLowEdge(puHist_->GetNbinsX()+1))));
+        } else
+          PUweight = Tupl->puWeight;  // Take puWeight directly from the tree
+        MCwt *= PUweight;
       }
 
       if (currentYear == EfficWt::Year2016 || currentYear == EfficWt::Year2017) {
-      	// Apply L1 prefire weight for 2016 and 2017
-      	if (sampleKey.Contains("ee")) {
-      	  for (unsigned j = 0; j < Tupl->Jets->size(); ++j) {
-      	    NoPrefireWt *= effPurCorr_->prefiring_weight_jet(Tupl->Jets, j);
-      	  }
-      	  double eeNoPFwt = 1;
-      	  for (unsigned e = 0; e < Tupl->Electrons->size(); ++e) {
-      	    double w = effPurCorr_->prefiring_weight_electron(Tupl->Electrons, e);
-      	    if (w < eeNoPFwt) eeNoPFwt = w;
-      	  }
-      	  NoPrefireWt *= eeNoPFwt;
-      	} else {
-      	  NoPrefireWt = Tupl->NonPrefiringProb;
-      	}
-      	MCwt *= NoPrefireWt;
+        // Apply L1 prefire weight for 2016 and 2017
+        if (sampleKey.Contains("ee")) {
+          for (unsigned j = 0; j < Tupl->Jets->size(); ++j) {
+            NoPrefireWt *= effPurCorr_->prefiring_weight_jet(Tupl->Jets, j);
+          }
+          double eeNoPFwt = 1;
+          for (unsigned e = 0; e < Tupl->Electrons->size(); ++e) {
+            double w = effPurCorr_->prefiring_weight_electron(Tupl->Electrons, e);
+            if (w < eeNoPFwt) eeNoPFwt = w;
+          }
+          NoPrefireWt *= eeNoPFwt;
+        } else {
+          NoPrefireWt = Tupl->NonPrefiringProb;
+        }
+        MCwt *= NoPrefireWt;
       }  // 2016 or 2017
 
       if (applyZptWt_ && (TString(sample).Contains("dy") || TString(sample).Contains("zinv"))
-	  && (currentYear == EfficWt::Year2017 || currentYear == EfficWt::Year2018)) {
-	// Apply Z Pt weight for 2017 MC
-	double ptZ = getGenPtZ();
-	ZPtWt = 1.0;
-	if (ptZ > 0.0) {
-	  int iptbin;
-	  for (iptbin = 1; iptbin<297; iptbin++) {
-	    if (ptZ < ptBins[iptbin]) break;
-	  }
-	  ZPtWt *= ptWgts[iptbin-1];
-	}
-	MCwt *= ZPtWt;
+          && (currentYear == EfficWt::Year2017 || currentYear == EfficWt::Year2018)) {
+        // Apply Z Pt weight for 2017 MC
+        double ptZ = getGenPtZ();
+        ZPtWt = 1.0;
+        if (ptZ > 0.0) {
+          int iptbin;
+          for (iptbin = 1; iptbin<297; iptbin++) {
+            if (ptZ < ptBins[iptbin]) break;
+          }
+          ZPtWt *= ptWgts[iptbin-1];
+        }
+        MCwt *= ZPtWt;
       }  // DY or Zinv in 2017 or 2018
 
       eventWt *= MCwt;
     }  // isMC_
 
     effWt_ = 1;  effSys_ = 0;
-    pair<double, double> efficiency = effPurCorr_->weight(Tupl, CCbins_, applyDRfitWt_, currentYear);
-    effWt_ = efficiency.first;  effSys_ = efficiency.second;
+    bool effValid = false;
 
-    // Skim cuts not in unskimmed ntuples
-    bool DiMuon = true, DiElectron = true, passEcalNoiseJetFilter = true;
+    // Skim cuts with no branches in unskimmed ntuples
+    bool passEcalNoiseJetFilter = true, passPhotonVeto = true, DiLepton = true;
 
     if (!isSkim_ && ntupleVersion_ != "V12" && ntupleVersion_ != "V15" ) {
       Tupl->EcalNoiseJetFilter = !isMC_ && currentYear == EfficWt::Year2017 ?
-	Tupl->EcalNoiseJetFilter = ecalNoiseJetFilter() : true;
+        ecalNoiseJetFilter() : true;
       passEcalNoiseJetFilter = Tupl->EcalNoiseJetFilter;
 
-      // Dilepton requirement:  2 iso, medium ID, opposite-charge leptons, no photons (skim cut)
-      if (TString(sample).Contains("zmm")) {
-	DiMuon = diLepton(Tupl->NMuons, Tupl->Muons, Tupl->Muons_mediumID, Tupl->Muons_passIso, Tupl->Muons_charge,
-			  Tupl->Photons, Tupl->Photons_fullID, Tupl->Photons_hasPixelSeed);
+      // Photon veto
+      int NumPhotons = 0;
+      for (unsigned p = 0; p < Tupl->Photons->size(); ++p) {
+      	if(!(Tupl->Photons_hasPixelSeed->at(p)) && Tupl->Photons->at(p).Pt() > 100) ++NumPhotons;
+      	// if(!(Tupl->Photons_hasPixelSeed->at(p)) && Tupl->Photons_fullID->at(p)
+      	//    && Tupl->Photons->at(p).Pt() > 100) ++NumPhotons;
       }
-      if (TString(sample).Contains("zee")) {
-	DiElectron = diLepton(Tupl->NElectrons, Tupl->Electrons, Tupl->Electrons_mediumID, Tupl->Electrons_passIso, Tupl->Electrons_charge,
-			      Tupl->Photons, Tupl->Photons_fullID, Tupl->Photons_hasPixelSeed);
-      }
+      if (NumPhotons > 0) passPhotonVeto = false;
+
+      // Dilepton requirement:  2 iso, medium ID, opposite-charge leptons (skim cut)
+      if (TString(sample).Contains("zmm"))
+        DiLepton = diLepton(Tupl->NMuons, Tupl->Muons, Tupl->Muons_mediumID,
+			    Tupl->Muons_passIso, Tupl->Muons_charge);
+      if (TString(sample).Contains("zee"))
+        DiLepton = diLepton(Tupl->NElectrons, Tupl->Electrons, Tupl->Electrons_mediumID,
+			    Tupl->Electrons_passIso, Tupl->Electrons_charge);
     }
 
+    // Cuts not amenable to implementation via TTreeFormulas
     // Trigger requirements
     bool passTrg = true;
     if (!isMC_) {
       passTrg = false;
       for (auto trgIndex : triggerIndexList)
-	if (Tupl->TriggerPass->at(trgIndex)) passTrg = true;
+        if (Tupl->TriggerPass->at(trgIndex)) passTrg = true;
     }
 
     // HEM veto for 2018HEM
@@ -878,19 +907,25 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample,
     // Fill cut flow histograms before imposing inline requirements
     for (auto & hg : cutHistograms) {
       double cutHistWt = 1;
-      if (hg->name.Contains(TString("Wt"))) {
-	cutHistWt = eventWt;
-	if (applySFwtToMC_ && isMC_) cutHistWt *= effWt_;
+      if (hg->name.Contains("Wt")) {
+        cutHistWt = eventWt;
+        if (applySFwtToMC_ && isMC_) {
+	  pair<double, double> efficiency = effPurCorr_->weight(Tupl, CCbins_, applyDRfitWt_, currentYear);
+	  effWt_ = efficiency.first;  effSys_ = efficiency.second;  effValid = true;
+	  cutHistWt *= effWt_;
+	}
       }
       bool zeroChg = true;
-      if (TString(sample).Contains("zmm") && !DiMuon) zeroChg = false;
-      if (TString(sample).Contains("zee") && !DiElectron) zeroChg = false;
-      cutHistFiller.fill((TH1D*) hg->hist, cutHistWt, zeroChg, passTrg, passHEM, passEcalNoiseJetFilter);
-      continue;
+      if ((TString(sample).Contains("zmm") || TString(sample).Contains("zee")) && !(DiLepton && passPhotonVeto)) zeroChg = false;
+      if (hg->name.Contains("Skim")) {
+	// cout << "NJets = " << Tupl->NJets << ", cut = " << evSelector_->NJetSkimCut() << ", pass = " << Tupl->TFvalue("NJetSkimCut");
+	cutHistFiller.fill((TH1D*) hg->hist, cutHistWt, DiLepton, passPhotonVeto);
+      } else {
+	cutHistFiller.fill((TH1D*) hg->hist, cutHistWt, zeroChg, passTrg, passHEM, passEcalNoiseJetFilter);
+      }
     }
 
-    if (TString(sample).Contains("zmm") && !DiMuon) continue;
-    if (TString(sample).Contains("zee") && !DiElectron) continue;
+    if ((TString(sample).Contains("zmm") || TString(sample).Contains("zee")) && !(DiLepton && passPhotonVeto)) continue;
     if (!passTrg) continue;
     if (!passHEM) continue;
     if (!passEcalNoiseJetFilter) continue;
@@ -898,19 +933,22 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample,
     // bool keep = false; for (auto & theE : *(Tupl->Electrons)) {if (!passHEMobjVeto(theE, 30, false)) keep = true;}  if (!keep) continue;
     // bool keep = false; for (auto & theG : *(Tupl->Photons)) {if (!passHEMobjVeto(theG, 30, false)) keep = true;}  if (!keep) continue;
 
-    int CCbin = -2;
+    int CCbin = CCbins_->jbk(CCbins_->jbin(Tupl->NJets), CCbins_->bbin(Tupl->NJets, Tupl->BTags),
+                             CCbins_->kinBin(Tupl->HT, Tupl->MHT));
+    if (isSkim_ && (UInt_t) CCbin != Tupl->RA2bin && !(CCbin == -1 && Tupl->RA2bin == 0)) {
+      cout << "CCbin = " << CCbin << ", != RA2bin = " << Tupl->RA2bin
+           << ", NJets = " << Tupl->NJets << ", j = " << CCbins_->jbin(Tupl->NJets)
+           << ", Nb = " << Tupl->BTags << ", b = " << CCbins_->bbin(Tupl->NJets, Tupl->BTags)
+           << ", HT = " << Tupl->HT << ", MHT = " << Tupl->MHT << ", k = " << CCbins_->kinBin(Tupl->HT, Tupl->MHT)
+           << endl;
+    }
+
+    if (!effValid) {
+      pair<double, double> efficiency = effPurCorr_->weight(Tupl, CCbins_, applyDRfitWt_, currentYear);
+      effWt_ = efficiency.first;  effSys_ = efficiency.second;  effValid = true;
+    }
+
     for (auto & hg : histograms) {
-      if (CCbin == -2) {
-	CCbin = CCbins_->jbk(CCbins_->jbin(Tupl->NJets), CCbins_->bbin(Tupl->NJets, Tupl->BTags),
-			     CCbins_->kinBin(Tupl->HT, Tupl->MHT));
-	if (isSkim_ && (UInt_t) CCbin != Tupl->RA2bin && !(CCbin == -1 && Tupl->RA2bin == 0)) {
-	  cout << "CCbin = " << CCbin << ", != RA2bin = " << Tupl->RA2bin
-	       << ", NJets = " << Tupl->NJets << ", j = " << CCbins_->jbin(Tupl->NJets)
-	       << ", Nb = " << Tupl->BTags << ", b = " << CCbins_->bbin(Tupl->NJets, Tupl->BTags)
-	       << ", HT = " << Tupl->HT << ", MHT = " << Tupl->MHT << ", k = " << CCbins_->kinBin(Tupl->HT, Tupl->MHT)
-	       << endl;
-	}
-      }
       double selWt = Tupl->TFvalue(hg->name);
       if (selWt == 0) continue;
 
@@ -967,8 +1005,8 @@ RA2bZinvAnalysis::bookHistograms(vector<histConfig*>& histoList, TCut baselineCu
     hg->hist->Sumw2();
     hg->hist->GetXaxis()->SetTitle(hg->axisTitles.first);
     hg->hist->GetYaxis()->SetTitle(hg->axisTitles.second);
-    if (hg->name.Contains(TString("Cut"))) cutHistFiller.setAxisLabels((TH1D*) hg->hist);
-    if (hg->name.Contains(TString("hCut")) || hg->name.Contains(TString("hgen"))) {
+    if (hg->name.Contains("Cut")) cutHistFiller.setAxisLabels((TH1D*) hg->hist);
+    if (hg->name.Contains("hCut") || hg->name.Contains(TString("hgen"))) {
       hg->NminusOneCuts = "1";
     } else {
       hg->NminusOneCuts = baselineCuts;
@@ -1004,9 +1042,7 @@ RA2bZinvAnalysis::setBTags(int runYear) {
 
 bool
 RA2bZinvAnalysis::diLepton(Int_t NLeptons, vector<TLorentzVector>* Leptons, vector<bool>* Leptons_mediumID,
-			   vector<bool>* Leptons_passIso, vector<int>* Leptons_charge,
-			   vector<TLorentzVector>* Photons, vector<bool>* Photons_fullID,
-			   vector<bool>* Photons_hasPixelSeed) {
+			   vector<bool>* Leptons_passIso, vector<int>* Leptons_charge) {
   if (NLeptons != 2) return false;
   bool DiLepton = false;
   for (size_t m1 = 0; m1 < Leptons->size(); ++m1) {
@@ -1020,14 +1056,6 @@ RA2bZinvAnalysis::diLepton(Int_t NLeptons, vector<TLorentzVector>* Leptons, vect
       }
     }
     if (DiLepton) break;
-  }
-  if (DiLepton) {
-    // Photon veto
-    int NumPhotons = 0;
-    for (unsigned p = 0; p < Photons->size(); ++p) {
-      if(Photons_hasPixelSeed->at(p) == 0. && Photons_fullID->at(p) && Photons->at(p).Pt() > 100) ++NumPhotons;
-    }
-    if (NumPhotons > 0) DiLepton = false;
   }
   return DiLepton;
 }  // ======================================================================================
@@ -1133,7 +1161,8 @@ RA2bZinvAnalysis::fillZmassjb(TH1D* h, double wt) {
 }  // ======================================================================================
 
 void
-RA2bZinvAnalysis::fillFilterCuts(TH1D* h, double wt) {
+RA2bZinvAnalysis::fillFilterCuts(TH1D* h, double wgt) {
+  double wt = TString(h->GetName()).Contains("NoWt") ? 1 : wgt;
   h->Fill(0.5, wt);
   if (!(Tupl->globalTightHalo2016Filter==1)) h->Fill(1.5, wt);
   if (ntupleVersion_ != "V12" && ntupleVersion_ != "V15" &&
@@ -1266,6 +1295,16 @@ RA2bZinvAnalysis::cutHistos::cutHistos(Ntuple* tuple, CutManager* selector)
   tuple_->setTF("massCut", selector_->massCut());  cutNames_.push_back("massCut");
   tuple_->setTF("photonDeltaRcut", selector_->photonDeltaRcut());  cutNames_.push_back("photonDeltaRcut");
   tuple_->setTF("commonCuts", selector_->commonCuts());  cutNames_.push_back("commonCuts");
+  // Skim cuts
+  tuple_->setTF("NJetSkimCut", selector_->NJetSkimCut());  skimCutNames_.push_back("NJetSkimCut");
+  tuple_->setTF("HTSkimCut", selector_->HTSkimCut());  skimCutNames_.push_back("HTSkimCut");
+  tuple_->setTF("MHTSkimCut", selector_->MHTSkimCut());  skimCutNames_.push_back("MHTSkimCut");
+  tuple_->setTF("MHTHTRatioSkimCut", selector_->MHTHTRatioSkimCut());  skimCutNames_.push_back("MHTHTRatioSkimCut");
+  tuple_->setTF("ElectronVetoSkimCut", selector_->ElectronVetoSkimCut());  skimCutNames_.push_back("ElectronVetoSkimCut");
+  tuple_->setTF("IsoElectronTrackVetoSkimCut", selector_->IsoElectronTrackVetoSkimCut());  skimCutNames_.push_back("IsoElectronTrackVetoSkimCut");
+  tuple_->setTF("IsoPionTrackVetoSkimCut", selector_->IsoPionTrackVetoSkimCut());  skimCutNames_.push_back("IsoPionTrackVetoSkimCut");
+  tuple_->setTF("DeltaPhiSkimCut", selector_->DeltaPhiSkimCut());  skimCutNames_.push_back("DeltaPhiSkimCut");
+  tuple_->setTF("JetIDSkimCut", selector_->JetIDSkimCut());  skimCutNames_.push_back("JetIDSkimCut");
 
 }  // ======================================================================================
 
@@ -1291,18 +1330,33 @@ RA2bZinvAnalysis::cutHistos::setAxisLabels(TH1D* hcf) {
     hcf->GetXaxis()->LabelsOption("vu");
   }
   if (TString(hcf->GetName()).Contains("hCut")) {
-    hcf->GetXaxis()->SetBinLabel(1, "1 None");
-    hcf->GetXaxis()->SetBinLabel(2, "2 HT");
-    hcf->GetXaxis()->SetBinLabel(3, "3 MHT");
-    hcf->GetXaxis()->SetBinLabel(4, "4 NJets");
-    hcf->GetXaxis()->SetBinLabel(5, "5 mnDphi");
-    hcf->GetXaxis()->SetBinLabel(6, "6 objects");
-    hcf->GetXaxis()->SetBinLabel(7, "7 Z/gamma pt");
-    hcf->GetXaxis()->SetBinLabel(8, "8 m(Z)");
-    hcf->GetXaxis()->SetBinLabel(9, "9 gamma dR");
-    hcf->GetXaxis()->SetBinLabel(10, "10 Trigger");
-    hcf->GetXaxis()->SetBinLabel(11, "11 HEM");
-    hcf->GetXaxis()->SetBinLabel(12, "12 Filters");
+    if (TString(hcf->GetName()).Contains("Skim")) {
+      hcf->GetXaxis()->SetBinLabel(1, "1 None");
+      hcf->GetXaxis()->SetBinLabel(2, "2 NJets");
+      hcf->GetXaxis()->SetBinLabel(3, "3 HT");
+      hcf->GetXaxis()->SetBinLabel(4, "4 MHT");
+      hcf->GetXaxis()->SetBinLabel(5, "5 MHT<HT");
+      hcf->GetXaxis()->SetBinLabel(6, "6 DiLepton");
+      hcf->GetXaxis()->SetBinLabel(7, "7 ele veto");
+      hcf->GetXaxis()->SetBinLabel(8, "8 isoEtrk");
+      hcf->GetXaxis()->SetBinLabel(9, "9 isoPitrk");
+      hcf->GetXaxis()->SetBinLabel(10, "10 pho veto");
+      hcf->GetXaxis()->SetBinLabel(11, "11 mnDphi");
+      hcf->GetXaxis()->SetBinLabel(12, "12 JetID");
+    } else {
+      hcf->GetXaxis()->SetBinLabel(1, "1 None");
+      hcf->GetXaxis()->SetBinLabel(2, "2 HT");
+      hcf->GetXaxis()->SetBinLabel(3, "3 MHT");
+      hcf->GetXaxis()->SetBinLabel(4, "4 NJets");
+      hcf->GetXaxis()->SetBinLabel(5, "5 mnDphi");
+      hcf->GetXaxis()->SetBinLabel(6, "6 objects");
+      hcf->GetXaxis()->SetBinLabel(7, "7 Z/gamma pt");
+      hcf->GetXaxis()->SetBinLabel(8, "8 m(Z)");
+      hcf->GetXaxis()->SetBinLabel(9, "9 gamma dR");
+      hcf->GetXaxis()->SetBinLabel(10, "10 Trigger");
+      hcf->GetXaxis()->SetBinLabel(11, "11 HEM");
+      hcf->GetXaxis()->SetBinLabel(12, "12 Filters");
+    }
     hcf->GetXaxis()->LabelsOption("vu");
   }
 }  // ======================================================================================
@@ -1328,6 +1382,40 @@ RA2bZinvAnalysis::cutHistos::fill(TH1D* hcf, Double_t wt, bool zeroChg, bool pas
       pass = tuple_->TFvalue(cutName) > 0;
       if (cutName == "objcut" && !zeroChg) pass = false;
       if (cutName == "commonCuts" && !passEcalNoiseJetFilter) pass = false;
+      j++;
+    }
+    if (hcf == nullptr) {
+      cout << "Cut " << cutName << " = " << pass << endl;
+      continue;
+    }
+    if (pass) {
+      if (hcf != nullptr) hcf->Fill(1.5 + i, wt);
+    } else if (isCutFlow) {
+      break;
+    }
+  }
+
+}  // ======================================================================================
+
+void
+RA2bZinvAnalysis::cutHistos::fill(TH1D* hcf, Double_t wt, bool DiLepton, bool passPhotonVeto) {
+  // Fill skim cut flow histograms.  If null histogram pointer passed, just print cut value.
+
+  bool pass = false;
+  bool isCutFlow = TString(hcf->GetName()).Contains("Flow");
+  TString cutName;
+  Size_t j = 0;
+  if (hcf != nullptr) hcf->Fill(0.5, wt);
+  for (Size_t i = 0; i < skimCutNames_.size() + 2; ++i) {
+    if (i == 4) {
+      cutName = "DiLepton";
+      pass = DiLepton;
+    } else if (i == 8) {
+      cutName = "phoVeto";
+      pass = passPhotonVeto;
+    } else {
+      cutName = skimCutNames_.at(j);
+      pass = tuple_->TFvalue(cutName) > 0;
       j++;
     }
     if (hcf == nullptr) {
@@ -1385,10 +1473,10 @@ RA2bZinvAnalysis::dumpSelEvIDs(const char* sample, const char* idFileName) {
   Tupl = new Ntuple(treeConfig_->getChain(key), treeConfig_->activeBranchList());
 
   evSelector_ = new CutManager(sample, ntupleVersion_, isSkim_, isMC_, verbosity_,
-			       era_, deltaPhi_, applyMassCut_, applyPtCut_, CCbins_);
+			       era_, deltaPhi_, applyMassCut_, applyPtCut_, restrictClean_, CCbins_);
   TCut baselineCuts = evSelector_->baseline();
   if (verbosity_ >= 1) cout << endl << "baseline = " << endl << baselineCuts << endl << endl;
-  Tupl->setTF("baselineCuts", (const char*) baselineCuts);
+  Tupl->setTF("baseline", baselineCuts);
   cutHistos cutHistFiller(Tupl, evSelector_);  // to dump cuts
 
   Tupl->setNotify();
@@ -1450,7 +1538,7 @@ RA2bZinvAnalysis::dumpSelEvIDs(const char* sample, const char* idFileName) {
     cout << "baseline = " << Tupl->TFvalue("baseline") << endl;
     cutHistFiller.fill(nullptr, 1, true, true, true, true);  // FIXME evaluate zeroChg, trigger, HEM, EcalNoiseJet selections
     cout << "globalTightHalo2016Filter = " << Tupl->globalTightHalo2016Filter << endl;
-    cout << "globalSuperTightHalo2016Filter = " << Tupl->globalTightHalo2016Filter << endl;
+    cout << "globalSuperTightHalo2016Filter = " << Tupl->globalSuperTightHalo2016Filter << endl;
     cout << "HBHENoiseFilter = " << Tupl->HBHENoiseFilter << endl;
     cout << "HBHEIsoNoiseFilter = " << Tupl->HBHEIsoNoiseFilter << endl;
     cout << "eeBadScFilter = " << Tupl->eeBadScFilter << endl;

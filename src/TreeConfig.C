@@ -170,6 +170,7 @@ TreeConfig::activeBranchList() {
     activeBranches->push_back("HTclean");
     activeBranches->push_back("HT5clean");
     activeBranches->push_back("MHTclean");
+    activeBranches->push_back("MHTPhiclean");
     activeBranches->push_back("JetIDclean");
     activeBranches->push_back("Jetsclean");
     activeBranches->push_back("Jetsclean_hadronFlavor");

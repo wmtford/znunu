@@ -73,10 +73,11 @@ public:
     ~cutHistos() {};
     void setAxisLabels(TH1D* hcf);
     void fill(TH1D* hcf, Double_t wt, bool zeroChg, bool passTrg, bool passHEM, bool passEcalNoiseJetFilter);
+    void fill(TH1D* hcf, Double_t wt, bool DiLepton, bool passPhotonVeto);
   private:
     Ntuple* tuple_;
     CutManager* selector_;
-    vector<TString> cutNames_;
+    vector<TString> cutNames_, skimCutNames_;
   };
 
 private:
@@ -99,6 +100,7 @@ private:
   bool applyZptWt_;
   bool applyDRfitWt_;
   bool applySFwtToMC_;
+  bool restrictClean_;
   Ntuple* Tupl;
   TreeConfig* treeConfig_;
   CCbinning* CCbins_;
@@ -117,9 +119,7 @@ private:
   void bookHistograms(vector<histConfig*>& histoList, TCut baselineCuts, cutHistos cutHistFiller);
   Int_t setBTags(int runYear);
   bool diLepton(Int_t NLeptons, vector<TLorentzVector>* Leptons, vector<bool>* Leptons_mediumID,
-		vector<bool>* Leptons_passIso, vector<int>* Leptons_charge,
-		vector<TLorentzVector>* Photons, vector<bool>* Photons_fullID,
-		vector<bool>* Photons_hasPixelSeed);
+		vector<bool>* Leptons_passIso, vector<int>* Leptons_charge);
   bool ecalNoiseJetFilter();
   void fillCutFlow(TH1D* hcf, Double_t wt);
   double get_cpu_time() {return (double)clock() / CLOCKS_PER_SEC;};
@@ -172,12 +172,14 @@ private:
     // For TreeMaker these replacements are made when skims are produced,
     // so this applies only to raw ntuple data sets.
     if (isSkim_) return;
+    if (restrictClean_ && Tupl->Jetsclean->size() == 0) return;
     Tupl->NJets = Tupl->NJetsclean;
     Tupl->BTags = Tupl->BTagsclean;
     Tupl->BTagsDeepCSV = Tupl->BTagsDeepCSVclean;
     Tupl->HT = Tupl->HTclean;
     Tupl->HT5 = Tupl->HT5clean;
     Tupl->MHT = Tupl->MHTclean;
+    Tupl->MHTPhi = Tupl->MHTPhiclean;
     Tupl->JetID = Tupl->JetIDclean;
     Tupl->Jets = Tupl->Jetsclean;
     Tupl->Jets_hadronFlavor = Tupl->Jetsclean_hadronFlavor;
@@ -193,7 +195,7 @@ private:
   };
 
   // Functions to fill histograms with non-double, non-int types
-  void fillFilterCuts(TH1D* h, double wt);
+  void fillFilterCuts(TH1D* h, double wgt);
   void fillCC(TH1D* h, double wt);
   void fillnZcand(TH1D* h, double wt) {h->Fill(Tupl->ZCandidates->size(), wt);}
   void fillZmass(TH1D* h, double wt) {for (auto & theZ : *(Tupl->ZCandidates)) h->Fill(theZ.M(), wt);}

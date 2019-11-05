@@ -6,10 +6,11 @@
 
 // ClassImp(CutManager)
 
-CutManager::CutManager(const TString sample, const TString ntupleVersion, bool isSkim, bool isMC, int verbosity,
-		       std::string era, string deltaPhi, bool applyMassCut, bool applyPtCut, CCbinning* CCbins) :
+CutManager::CutManager(const TString sample, const TString ntupleVersion, bool isSkim, bool isMC,
+		       int verbosity, string era, string deltaPhi, bool applyMassCut,
+		       bool applyPtCut, bool restrictClean, CCbinning* CCbins) :
   ntupleVersion_(ntupleVersion), isSkim_(isSkim), verbosity_(verbosity), isMC_(isMC), era_(era), deltaPhi_(deltaPhi),
-  applyMassCut_(applyMassCut), applyPtCut_(applyPtCut), CCbins_(CCbins) {
+  applyMassCut_(applyMassCut), applyPtCut_(applyPtCut), restrictClean_(restrictClean), CCbins_(CCbins) {
 
   fillCutMaps();  // Depends on isMC_
   string_map::iterator iter = sampleKeyMap_.find(sample);
@@ -60,13 +61,13 @@ CutManager::CutManager(const TString sample, const TString ntupleVersion, bool i
   }
   commonCuts_ += " && " + EcalNoiseJetFilterCut;
   if (!isSkim_) {
-    commonCuts_ += " && JetIDclean";
+    commonCuts_ += " && " + skimCut("JetIDclean");
     commonCuts_ += " && PFCaloMETRatio < 5";  // METRatioFilter in skims
     if (era_ == "2016")
-      commonCuts_ += " && HT5clean/HTclean <= 2";  // HTRatioFilter
+      commonCuts_ += " && " + skimCut("HT5clean/HTclean <= 2");  // HTRatioFilter
     else
       // HTRatioDPhiFilter:
-      commonCuts_ += " && ((HT5clean/HTclean < 1.2) || (HT5clean/HTclean <= (DeltaPhi1clean - (-0.5875))/1.025))";
+      commonCuts_ += " && " + skimCut("((HT5clean/HTclean < 1.2) || (HT5clean/HTclean <= (DeltaPhi1clean - (-0.5875))/1.025))");
     // For !isSkim && !isMC_, EcalNoiseJetFilter is computed and applied in the loop
     // commonCuts_ += " && noMuonJet";  // Defined in loop, applied in skimming (xV16), single lepton
     // commonCuts_ += " && noFakeJet";  // Defined in loop, applied in skimming FastSim
@@ -87,11 +88,11 @@ CutManager::CutManager(const TString sample, const TString ntupleVersion, bool i
   }
 
   if (isSkim_) {
-    HTcut_ = string("HT>=") + std::to_string(CCbins_->htThreshold(0, 0));
-    NJetscut_ = string("NJets>=") + std::to_string(CCbins_->nJetThreshold(0));
+    HTcut_ = string("HT>=") + to_string(CCbins_->htThreshold(0, 0));
+    NJetscut_ = string("NJets>=") + to_string(CCbins_->nJetThreshold(0));
   } else {
-    HTcut_ = string("HTclean>=") + std::to_string(CCbins_->htThreshold(0, 0));
-    NJetscut_ = string("NJetsclean>=") + std::to_string(CCbins_->nJetThreshold(0));
+    HTcut_ = skimCut((string("HTclean>=") + to_string(CCbins_->htThreshold(0, 0))).c_str());
+    NJetscut_ = skimCut((string("NJetsclean>=") + to_string(CCbins_->nJetThreshold(0))).c_str());
   }
   MHTcut_ = MHTCutMap_.at(deltaPhi_);
   objcut_ = objCutMap_.at(sampleKey);
@@ -112,6 +113,19 @@ CutManager::CutManager(const TString sample, const TString ntupleVersion, bool i
   }
   photonVeto_ = "@Photons.size()==0";
   photonCut_ = "@Photons.size()!=0";
+
+  // FIXME:  Following are for dimuons, check against cut flow histo in skim files
+  NJetSkimCut_ = skimCut("NJetsclean>=2", true);
+  HTSkimCut_ = skimCut("HTclean>=200", true);
+  MHTSkimCut_ = skimCut("MHTclean>=100", true);
+  MHTHTRatioSkimCut_ = skimCut("MHTclean<=HTclean", true);
+  // DiMuonSkimCut_ (inline)
+  ElectronVetoSkimCut_ = "NElectrons==0";
+  IsoElectronTrackVetoSkimCut_ = "isoElectronTracksclean==0";
+  IsoPionTrackVetoSkimCut_ = "isoPionTracksclean==0";
+  // PhotonSkimCut_ (inline)
+  DeltaPhiSkimCut_ = skimCut("DeltaPhi1clean>0.5 && DeltaPhi2clean>0.5 && DeltaPhi3clean>0.3 && DeltaPhi4clean>0.3", true);
+  JetIDSkimCut_ = skimCut("JetIDclean", true);
 
   cuts_ += objcut_;
   cuts_ += HTcut_;
@@ -220,30 +234,30 @@ CutManager::fillCutMaps() {
 
     if (ntupleVersion_ == "V12") {
     } else if (ntupleVersion_ == "V15" || ntupleVersion_ == "V16" || ntupleVersion_ == "V17") {
-      objCutMap_["sig"] = "NMuons==0 && NElectrons==0 && isoElectronTracksclean==0 && isoMuonTracksclean==0 && isoPionTracksclean==0";
+      objCutMap_["sig"] = skimCut("NMuons==0 && NElectrons==0 && isoElectronTracksclean==0 && isoMuonTracksclean==0 && isoPionTracksclean==0");
       // objCutMap_["zmm"] = "NMuons==2 && NElectrons==0 && isoElectronTracksclean==0 && isoPionTracksclean==0 && (@Photons.size()==0) && isoMuonTracksclean==0";
-      objCutMap_["zmm"] = "NMuons==2 && NElectrons==0 && isoElectronTracksclean==0 && isoPionTracksclean==0";
+      objCutMap_["zmm"] =  skimCut("NMuons==2 && NElectrons==0 && isoElectronTracksclean==0 && isoPionTracksclean==0");
       // objCutMap_["zee"] = "NMuons==0 && NElectrons==2 && isoMuonTracksclean==0 && isoPionTracksclean==0 && (@Photons.size()==0) && isoElectronTracksclean==0";
-      objCutMap_["zee"] = "NMuons==0 && NElectrons==2 && isoMuonTracksclean==0 && isoPionTracksclean==0";
-      objCutMap_["zll"] = "((NMuons==2 && NElectrons==0 && isoElectronTracksclean==0 && isoPionTracksclean==0) || (NMuons==0 && NElectrons==2 && isoMuonTracksclean==0 && isoPionTracksclean==0))";
-      objCutMap_["photon"] = "Sum$(Photons_nonPrompt)==0 && Sum$(Photons_fullID)==1 && (@Photons.size()==1 && Photons_hasPixelSeed==0) && NMuons==0 && NElectrons==0 && isoElectronTracksclean==0 && isoMuonTracksclean==0 && isoPionTracksclean==0";
-      objCutMap_["photonqcd"] = "Sum$(Photons_nonPrompt)!=0 && @Photons.at(0).Pt()>=200 && NMuons==0 && NElectrons==0 && isoElectronTracksclean==0 && isoMuonTracksclean==0 && isoPionTracksclean==0";
-      objCutMap_["ttz"] = "NMuons==0 && NElectrons==0 && isoElectronTracksclean==0 && isoMuonTracksclean==0 && isoPionTracksclean==0 && (@GenMuons.size()==0 && @GenElectrons.size()==0 && @GenTaus.size()==0)";
-      objCutMap_["slm"] = "NMuons==1 && NElectrons==0 && isoElectronTracksclean==0 && isoPionTracksclean==0";
+      objCutMap_["zee"] = skimCut( "NMuons==0 && NElectrons==2 && isoMuonTracksclean==0 && isoPionTracksclean==0");
+      objCutMap_["zll"] =  skimCut("((NMuons==2 && NElectrons==0 && isoElectronTracksclean==0 && isoPionTracksclean==0) || (NMuons==0 && NElectrons==2 && isoMuonTracksclean==0 && isoPionTracksclean==0))");
+      objCutMap_["photon"] =  skimCut("Sum$(Photons_nonPrompt)==0 && Sum$(Photons_fullID)==1 && (@Photons.size()==1 && Photons_hasPixelSeed==0) && NMuons==0 && NElectrons==0 && isoElectronTracksclean==0 && isoMuonTracksclean==0 && isoPionTracksclean==0");
+      objCutMap_["photonqcd"] =  skimCut("Sum$(Photons_nonPrompt)!=0 && @Photons.at(0).Pt()>=200 && NMuons==0 && NElectrons==0 && isoElectronTracksclean==0 && isoMuonTracksclean==0 && isoPionTracksclean==0");
+      objCutMap_["ttz"] =  skimCut("NMuons==0 && NElectrons==0 && isoElectronTracksclean==0 && isoMuonTracksclean==0 && isoPionTracksclean==0 && (@GenMuons.size()==0 && @GenElectrons.size()==0 && @GenTaus.size()==0)");
+      objCutMap_["slm"] =  skimCut("NMuons==1 && NElectrons==0 && isoElectronTracksclean==0 && isoPionTracksclean==0");
       objCutMap_["slm"] += " && TransverseMass(METPt,METPhi,@Muons.at(0).Pt(),@Muons.at(0).Phi()) < 100";  // add'l skim cut
-      objCutMap_["sle"] = "NMuons==0 && NElectrons==1 && isoMuonTracksclean==0 && isoPionTracksclean==0";
+      objCutMap_["sle"] =  skimCut("NMuons==0 && NElectrons==1 && isoMuonTracksclean==0 && isoPionTracksclean==0");
       objCutMap_["sle"] += " && TransverseMass(METPt,METPhi,@Electrons.at(0).Pt(),@Electrons.at(0).Phi()) < 100";  // add'l skim cut
     }
 
-    minDphiCutMap_["nominal"] = "DeltaPhi1clean>0.5 && DeltaPhi2clean>0.5 && DeltaPhi3clean>0.3 && DeltaPhi4clean>0.3";
-    minDphiCutMap_["hdp"] = "DeltaPhi1clean>0.5 && DeltaPhi2clean>0.5 && DeltaPhi3clean>0.3 && DeltaPhi4clean>0.3";
-    minDphiCutMap_["ldp"] = "(DeltaPhi1clean<0.5 || DeltaPhi2clean<0.5 || DeltaPhi3clean<0.3 || DeltaPhi4clean<0.3)";
-    minDphiCutMap_["ldpnominal"] = "(DeltaPhi1clean<0.5 || DeltaPhi2clean<0.5 || DeltaPhi3clean<0.3 || DeltaPhi4clean<0.3)";
+    minDphiCutMap_["nominal"] = skimCut("DeltaPhi1clean>0.5 && DeltaPhi2clean>0.5 && DeltaPhi3clean>0.3 && DeltaPhi4clean>0.3");
+    minDphiCutMap_["hdp"] = skimCut("DeltaPhi1clean>0.5 && DeltaPhi2clean>0.5 && DeltaPhi3clean>0.3 && DeltaPhi4clean>0.3");
+    minDphiCutMap_["ldp"] = skimCut("(DeltaPhi1clean<0.5 || DeltaPhi2clean<0.5 || DeltaPhi3clean<0.3 || DeltaPhi4clean<0.3)");
+    minDphiCutMap_["ldpnominal"] = skimCut("(DeltaPhi1clean<0.5 || DeltaPhi2clean<0.5 || DeltaPhi3clean<0.3 || DeltaPhi4clean<0.3)");
 
-    MHTCutMap_["nominal"] = "MHTclean>=300 && MHTclean<=HTclean";
-    MHTCutMap_["hdp"] = "MHTclean>=250 && MHTclean<=HTclean";
-    MHTCutMap_["ldp"] = "MHTclean>=250 && MHTclean<=HTclean";
-    MHTCutMap_["ldpnominal"] = "MHTclean>=300 && MHTclean<=HTclean";
+    MHTCutMap_["nominal"] = skimCut("MHTclean>=300 && MHTclean<=HTclean");
+    MHTCutMap_["hdp"] = skimCut("MHTclean>=250 && MHTclean<=HTclean");
+    MHTCutMap_["ldp"] = skimCut("MHTclean>=250 && MHTclean<=HTclean");
+    MHTCutMap_["ldpnominal"] = skimCut("MHTclean>=300 && MHTclean<=HTclean");
   }
 
   triggerMapByName_["zmm"] = {
@@ -339,7 +353,7 @@ CutManager::setTriggerIndexList(const char* sample, vector<unsigned>* triggerInd
 				vector<string>* TriggerNames, vector<int>* TriggerPrescales) {
 
   triggerIndexList->clear();
-  std::vector<TString> triggers;
+  vector<TString> triggers;
   vstring_map trigMap = triggerMapByName();
   if (trigMap.count(sample) > 0) {
     triggers = trigMap.at(sample);
