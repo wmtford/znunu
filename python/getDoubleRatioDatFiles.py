@@ -26,7 +26,7 @@ else:
 
 haveHistograms = True
 runYear = "Run2"
-postDRfit = True
+postDRfit = False
 plotRefLine = False
 Ymin = None
 Ymax = None
@@ -121,7 +121,7 @@ for sample in doSample:
             iPeriod = 9
             dataZllFile = ROOT.TFile('../outputs/histsDY_Run2v17.root')
             dataPhotonFile = ROOT.TFile('../outputs/histsPhoton_Run2v17.root')
-            mcZllFile = ROOT.TFile('../outputs/histsDYMC_Run2v17.root')
+            mcZllFile = ROOT.TFile('../outputs/histsDYMC_Run2v17_corrSF.root')
             if (postDRfit):
                 mcPhotonFile = ROOT.TFile('../outputs/histsGjets_Run2v17_DRr2wt.root')
             else:

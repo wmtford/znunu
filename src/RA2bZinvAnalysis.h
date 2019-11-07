@@ -118,8 +118,8 @@ private:
 			     vector<histConfig*>& cutHistograms);
   void bookHistograms(vector<histConfig*>& histoList, TCut baselineCuts, cutHistos cutHistFiller);
   Int_t setBTags(int runYear);
-  bool diLepton(Int_t NLeptons, vector<TLorentzVector>* Leptons, vector<bool>* Leptons_mediumID,
-		vector<bool>* Leptons_passIso, vector<int>* Leptons_charge);
+  bool diLepton(Int_t NLeptons, vector<TLorentzVector>* Leptons, vector<bool>* Leptons_passIso,
+		vector<int>* Leptons_charge, vector<bool>* Leptons_mediumID = nullptr);
   bool ecalNoiseJetFilter();
   void fillCutFlow(TH1D* hcf, Double_t wt);
   double get_cpu_time() {return (double)clock() / CLOCKS_PER_SEC;};

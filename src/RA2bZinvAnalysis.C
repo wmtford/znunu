@@ -884,11 +884,9 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample,
 
       // Dilepton requirement:  2 iso, medium ID, opposite-charge leptons (skim cut)
       if (TString(sample).Contains("zmm"))
-        DiLepton = diLepton(Tupl->NMuons, Tupl->Muons, Tupl->Muons_mediumID,
-			    Tupl->Muons_passIso, Tupl->Muons_charge);
+        DiLepton = diLepton(Tupl->NMuons, Tupl->Muons, Tupl->Muons_passIso, Tupl->Muons_charge, Tupl->Muons_mediumID);
       if (TString(sample).Contains("zee"))
-        DiLepton = diLepton(Tupl->NElectrons, Tupl->Electrons, Tupl->Electrons_mediumID,
-			    Tupl->Electrons_passIso, Tupl->Electrons_charge);
+        DiLepton = diLepton(Tupl->NElectrons, Tupl->Electrons, Tupl->Electrons_passIso, Tupl->Electrons_charge);
     }
 
     // Cuts not amenable to implementation via TTreeFormulas
@@ -1041,14 +1039,15 @@ RA2bZinvAnalysis::setBTags(int runYear) {
 }  // ======================================================================================
 
 bool
-RA2bZinvAnalysis::diLepton(Int_t NLeptons, vector<TLorentzVector>* Leptons, vector<bool>* Leptons_mediumID,
-			   vector<bool>* Leptons_passIso, vector<int>* Leptons_charge) {
+RA2bZinvAnalysis::diLepton(Int_t NLeptons, vector<TLorentzVector>* Leptons,
+			   vector<bool>* Leptons_passIso, vector<int>* Leptons_charge,
+			   vector<bool>* Leptons_mediumID) {
   if (NLeptons != 2) return false;
   bool DiLepton = false;
   for (size_t m1 = 0; m1 < Leptons->size(); ++m1) {
-    if (m1+1 < Leptons->size() && Leptons_mediumID->at(m1) && Leptons_passIso->at(m1)) {
+    if (m1+1 < Leptons->size() && (Leptons_mediumID == nullptr || Leptons_mediumID->at(m1)) && Leptons_passIso->at(m1)) {
       for (size_t m2 = m1+1; m2 < Leptons->size(); ++m2) {
-	if (Leptons_mediumID->at(m2) && Leptons_passIso->at(m2)
+	if ((Leptons_mediumID == nullptr || Leptons_mediumID->at(m2)) && Leptons_passIso->at(m2)
 	    && Leptons_charge->at(m1) != Leptons_charge->at(m2)) {
 	  DiLepton = true;
 	  break;

@@ -276,7 +276,7 @@ EfficWt::weight(Ntuple* Tupl, CCbinning* CCbins, bool applyDRfitWt, int currentY
 	int numElectrons = Tupl->Electrons->size();
 	for (int i=0; i<numElectrons; i++){
 	  // The following line was absent for SUS-19-006
-	  if (!(Tupl->Electrons_mediumID->at(i) && Tupl->Electrons_passIso->at(i))) continue;
+	  if (!(Tupl->Electrons_passIso->at(i))) continue;
 
 	  pt  = Tupl->Electrons->at(i).Pt(); if (pt>500) pt=499.9;
 	  eta = Tupl->Electrons->at(i).Eta();
