@@ -3,12 +3,13 @@
 //
 
 #include "CutManager.h"
+#include <sstream>
 
 // ClassImp(CutManager)
 
 CutManager::CutManager(const TString sample, const TString ntupleVersion, bool isSkim, bool isMC,
 		       int verbosity, string era, string deltaPhi, bool applyMassCut,
-		       bool applyPtCut, bool restrictClean, CCbinning* CCbins) :
+		       bool applyPtCut, int minNb, bool restrictClean, CCbinning* CCbins) :
   ntupleVersion_(ntupleVersion), isSkim_(isSkim), verbosity_(verbosity), isMC_(isMC), era_(era), deltaPhi_(deltaPhi),
   applyMassCut_(applyMassCut), applyPtCut_(applyPtCut), restrictClean_(restrictClean), CCbins_(CCbins) {
 
@@ -94,6 +95,7 @@ CutManager::CutManager(const TString sample, const TString ntupleVersion, bool i
     HTcut_ = skimCut((string("HTclean>=") + to_string(CCbins_->htThreshold(0, 0))).c_str());
     NJetscut_ = skimCut((string("NJetsclean>=") + to_string(CCbins_->nJetThreshold(0))).c_str());
   }
+  Nbcut_ = string("BTags>=") + to_string(minNb);
   MHTcut_ = MHTCutMap_.at(deltaPhi_);
   objcut_ = objCutMap_.at(sampleKey);
   minDphicut_ = minDphiCutMap_.at(deltaPhi_);
@@ -130,6 +132,7 @@ CutManager::CutManager(const TString sample, const TString ntupleVersion, bool i
   cuts_ += objcut_;
   cuts_ += HTcut_;
   cuts_ += NJetscut_;
+  cuts_ += Nbcut_;
   cuts_ += MHTcut_;
   if (!isSkim_) cuts_ += minDphicut_;
   cuts_ += ptCut_;
@@ -201,7 +204,7 @@ CutManager::fillCutMaps() {
       objCutMap_["slm"] = "@Muons.size()==1 && @Electrons.size()==0 && isoElectronTracks==0 && isoPionTracks==0";
       objCutMap_["sle"] = "@Muons.size()==0 && @Electrons.size()==1 && isoMuonTracks==0 && isoPionTracks==0";
 
-    } else if (ntupleVersion_ == "V15" || ntupleVersion_ == "V16" || ntupleVersion_ == "V17") {
+    } else if (ntupleVersion_ == "V15" || ntupleVersion_ == "V16" || ntupleVersion_ == "V17" || ntupleVersion_ == "V18") {
 
       objCutMap_["sig"] = "NMuons==0 && NElectrons==0 && isoElectronTracks==0 && isoMuonTracks==0 && isoPionTracks==0";
       // zmm skim cuts:  NMuons==2 && NElectrons==0 && isoElectronTracks==0 && isoPionTracks==0
@@ -233,7 +236,7 @@ CutManager::fillCutMaps() {
   } else {  // ntuple
 
     if (ntupleVersion_ == "V12") {
-    } else if (ntupleVersion_ == "V15" || ntupleVersion_ == "V16" || ntupleVersion_ == "V17") {
+    } else if (ntupleVersion_ == "V15" || ntupleVersion_ == "V16" || ntupleVersion_ == "V17" || ntupleVersion_ == "V18") {
       objCutMap_["sig"] = skimCut("NMuons==0 && NElectrons==0 && isoElectronTracksclean==0 && isoMuonTracksclean==0 && isoPionTracksclean==0");
       // objCutMap_["zmm"] = "NMuons==2 && NElectrons==0 && isoElectronTracksclean==0 && isoPionTracksclean==0 && (@Photons.size()==0) && isoMuonTracksclean==0";
       objCutMap_["zmm"] =  skimCut("NMuons==2 && NElectrons==0 && isoElectronTracksclean==0 && isoPionTracksclean==0");
@@ -349,8 +352,7 @@ CutManager::fillCutMaps() {
 }  // ======================================================================================
 
 void
-CutManager::setTriggerIndexList(const char* sample, vector<unsigned>* triggerIndexList,
-				vector<string>* TriggerNames, vector<int>* TriggerPrescales) {
+CutManager::setTriggerIndexList(const char* sample, vector<unsigned>* triggerIndexList, Ntuple* ntuple) {
 
   triggerIndexList->clear();
   vector<TString> triggers;
@@ -361,16 +363,32 @@ CutManager::setTriggerIndexList(const char* sample, vector<unsigned>* triggerInd
     cout << "No matches in triggerMapByName for sample " << sample << endl;
     return;
   }
+
+  vector<string>* tnames;
+  bool make_tnames = ntupleVersion_=="V18" ? true : false;
+  if (make_tnames) {
+    tnames = new vector<string>;
+    // TriggerNames is stored in the title of the other trigger vectors from V18
+    std::istringstream iss(ntuple->b_TriggerPass->GetTitle());
+    std::string item;
+    while (std::getline(iss, item, ',')) {
+      tnames->push_back(item);
+    }
+  } else {
+    tnames = ntuple->TriggerNames;
+  }
+
   for (auto myTrigName : triggers) {
-    for (unsigned int ti = 0; ti < TriggerNames->size(); ++ti) {
-      if (TString(TriggerNames->at(ti)).Contains(myTrigName)) {
+    for (unsigned int ti = 0; ti < tnames->size(); ++ti) {
+      if (TString(tnames->at(ti)).Contains(myTrigName)) {
 	triggerIndexList->push_back(ti);
-	Int_t prescale = TriggerPrescales->at(ti);
+	Int_t prescale = ntuple->TriggerPrescales->at(ti);
 	if (verbosity_ >= 2 || (verbosity_ >= 1 && prescale != 1))
-	  cout << "Trigger " << TriggerNames->at(ti) << " (" << ti << ") prescaled by " << prescale << endl;
+	  cout << "Trigger " << tnames->at(ti) << " (" << ti << ") prescaled by " << prescale << endl;
 	continue;
       }
     }
   }
+  if (make_tnames) delete tnames;
 
 }  // ======================================================================================

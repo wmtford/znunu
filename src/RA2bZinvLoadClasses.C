@@ -15,5 +15,6 @@
   gROOT->ProcessLine(".L CCbinning.C+");
   gROOT->ProcessLine(".L CutManager.C+");
   gROOT->ProcessLine(".L EfficWt.C+");
+  gROOT->ProcessLine(".L BTagSF.h+");
   gROOT->ProcessLine(".L RA2bZinvAnalysis.C+");
 }

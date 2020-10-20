@@ -11,6 +11,7 @@
 #include <TString.h>
 #include <TRegexp.h>
 #include <TCut.h>
+#include "Ntuple.h"
 #include "CCbinning.h"
 
 #include <iostream>
@@ -20,15 +21,14 @@ class CutManager {
  public:
   CutManager(const TString sample, const TString ntupleVersion, bool isSkim, bool isMC,
 	     int verbosity, string era, string deltaPhi, bool applyMassCut,
-	     bool applyPtCut, bool restrictClean, CCbinning* CCbins);
+	     bool applyPtCut, int minNb, bool restrictClean, CCbinning* CCbins);
   virtual ~CutManager() {};
 
   enum yearFirstRun {Start2016 = 271036, Start2017 = 294645, Start2018 = 315252, StartHEM = 319077, Start2018C = 319313};
   typedef map<TString, TString> string_map;
   typedef map<TString, vector<TString> > vstring_map;
 
-  void setTriggerIndexList(const char* sample, vector<unsigned>* triggerIndexList,
-			   vector<string>* TriggerNames, vector<int>* TriggerPrescales);
+  void setTriggerIndexList(const char* sample, vector<unsigned>* triggerIndexList, Ntuple* ntuple);
   const string_map& sampleKeyMap() const {return sampleKeyMap_;};
   const vstring_map& triggerMapByName() const {return triggerMapByName_;};
   const TString skimCut(const char* cutStringClean, bool restrictClean = false) const {
@@ -42,6 +42,7 @@ class CutManager {
   const TString& HTcut() const {return HTcut_;};
   const TString& MHTcut() const {return MHTcut_;};
   const TString& NJetscut() const {return NJetscut_;};
+  const TString& Nbcut() const {return Nbcut_;};
   const TString& objcut() const {return objcut_;};
   const TString& minDphicut() const {return minDphicut_;};
   const TString& commonCuts() const {return commonCuts_;};
@@ -85,6 +86,7 @@ class CutManager {
   TString HTcut_;
   TString MHTcut_;
   TString NJetscut_;
+  TString Nbcut_;
   TString objcut_;
   TString minDphicut_;
   TString commonCuts_;

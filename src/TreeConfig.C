@@ -208,7 +208,7 @@ TreeConfig::activeBranchList() {
   activeBranches->push_back("Photons_hasPixelSeed");
   activeBranches->push_back("Photons_isEB");
   activeBranches->push_back("NVtx");
-  activeBranches->push_back("TriggerNames");
+  if (ntupleVersion_ != "V18") activeBranches->push_back("TriggerNames");
   activeBranches->push_back("TriggerPass");
   activeBranches->push_back("TriggerPrescales");
   activeBranches->push_back("HBHENoiseFilter");

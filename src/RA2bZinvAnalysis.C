@@ -59,6 +59,7 @@ RA2bZinvAnalysis::Config(const string& cfg_filename) {
     ("integrated luminosity", po::value<double>(&intLumi_))
     ("apply Z mass cut", po::value<bool>(&applyMassCut_))
     ("apply Z/gamma Pt cut", po::value<bool>(&applyPtCut_))
+    ("min Nb cut", po::value<int>(&minNbCut_))
     ("use DeepCSV", po::value<bool>(&useDeepCSV_))
     ("apply b-tag SF", po::value<bool>(&applyBTagSF_))
     ("apply pileup weight", po::value<bool>(&applyPuWeight_))
@@ -119,6 +120,7 @@ RA2bZinvAnalysis::Config(const string& cfg_filename) {
   cout << "The path to input files is " << treeLoc << endl;
   cout << "The minDeltaPhi cuts are " << deltaPhi_ << endl;
   cout << "Apply Z/gamma Pt cut is " << applyPtCut_ << endl;
+  cout << "The minimum Nb is " << minNbCut_ << endl;
   cout << "Use DeepCSV is " << useDeepCSV_ << endl;
   cout << "Apply HEM jet veto for 2018HEM is " << applyHEMjetVeto_ << endl;
   cout << "Restrict cleanVars for raw ntuple is " << restrictClean_ << endl;
@@ -160,7 +162,8 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   }
 
   evSelector_ = new CutManager(sample, ntupleVersion_, isSkim_, isMC_, verbosity_,
-                               era_, deltaPhi_, applyMassCut_, applyPtCut_, restrictClean_, CCbins_);
+                               era_, deltaPhi_, applyMassCut_, applyPtCut_,
+			       minNbCut_, restrictClean_, CCbins_);
   CutManager::string_map sampleMap = evSelector_->sampleKeyMap();
   TString sampleKey = sampleMap.count(sample) > 0 ? sampleMap.at(sample) : "none";
   bool isZll = (sampleKey == "zmm" || sampleKey == "zee" || sampleKey == "zll");
@@ -294,7 +297,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hBTags.name = TString("hBTags_") + sample;  hBTags.title = "BTags";
   hBTags.NbinsX = 20;  hBTags.rangeX.first = 0;  hBTags.rangeX.second = 20;
   hBTags.axisTitles.first = "N (b jets)";  hBTags.axisTitles.second = "Events / bin";
-  hBTags.ivalue = &(Tupl->BTags);
+  hBTags.ivalue = &(Tupl->BTags);  hBTags.omitCuts.push_back(&(evSelector_->Nbcut()));
   histograms.push_back(&hBTags);
 
   histConfig hVertices;
@@ -329,6 +332,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hHT_DR.binsX = hHT_DR_bins;
   hHT_DR.axisTitles.first = "HT [GeV]";  hHT_DR.axisTitles.second = "Events / bin";
   hHT_DR.dvalue = &(Tupl->HT);
+  hHT_DR.omitCuts.push_back(&(evSelector_->Nbcut()));
   histograms.push_back(&hHT_DR);
 
   histConfig hHT_DR_xWt;  // for weighted centers of bins
@@ -337,6 +341,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hHT_DR_xWt.binsX = hHT_DR.binsX;
   hHT_DR_xWt.axisTitles.first = "HT [GeV]";  hHT_DR_xWt.axisTitles.second = "Bin value / bin";
   hHT_DR_xWt.filler1D = &RA2bZinvAnalysis::fillHT_DR_xWt;
+  hHT_DR_xWt.omitCuts.push_back(&(evSelector_->Nbcut()));
   if (isPhoton) histograms.push_back(&hHT_DR_xWt);
 
   std::vector<double> HTthresh1;
@@ -352,6 +357,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hHT1_DRCC.binsX = hHT1_DRCC_bins;
   hHT1_DRCC.axisTitles.first = "HT [GeV]";  hHT1_DRCC.axisTitles.second = "Events / bin";
   hHT1_DRCC.dvalue = &(Tupl->HT);  hHT1_DRCC.omitCuts.push_back(&(evSelector_->HTcut()));
+  hHT1_DRCC.omitCuts.push_back(&(evSelector_->Nbcut()));
   if (isPhoton) histograms.push_back(&hHT1_DRCC);
   histConfig hHT1_DRCC_xWt;  // for weighted centers of bins
   hHT1_DRCC_xWt.name = TString("hHT1_DRCC_xWt_") + sample;  hHT1_DRCC_xWt.title = "HT CC bin values";
@@ -359,6 +365,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hHT1_DRCC_xWt.binsX = hHT1_DRCC.binsX;
   hHT1_DRCC_xWt.axisTitles.first = "HT [GeV]";  hHT1_DRCC_xWt.axisTitles.second = "Bin value / bin";
   hHT1_DRCC_xWt.filler1D = &RA2bZinvAnalysis::fillHT_DR_xWt;
+  hHT1_DRCC_xWt.omitCuts.push_back(&(evSelector_->Nbcut()));
   hHT1_DRCC_xWt.omitCuts.push_back(&(evSelector_->HTcut()));
   if (isPhoton) histograms.push_back(&hHT1_DRCC_xWt);
 
@@ -379,6 +386,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hHT2_DRCC.binsX = hHT2_DRCC_bins;
   hHT2_DRCC.axisTitles.first = "HT [GeV]";  hHT2_DRCC.axisTitles.second = "Events / bin";
   hHT2_DRCC.dvalue = &(Tupl->HT);  hHT2_DRCC.omitCuts.push_back(&(evSelector_->HTcut()));
+  hHT2_DRCC.omitCuts.push_back(&(evSelector_->Nbcut()));
   if (isPhoton) histograms.push_back(&hHT2_DRCC);
   histConfig hHT2_DRCC_xWt;  // for weighted centers of bins
   hHT2_DRCC_xWt.name = TString("hHT2_DRCC_xWt_") + sample;  hHT2_DRCC_xWt.title = "HT CC bin values";
@@ -386,6 +394,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hHT2_DRCC_xWt.binsX = hHT2_DRCC.binsX;
   hHT2_DRCC_xWt.axisTitles.first = "HT [GeV]";  hHT2_DRCC_xWt.axisTitles.second = "Bin value / bin";
   hHT2_DRCC_xWt.filler1D = &RA2bZinvAnalysis::fillHT_DR_xWt;
+  hHT2_DRCC_xWt.omitCuts.push_back(&(evSelector_->Nbcut()));
   hHT2_DRCC_xWt.omitCuts.push_back(&(evSelector_->HTcut()));
   if (isPhoton) histograms.push_back(&hHT2_DRCC_xWt);
 
@@ -396,6 +405,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hMHT_DR.binsX = hMHT_DR_bins;
   hMHT_DR.axisTitles.first = "MHT [GeV]";  hMHT_DR.axisTitles.second = "Events / bin";
   hMHT_DR.dvalue = &(Tupl->MHT);
+  hMHT_DR.omitCuts.push_back(&(evSelector_->Nbcut()));
   histograms.push_back(&hMHT_DR);
 
   histConfig hMHT_DR_xWt;  // for weighted centers of bins
@@ -404,6 +414,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hMHT_DR_xWt.binsX = hMHT_DR.binsX;
   hMHT_DR_xWt.axisTitles.first = "MHT [GeV]";  hMHT_DR_xWt.axisTitles.second = "Bin value / bin";
   hMHT_DR_xWt.filler1D = &RA2bZinvAnalysis::fillMHT_DR_xWt;
+  hMHT_DR_xWt.omitCuts.push_back(&(evSelector_->Nbcut()));
   if (isPhoton) histograms.push_back(&hMHT_DR_xWt);
 
   std::vector<double> MHTthresh;
@@ -417,6 +428,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hMHT_DRCC.binsX = hMHT_DRCC_bins;
   hMHT_DRCC.axisTitles.first = "MHT [GeV]";  hMHT_DRCC.axisTitles.second = "Events / bin";
   hMHT_DRCC.dvalue = &(Tupl->MHT);
+  hMHT_DRCC.omitCuts.push_back(&(evSelector_->Nbcut()));
   hMHT_DRCC.omitCuts.push_back(&(evSelector_->MHTcut()));
   hMHT_DRCC.omitCuts.push_back(&(evSelector_->ptCut()));
   if (isPhoton) histograms.push_back(&hMHT_DRCC);
@@ -426,6 +438,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hMHT_DRCC_xWt.binsX = hMHT_DRCC.binsX;
   hMHT_DRCC_xWt.axisTitles.first = "MHT [GeV]";  hMHT_DRCC_xWt.axisTitles.second = "Bin value / bin";
   hMHT_DRCC_xWt.filler1D = &RA2bZinvAnalysis::fillMHT_DR_xWt;
+  hMHT_DRCC_xWt.omitCuts.push_back(&(evSelector_->Nbcut()));
   hMHT_DRCC_xWt.omitCuts.push_back(&(evSelector_->MHTcut()));
   hMHT_DRCC_xWt.omitCuts.push_back(&(evSelector_->ptCut()));
   if (isPhoton) histograms.push_back(&hMHT_DRCC_xWt);
@@ -435,6 +448,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hNJets_DR.NbinsX = 8;  hNJets_DR.rangeX.first = 1.5;  hNJets_DR.rangeX.second = 9.5;
   hNJets_DR.axisTitles.first = "N (jets)";  hNJets_DR.axisTitles.second = "Events / bin";
   hNJets_DR.ivalue = &(Tupl->NJets);
+  hNJets_DR.omitCuts.push_back(&(evSelector_->Nbcut()));
   histograms.push_back(&hNJets_DR);
 
   std::vector<double> NJetsthresh;
@@ -447,6 +461,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hNJets_DRCC.binsX = hNJets_DRCC_bins;
   hNJets_DRCC.axisTitles.first = "N (jets)";  hNJets_DRCC.axisTitles.second = "Events / bin";
   hNJets_DRCC.ivalue = &(Tupl->NJets);
+  hNJets_DRCC.omitCuts.push_back(&(evSelector_->Nbcut()));
   histograms.push_back(&hNJets_DRCC);
   histConfig hNJets_DRCC_xWt;  // for weighted centers of bins
   hNJets_DRCC_xWt.name = TString("hNJets_DRCC_xWt_") + sample;  hNJets_DRCC_xWt.title = "NJets CC bin values";
@@ -454,6 +469,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hNJets_DRCC_xWt.binsX = hNJets_DRCC.binsX;
   hNJets_DRCC_xWt.axisTitles.first = "N (jets)";  hNJets_DRCC_xWt.axisTitles.second = "Bin value / bin";
   hNJets_DRCC_xWt.filler1D = &RA2bZinvAnalysis::fillNJets_DR_xWt;
+  hNJets_DRCC_xWt.omitCuts.push_back(&(evSelector_->Nbcut()));
   if (isPhoton) histograms.push_back(&hNJets_DRCC_xWt);
 
   histConfig hSFwt_DR;
@@ -461,6 +477,7 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hSFwt_DR.NbinsX = 80;  hSFwt_DR.rangeX.first = 0.8;  hSFwt_DR.rangeX.second = 1.2;
   hSFwt_DR.axisTitles.first = "SF weight";  hSFwt_DR.axisTitles.second = "Events / bin";
   hSFwt_DR.filler1D = &RA2bZinvAnalysis::fillSFwt_DR;
+  hSFwt_DR.omitCuts.push_back(&(evSelector_->Nbcut()));
   histograms.push_back(&hSFwt_DR);
 
   histConfig hSFsys_DR;
@@ -468,7 +485,10 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hSFsys_DR.NbinsX = 100;  hSFsys_DR.rangeX.first = 0;  hSFsys_DR.rangeX.second = 0.2;
   hSFsys_DR.axisTitles.first = "SF error";  hSFsys_DR.axisTitles.second = "Events / bin";
   hSFsys_DR.filler1D = &RA2bZinvAnalysis::fillSFsys_DR;
+  hSFsys_DR.omitCuts.push_back(&(evSelector_->Nbcut()));
   histograms.push_back(&hSFsys_DR);
+
+  // end DR histograms
 
   histConfig hnZcand;
   hnZcand.name = TString("hnZcand_") + sample;  hnZcand.title = "Number of Z candidates";
@@ -686,10 +706,9 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample,
 
   // For B-tagging corrections
   if (isMC_ && applyBTagSF_) {
-    btagcorr_ = new BTagCorrector;
-    btagcorr_->SetCalib(BTagSFfile_);
+    btagsf_ = new BTagSF();
   } else {
-    btagcorr_ = nullptr;
+    btagsf_ = nullptr;
   }
 
   // Z Pt weights
@@ -755,14 +774,9 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample,
               TFile* pufile = TFile::Open("../../Analysis/corrections/PileupHistograms_0121_69p2mb_pm4p6.root", "READ");
               puHist_ = (TH1*) pufile->Get("pu_weights_down");
             }
-            BTagSFfile_ = useDeepCSV_ ? "../datFiles/DeepCSV_2016LegacySF_WP_V1.csv" :
-              "../../Analysis/btag/CSVv2_Moriond17_B_H_mod.csv";
-          } else if (currentYear == EfficWt::Year2017) {
-            BTagSFfile_ = "../datFiles/DeepCSV_94XSF_WP_V4_B_F.csv";
-          } else if (currentYear == EfficWt::Year2018) {
-            BTagSFfile_ = "../datFiles/DeepCSV_102XSF_WP_V1.csv";
-          }
-        }
+	    if (btagsf_) btagsf_->SetCalib((unsigned) currentYear);
+	  }
+	}
       }
       // Set MCwtCorr for this file
       if (isMC_ && isSkim_ &&
@@ -790,8 +804,8 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample,
       }
       if (isMC_ && verbosity_ >= 1) cout << "MC weight for this file is " << Tupl->Weight
                                          << " times correction " << MCwtCorr << endl;
-      if (btagcorr_) btagcorr_->SetEffs(thisFile);
-      evSelector_->setTriggerIndexList(sample, &triggerIndexList, Tupl->TriggerNames, Tupl->TriggerPrescales);
+      if (btagsf_) btagsf_->SetEffs(thisFile);
+      evSelector_->setTriggerIndexList(sample, &triggerIndexList, Tupl);
     }  // newFileInChain
 
     countInFile++;
@@ -844,7 +858,8 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample,
         MCwt *= NoPrefireWt;
       }  // 2016 or 2017
 
-      if (applyZptWt_ && (TString(sample).Contains("dy") || TString(sample).Contains("zinv"))
+      if (applyZptWt_ && (ntupleVersion_ == "V16" || ntupleVersion_ == "V17")
+	  && (TString(sample).Contains("dy") || TString(sample).Contains("zinv"))
           && (currentYear == EfficWt::Year2017 || currentYear == EfficWt::Year2018)) {
         // Apply Z Pt weight for 2017 MC
         double ptZ = getGenPtZ();
@@ -857,7 +872,16 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample,
           ZPtWt *= ptWgts[iptbin-1];
         }
         MCwt *= ZPtWt;
-      }  // DY or Zinv in 2017 or 2018
+      }  // DY or Zinv in 2017 or 2018, for V16 and V17
+
+      if (minNbCut_ == 1 && applyBTagSF_) {
+	// Compute B tag SF via "simple correction (1a)"
+	double BSFwt = Tupl->BTags > 0 ?
+	  btagsf_->weight(Tupl->Jets, Tupl->Jets_hadronFlavor,
+			  Tupl->Jets_HTMask, Tupl->Jets_bDiscriminatorCSV)
+	  : 1;
+	MCwt *= BSFwt;
+      }
 
       eventWt *= MCwt;
     }  // isMC_
@@ -980,7 +1004,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample,
   }  // loop over entries
   cout << "At end, count = " << countInSel << ", with negative weights = " << countNegWt << endl;
 
-  delete btagcorr_;
+  if (btagsf_) delete btagsf_;
 
 }  // ======================================================================================
 
@@ -1087,32 +1111,12 @@ RA2bZinvAnalysis::fillCC(TH1D* h, double wt) {
   int binNjets = (hName.Contains("spl") || hName.Contains("Jb")) ? CCbins_->Jbin(Tupl->NJets)
                                                                  : CCbins_->jbin(Tupl->NJets);
   if (binNjets < 0) return;
-  if (!(isMC_ && applyBTagSF_)) {
-    int binNb = CCbins_->bbin(Tupl->NJets, Tupl->BTags);
-    binCC = (hName.Contains("spl") || hName.Contains("Jb")) ?
-      CCbins_->Jbk(binNjets, binNb, binKin) :
-      CCbins_->jbk(binNjets, binNb, binKin);
-    if (binCC <= 0) return;
-    if (verbosity_ >= 4) cout << "j = " << binNjets << ", b = " << binNb << ", k = " << binKin
-			      << ", binCC = " << binCC << ", RA2bin = " << Tupl->RA2bin << endl;
-    if (hName.Contains("jb") || hName.Contains("Jb")) {
-      // Above test on j, b, k needed even here, to exclude j = 3,4, k = 0,3
-      binCCjb = hName.Contains("jb") ? CCbins_->jb(binNjets, binNb) : CCbins_->Jb(binNjets, binNb);
-      if (binCCjb > 0) h->Fill(Double_t(binCCjb), wt);
-    } else if (hName.Contains("jk")) {
-      if (Tupl->BTags == 0) {
-	int binCCjk = CCbins_->jk(binNjets, binKin);
-	if (binCCjk > 0) h->Fill(Double_t(binCCjk), wt);
-      }
-    } else {
-      h->Fill(Double_t(binCC), wt);
-    }
-  } else {
+  if (isMC_ && applyBTagSF_ && minNbCut_ == 0) {
     // apply BTagSF to all Nb bins
     if (verbosity_ >= 4) cout << "Size of input Jets = " << Tupl->Jets->size()
 			      << ", Jets_hadronFlavor = " << Tupl->Jets_hadronFlavor->size()
 			      << " Jets_HTMask = " << Tupl->Jets_HTMask->size() << endl;
-    vector<double> probNb = btagcorr_->GetCorrections(Tupl->Jets, Tupl->Jets_hadronFlavor,
+    vector<double> probNb = btagsf_->GetCorrections(Tupl->Jets, Tupl->Jets_hadronFlavor,
 						      Tupl->Jets_HTMask);
     for (int b = 0; b < (int) probNb.size(); ++b) {
       int NbinsB = hName.Contains("spl") || hName.Contains("Jb") ? CCbins_-> binsB(binNjets)
@@ -1135,6 +1139,26 @@ RA2bZinvAnalysis::fillCC(TH1D* h, double wt) {
       } else {
 	h->Fill(Double_t(binCC), wt*probNb[b]);
       }
+    }
+  } else {
+    int binNb = CCbins_->bbin(Tupl->NJets, Tupl->BTags);
+    binCC = (hName.Contains("spl") || hName.Contains("Jb")) ?
+      CCbins_->Jbk(binNjets, binNb, binKin) :
+      CCbins_->jbk(binNjets, binNb, binKin);
+    if (binCC <= 0) return;
+    if (verbosity_ >= 4) cout << "j = " << binNjets << ", b = " << binNb << ", k = " << binKin
+			      << ", binCC = " << binCC << ", RA2bin = " << Tupl->RA2bin << endl;
+    if (hName.Contains("jb") || hName.Contains("Jb")) {
+      // Above test on j, b, k needed even here, to exclude j = 3,4, k = 0,3
+      binCCjb = hName.Contains("jb") ? CCbins_->jb(binNjets, binNb) : CCbins_->Jb(binNjets, binNb);
+      if (binCCjb > 0) h->Fill(Double_t(binCCjb), wt);
+    } else if (hName.Contains("jk")) {
+      if (Tupl->BTags == 0) {
+	int binCCjk = CCbins_->jk(binNjets, binKin);
+	if (binCCjk > 0) h->Fill(Double_t(binCCjk), wt);
+      }
+    } else {
+      h->Fill(Double_t(binCC), wt);
     }
   }  // if apply BTagSF
 
@@ -1472,7 +1496,7 @@ RA2bZinvAnalysis::dumpSelEvIDs(const char* sample, const char* idFileName) {
   Tupl = new Ntuple(treeConfig_->getChain(key), treeConfig_->activeBranchList());
 
   evSelector_ = new CutManager(sample, ntupleVersion_, isSkim_, isMC_, verbosity_,
-			       era_, deltaPhi_, applyMassCut_, applyPtCut_, restrictClean_, CCbins_);
+			       era_, deltaPhi_, applyMassCut_, applyPtCut_, minNbCut_, restrictClean_, CCbins_);
   TCut baselineCuts = evSelector_->baseline();
   if (verbosity_ >= 1) cout << endl << "baseline = " << endl << baselineCuts << endl << endl;
   Tupl->setTF("baseline", baselineCuts);

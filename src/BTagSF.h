@@ -1,0 +1,68 @@
+//
+//  BTag data/MC scale factors
+//  (wrapper for https://github.com/kpedro88/Analysis/btag/BTagCorrector)
+//
+
+#ifndef BTAGSF_H
+#define BTAGSF_H
+
+#include <TH2F.h>
+// Following assumes that ../../Analysis is a clone of
+//   https://github.com/kpedro88/Analysis/blob/SUSY2018/
+#include "../../Analysis/btag/BTagCorrector.h"
+
+class BTagSF {
+ public:
+
+  // Assume caller is using the following convention for run year index:
+  // enum runYear{Year2016 = 0, Year2017 = 1, Year2018 = 2, Year2018HEP = 3, Year2018HEM = 4};
+
+  BTagSF(bool useDeepCSV=true) {
+    btagcorr_ = new BTagCorrector;
+    // Scale factor files, from https://twiki.cern.ch/twiki/bin/view/CMS/BtagRecommendation/
+    BTagSFfile_.push_back(useDeepCSV ? string("../datFiles/DeepCSV_2016LegacySF_WP_V1.csv")  // 2016
+			  : string("../../Analysis/btag/CSVv2_Moriond17_B_H_mod.csv"));  // 2016 CSVv2
+    BTagSFfile_.push_back(string("../datFiles/DeepCSV_94XSF_WP_V4_B_F.csv"));  // 2017
+    BTagSFfile_.push_back(string("../datFiles/DeepCSV_102XSF_WP_V1.csv"));  // 2018
+    BTagSFfile_.push_back(string("../datFiles/DeepCSV_102XSF_WP_V1.csv"));  // 2018HEP
+    BTagSFfile_.push_back(string("../datFiles/DeepCSV_102XSF_WP_V1.csv"));  // 2018HEM
+    // DeepCSV medium working points
+    BTagWP_.push_back(0.6321);  // 2016
+    BTagWP_.push_back(0.4941);  // 2017
+    BTagWP_.push_back(0.4184);  // 2018
+    BTagWP_.push_back(0.4184);  // 2018HEP
+    BTagWP_.push_back(0.4184);  // 2018HEM
+  };
+
+  ~BTagSF() {delete btagcorr_;};
+
+  void SetCalib(unsigned runYearIndex) {
+    btagcorr_->SetCalib(BTagSFfile_[runYearIndex]);
+    currentWP_ = BTagWP_[runYearIndex];
+  }
+  void SetEffs(TFile* dataFile) {btagcorr_->SetEffs(dataFile);}
+  double weight(vector<TLorentzVector>* Jets, vector<int>* Jets_flavor, vector<bool>* Jets_HTMask,
+		vector<double>* Jets_bDiscriminator) {
+    double sf = btagcorr_->GetSimpleCorrection(Jets, Jets_flavor, Jets_HTMask, Jets_bDiscriminator, currentWP_);
+    if (isnan(sf)) {
+      cout << "BTagCorrector returns NaN" << endl;
+      return 1.0;
+    } else {
+      return sf;
+    }
+  };
+  vector<double> GetCorrections(vector<TLorentzVector>* Jets, vector<int>* Jets_flavor,
+				vector<bool>* Jets_HTMask) {
+    return btagcorr_->GetCorrections(Jets, Jets_flavor, Jets_HTMask);
+  };
+
+ private:
+  BTagCorrector* btagcorr_;
+  vector<string> BTagSFfile_;
+  vector<double> BTagWP_;
+  double currentWP_;
+
+  /* ClassDef(BTagSF, 1) // 2nd arg is ClassVersionID */
+};
+
+#endif

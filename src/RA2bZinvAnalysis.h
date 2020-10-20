@@ -17,6 +17,7 @@
 #include "CutManager.h"
 #include "CCbinning.h"
 #include "EfficWt.h"
+#include "BTagSF.h"
 #include <TH1F.h>
 #include <TH1D.h>
 #include <TH2F.h>
@@ -92,6 +93,7 @@ private:
   double intLumi_;
   bool applyMassCut_;
   bool applyPtCut_;
+  int minNbCut_;
   bool useDeepCSV_;
   bool applyBTagSF_;
   bool applyPuWeight_;
@@ -106,8 +108,7 @@ private:
   CCbinning* CCbins_;
   CutManager* evSelector_;
   EfficWt* effPurCorr_;
-  BTagCorrector* btagcorr_;
-  const char* BTagSFfile_;
+  BTagSF* btagsf_;
   double csvMthreshold_;
   TH1* puHist_;
   double effWt_, effSys_;
