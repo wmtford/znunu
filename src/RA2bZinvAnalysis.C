@@ -704,12 +704,8 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample,
   TCut baselineCuts = evSelector_->baseline();
   Tupl->setTF("baseline", baselineCuts);
 
-  // For B-tagging corrections
-  if (isMC_ && applyBTagSF_) {
-    btagsf_ = new BTagSF();
-  } else {
-    btagsf_ = nullptr;
-  }
+  // For B-tagging corrections or modified b tagging selection
+  btagsf_ = new BTagSF();
 
   // Z Pt weights
   Double_t ptBins[297] = {0.,1.,2.,3.,4.,5.,6.,7.,8.,9.,10.,11.,12.,13.,14.,15.,16.,17.,18.,19.,20.,21.,22.,23.,24.,25.,26.,27.,28.,29.,30.,31.,32.,33.,34.,35.,36.,37.,38.,39.,40.,41.,42.,43.,44.,45.,46.,47.,48.,49.,50.,51.,52.,53.,54.,55.,56.,57.,58.,59.,60.,61.,62.,63.,64.,65.,66.,67.,68.,69.,70.,71.,72.,73.,74.,75.,76.,77.,78.,79.,80.,81.,82.,83.,84.,85.,86.,87.,88.,89.,90.,91.,92.,93.,94.,95.,96.,97.,98.,99.,100.,101.,102.,103.,104.,105.,106.,107.,108.,109.,110.,111.,112.,113.,114.,115.,116.,117.,118.,119.,120.,121.,122.,123.,124.,125.,126.,127.,128.,129.,130.,131.,132.,133.,134.,135.,136.,137.,138.,139.,140.,141.,142.,143.,144.,145.,146.,147.,148.,149.,150.,151.,152.,153.,154.,155.,156.,157.,158.,159.,160.,161.,162.,163.,164.,165.,166.,167.,168.,169.,170.,171.,172.,173.,174.,175.,176.,177.,178.,179.,180.,181.,182.,183.,184.,185.,186.,187.,188.,189.,190.,191.,192.,193.,194.,195.,196.,197.,198.,199.,200.,202.,204.,206.,208.,210.,212.,214.,216.,218.,220.,222.,224.,226.,228.,230.,232.,234.,236.,238.,240.,242.,244.,246.,248.,250.,252.,254.,256.,258.,260.,262.,264.,266.,268.,270.,272.,274.,276.,278.,280.,282.,284.,286.,288.,290.,292.,294.,296.,298.,300.,304.,308.,312.,316.,320.,324.,328.,332.,336.,340.,344.,348.,352.,356.,360.,364.,368.,372.,376.,380.,384.,388.,392.,396.,400.,410.,420.,430.,440.,450.,460.,470.,480.,490.,500.,520.,540.,560.,580.,600.,650.,700.,750.,800.,900.,1000.};
@@ -774,7 +770,10 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample,
               TFile* pufile = TFile::Open("../../Analysis/corrections/PileupHistograms_0121_69p2mb_pm4p6.root", "READ");
               puHist_ = (TH1*) pufile->Get("pu_weights_down");
             }
-	    if (btagsf_) btagsf_->SetCalib((unsigned) currentYear);
+	  }
+	  if (btagsf_) {
+	    if (minNbCut_ == 0) btagsf_->SetCalib((unsigned) currentYear);
+	    else btagsf_->SetCalib((unsigned) currentYear, (unsigned) BTagSF::Tight);
 	  }
 	}
       }
@@ -804,7 +803,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample,
       }
       if (isMC_ && verbosity_ >= 1) cout << "MC weight for this file is " << Tupl->Weight
                                          << " times correction " << MCwtCorr << endl;
-      if (btagsf_) btagsf_->SetEffs(thisFile);
+      if (applyBTagSF_) btagsf_->SetEffs(thisFile);
       evSelector_->setTriggerIndexList(sample, &triggerIndexList, Tupl);
     }  // newFileInChain
 
@@ -878,7 +877,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample,
 	// Compute B tag SF via "simple correction (1a)"
 	double BSFwt = Tupl->BTags > 0 ?
 	  btagsf_->weight(Tupl->Jets, Tupl->Jets_hadronFlavor,
-			  Tupl->Jets_HTMask, Tupl->Jets_bDiscriminatorCSV)
+			  Tupl->Jets_HTMask, Tupl->Jets_bJetTagDeepCSVBvsAll)
 	  : 1;
 	MCwt *= BSFwt;
       }
@@ -957,7 +956,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample,
 
     int CCbin = CCbins_->jbk(CCbins_->jbin(Tupl->NJets), CCbins_->bbin(Tupl->NJets, Tupl->BTags),
                              CCbins_->kinBin(Tupl->HT, Tupl->MHT));
-    if (isSkim_ && (UInt_t) CCbin != Tupl->RA2bin && !(CCbin == -1 && Tupl->RA2bin == 0)) {
+    if (isSkim_ && minNbCut_ == 0 && (UInt_t) CCbin != Tupl->RA2bin && !(CCbin == -1 && Tupl->RA2bin == 0)) {
       cout << "CCbin = " << CCbin << ", != RA2bin = " << Tupl->RA2bin
            << ", NJets = " << Tupl->NJets << ", j = " << CCbins_->jbin(Tupl->NJets)
            << ", Nb = " << Tupl->BTags << ", b = " << CCbins_->bbin(Tupl->NJets, Tupl->BTags)
@@ -1049,13 +1048,21 @@ Int_t
 RA2bZinvAnalysis::setBTags(int runYear) {
   Int_t BTagsOrig = Tupl->BTags;
   if (useDeepCSV_) {
-    Tupl->BTags = Tupl->BTagsDeepCSV;
+    if (minNbCut_ > 0) {  // Boosted H uses cut on Nb(tight) > 0
+      Tupl->BTags = 0;
+      for (size_t j = 0; j < (Tupl->Jets)->size(); ++j) {
+	if(Tupl->Jets_HTMask->at(j) &&
+	   Tupl->Jets_bJetTagDeepCSVBvsAll->at(j) > btagsf_->WPvalue()) Tupl->BTags++;
+      }
+    } else {
+      Tupl->BTags = Tupl->BTagsDeepCSV;
+    }
   } else if (ntupleVersion_ == "V15" && runYear != EfficWt::Year2016) {
     // Recompute BTags with a different discriminator threshold
     Tupl->BTags = 0;
     for (size_t j = 0; j < (Tupl->Jets)->size(); ++j) {
-      if(!Tupl->Jets_HTMask->at(j)) continue;
-      if (Tupl->Jets_bDiscriminatorCSV->at(j) > csvMthreshold_) Tupl->BTags++;
+      if (Tupl->Jets_HTMask->at(j) &&
+	  Tupl->Jets_bDiscriminatorCSV->at(j) > csvMthreshold_) Tupl->BTags++;
     }
   }
   // From Rishi email of 20 Feb 2019, DeepCSV 2018 WP: 0.4184 and the 2017 WP: 0.4941
