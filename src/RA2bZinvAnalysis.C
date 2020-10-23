@@ -773,7 +773,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample,
 	  }
 	  if (btagsf_) {
 	    if (minNbCut_ == 0) btagsf_->SetCalib((unsigned) currentYear);
-	    else btagsf_->SetCalib((unsigned) currentYear, (unsigned) BTagSF::Tight);
+	    else btagsf_->SetCalib((unsigned) currentYear, BTagEntryS::OP_TIGHT);
 	  }
 	}
       }

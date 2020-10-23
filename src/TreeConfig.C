@@ -187,6 +187,7 @@ TreeConfig::activeBranchList() {
     activeBranches->push_back("NMuons");
     activeBranches->push_back("NElectrons");
     activeBranches->push_back("BTagsDeepCSV");
+    activeBranches->push_back("Jets_bJetTagDeepCSVBvsAll");
     activeBranches->push_back("ecalBadCalibFilter");
   }
   activeBranches->push_back("RunNum");

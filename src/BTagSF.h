@@ -36,9 +36,12 @@ class BTagSF {
 
   ~BTagSF() {delete btagcorr_;};
 
-  void SetCalib(unsigned runYearIndex, unsigned wp=1) {
-    btagcorr_->SetCalib(BTagSFfile_.at(runYearIndex));
-    currentWP_ = (BTagWPval_.at(runYearIndex)).at(wp);
+  void SetCalib(unsigned runYearIndex, BTagEntryS::OperatingPoint op=BTagEntryS::OP_MEDIUM) {
+    btagcorr_->SetCalib(BTagSFfile_.at(runYearIndex), op);
+    // The following line depends on alignment of indices between
+    // BTagWPval[runYear][0,1,2] and BTagEntryS::OperatingPoint.
+    // (BTagEntryS::OP_RESHAPING is not supported here)
+    currentWP_ = (BTagWPval_.at(runYearIndex)).at(op);
   }
   double WPvalue() {return currentWP_;};
   void SetEffs(TFile* dataFile) {btagcorr_->SetEffs(dataFile);}
