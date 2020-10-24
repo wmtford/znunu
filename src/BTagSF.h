@@ -46,7 +46,9 @@ class BTagSF {
   double WPvalue() {return currentWP_;};
   void SetEffs(TFile* dataFile) {btagcorr_->SetEffs(dataFile);}
   double weight(vector<TLorentzVector>* Jets, vector<int>* Jets_flavor, vector<bool>* Jets_HTMask,
-		vector<double>* Jets_bDiscriminator) {
+		vector<double>* Jets_bDiscriminator, int sys_b=0, int sys_mistag=0) {
+    btagcorr_->SetBtagSFunc(sys_b);
+    btagcorr_->SetMistagSFunc(sys_mistag);
     double sf = btagcorr_->GetSimpleCorrection(Jets, Jets_flavor, Jets_HTMask, Jets_bDiscriminator, currentWP_);
     if (isnan(sf)) {
       cout << "BTagCorrector returns NaN" << endl;
