@@ -248,14 +248,49 @@ RA2bZinvAnalysis::makeHistograms(const char* sample) {
   hCCJb.filler1D = &RA2bZinvAnalysis::fillCC;
   histograms.push_back(&hCCJb);
 
+  Int_t MaxBinsjk = CCbins_->binsjk();  // for the next 6 histograms
+  cout << "MaxBinsjk = " << MaxBinsjk << endl;
   histConfig hCCjk;
   hCCjk.name = TString("hCCjk_") + sample;  hCCjk.title = "Cut & count, Nb = 0";
-  Int_t MaxBinsjk = CCbins_->binsjk();
-  cout << "MaxBinsjk = " << MaxBinsjk << endl;
   hCCjk.NbinsX = MaxBinsjk;  hCCjk.rangeX.first = 0.5;  hCCjk.rangeX.second = MaxBinsjk+0.5;
   hCCjk.axisTitles.first = "Njets, (HT, MHT)";  hCCjk.axisTitles.second = "Events / bin";
   hCCjk.filler1D = &RA2bZinvAnalysis::fillCC;
   histograms.push_back(&hCCjk);
+
+  histConfig hCCjkcc;
+  hCCjkcc.name = TString("hCCjkcc_") + sample;  hCCjkcc.title = "Cut & count, Nb > 0, central SF";
+  hCCjkcc.NbinsX = MaxBinsjk;  hCCjkcc.rangeX.first = 0.5;  hCCjkcc.rangeX.second = MaxBinsjk+0.5;
+  hCCjkcc.axisTitles.first = "Njets, (HT, MHT)";  hCCjkcc.axisTitles.second = "Events / bin";
+  hCCjkcc.filler1D = &RA2bZinvAnalysis::fillCC;
+  if (isMC_ && applyBTagSF_ && minNbCut_ > 0) histograms.push_back(&hCCjkcc);
+
+  histConfig hCCjkuc;
+  hCCjkuc.name = TString("hCCjkuc_") + sample;  hCCjkuc.title = "Cut & count, Nb > 0, b eff SF up";
+  hCCjkuc.NbinsX = MaxBinsjk;  hCCjkuc.rangeX.first = 0.5;  hCCjkuc.rangeX.second = MaxBinsjk+0.5;
+  hCCjkuc.axisTitles.first = "Njets, (HT, MHT)";  hCCjkuc.axisTitles.second = "Events / bin";
+  hCCjkuc.filler1D = &RA2bZinvAnalysis::fillCC;
+  if (isMC_ && applyBTagSF_ && minNbCut_ > 0) histograms.push_back(&hCCjkuc);
+
+  histConfig hCCjkcu;
+  hCCjkcu.name = TString("hCCjkcu_") + sample;  hCCjkcu.title = "Cut & count, Nb > 0, b mistag SF up";
+  hCCjkcu.NbinsX = MaxBinsjk;  hCCjkcu.rangeX.first = 0.5;  hCCjkcu.rangeX.second = MaxBinsjk+0.5;
+  hCCjkcu.axisTitles.first = "Njets, (HT, MHT)";  hCCjkcu.axisTitles.second = "Events / bin";
+  hCCjkcu.filler1D = &RA2bZinvAnalysis::fillCC;
+  if (isMC_ && applyBTagSF_ && minNbCut_ > 0) histograms.push_back(&hCCjkcu);
+
+  histConfig hCCjkdc;
+  hCCjkdc.name = TString("hCCjkdc_") + sample;  hCCjkdc.title = "Cut & count, Nb > 0, b eff SF down";
+  hCCjkdc.NbinsX = MaxBinsjk;  hCCjkdc.rangeX.first = 0.5;  hCCjkdc.rangeX.second = MaxBinsjk+0.5;
+  hCCjkdc.axisTitles.first = "Njets, (HT, MHT)";  hCCjkdc.axisTitles.second = "Events / bin";
+  hCCjkdc.filler1D = &RA2bZinvAnalysis::fillCC;
+  if (isMC_ && applyBTagSF_ && minNbCut_ > 0) histograms.push_back(&hCCjkdc);
+
+  histConfig hCCjkcd;
+  hCCjkcd.name = TString("hCCjkcd_") + sample;  hCCjkcd.title = "Cut & count, Nb > 0, b mistag SF down";
+  hCCjkcd.NbinsX = MaxBinsjk;  hCCjkcd.rangeX.first = 0.5;  hCCjkcd.rangeX.second = MaxBinsjk+0.5;
+  hCCjkcd.axisTitles.first = "Njets, (HT, MHT)";  hCCjkcd.axisTitles.second = "Events / bin";
+  hCCjkcd.filler1D = &RA2bZinvAnalysis::fillCC;
+  if (isMC_ && applyBTagSF_ && minNbCut_ > 0) histograms.push_back(&hCCjkcd);
 
   histConfig hgenHT;
   hgenHT.name = TString("hgenHT_") + sample;  hgenHT.title = "Generated HT";
@@ -1160,9 +1195,35 @@ RA2bZinvAnalysis::fillCC(TH1D* h, double wt) {
       binCCjb = hName.Contains("jb") ? CCbins_->jb(binNjets, binNb) : CCbins_->Jb(binNjets, binNb);
       if (binCCjb > 0) h->Fill(Double_t(binCCjb), wt);
     } else if (hName.Contains("jk")) {
-      if (Tupl->BTags == 0) {
-	int binCCjk = CCbins_->jk(binNjets, binKin);
-	if (binCCjk > 0) h->Fill(Double_t(binCCjk), wt);
+      int binCCjk = CCbins_->jk(binNjets, binKin);
+      if (binCCjk <= 0) return;
+      if (hName.Contains("jk_")) {
+	if (Tupl->BTags == 0) h->Fill(Double_t(binCCjk), wt);
+      } else if (isMC_ && applyBTagSF_ && minNbCut_ > 0 && Tupl->BTags > 0) {
+	// Histograms for minNbCut = 1, with b tag systematics
+	double BSFwt = 1;
+	if (hName.Contains("uc")) {
+	  BSFwt = btagsf_->weight(Tupl->Jets, Tupl->Jets_hadronFlavor,
+				  Tupl->Jets_HTMask, Tupl->Jets_bJetTagDeepCSVBvsAll, 1, 0);
+	  BSFwt /= btagsf_->weight(Tupl->Jets, Tupl->Jets_hadronFlavor,
+				   Tupl->Jets_HTMask, Tupl->Jets_bJetTagDeepCSVBvsAll);
+	} else if (hName.Contains("cu")) {
+	  BSFwt = btagsf_->weight(Tupl->Jets, Tupl->Jets_hadronFlavor,
+				  Tupl->Jets_HTMask, Tupl->Jets_bJetTagDeepCSVBvsAll, 0, 1);
+	  BSFwt /= btagsf_->weight(Tupl->Jets, Tupl->Jets_hadronFlavor,
+				   Tupl->Jets_HTMask, Tupl->Jets_bJetTagDeepCSVBvsAll);
+	} else if (hName.Contains("dc")) {
+	  BSFwt = btagsf_->weight(Tupl->Jets, Tupl->Jets_hadronFlavor,
+				  Tupl->Jets_HTMask, Tupl->Jets_bJetTagDeepCSVBvsAll, -1, 0);
+	  BSFwt /= btagsf_->weight(Tupl->Jets, Tupl->Jets_hadronFlavor,
+				   Tupl->Jets_HTMask, Tupl->Jets_bJetTagDeepCSVBvsAll);
+	} else if (hName.Contains("cd")) {
+	  BSFwt = btagsf_->weight(Tupl->Jets, Tupl->Jets_hadronFlavor,
+				  Tupl->Jets_HTMask, Tupl->Jets_bJetTagDeepCSVBvsAll, 0, -1);
+	  BSFwt /= btagsf_->weight(Tupl->Jets, Tupl->Jets_hadronFlavor,
+				   Tupl->Jets_HTMask, Tupl->Jets_bJetTagDeepCSVBvsAll);
+	}
+	h->Fill(Double_t(binCCjk), BSFwt*wt);
       }
     } else {
       h->Fill(Double_t(binCC), wt);
