@@ -838,7 +838,7 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample,
       }
       if (isMC_ && verbosity_ >= 1) cout << "MC weight for this file is " << Tupl->Weight
                                          << " times correction " << MCwtCorr << endl;
-      if (applyBTagSF_) btagsf_->SetEffs(thisFile);
+      if (isMC_ && applyBTagSF_) btagsf_->SetEffs(thisFile);
       evSelector_->setTriggerIndexList(sample, &triggerIndexList, Tupl);
     }  // newFileInChain
 
@@ -953,7 +953,10 @@ RA2bZinvAnalysis::bookAndFillHistograms(const char* sample,
     if (!isMC_) {
       passTrg = false;
       for (auto trgIndex : triggerIndexList)
-        if (Tupl->TriggerPass->at(trgIndex)) passTrg = true;
+        if (Tupl->TriggerPass->at(trgIndex) == 1) passTrg = true;
+	// 1 = Trigger is found in the list/menu, and it fired
+	// 0 = Trigger is found in the list/menu, but it did not fire
+	// -1 = Trigger is not not found in the list/menu
     }
 
     // HEM veto for 2018HEM
