@@ -2,6 +2,8 @@
 Text files and common code for RA2b Zinv analysers
 
 Created from a fork of tmulholland/z-team-assembly 17 Aug. 2018.
+Create script RA2bUtils from Troy's omnibus RA2b.py script, keeping
+the parts needed for plotting, fitting, etc.
 
 # To create a histogram root file from Bill's front-end root macro, follow the instructions in src/README_RA2bZinvAnalysis
 
@@ -15,7 +17,7 @@ python -u histoRatios.py
 
 Edit and run histoZmassFits.py
 
-These load Troy's omnibus RA2b.py script to do the plotting, fitting, etc.
+These import RA2bUtils.py script to do the plotting, fitting, etc.
 
 # Instructions for Bill's integration script
 
@@ -48,12 +50,3 @@ cd python/
 ./setPhotonEffs.py
 
 ./setZllEffs.py
-
-
-# code to make histograms
-
-To go here
-
-# syncronization stuff
-
-To go here

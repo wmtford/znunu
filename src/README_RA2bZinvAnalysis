@@ -4,10 +4,11 @@ Bill Ford
 
 RA2bZinvAnalysis is a root macro in C++ that produces the histograms
 needed for performing the Z->nunu background measurement in the RA2b
-analysis.  It is a reimplementation of parts of Troy's RA2b.py.  The
-remaining functions are accomplished by feeding the histograms into
-RA2b.py.  The input source is the skims of ntuples produced by
-TreeMaker.
+analysis.  It is a reimplementation of a subset of the functions in 
+Troy's RA2b.py.  The remaining functions, now in RA2bUtils.py, are 
+accomplished by feeding the histograms created by RA2bZinvAnalysis
+into RA2bUtils.py.  The input source is the (skims of) ntuples 
+produced by TreeMaker (or nanoAOD for Run 3).
 
 The macro produces the 174-bin histogram of the background predictions
 and expectations, N-1 plots of the main analysis variables, cut-flow and
@@ -26,7 +27,7 @@ src/RA2bZinvDriver.C
 src/TreeConfig.h, .C
 src/CutManager.h, .C
 src/CCbinning.h, .C
-src/EfficiencyAndPurity.h, .C
+src/EfficWt.h, .C
 src/RA2bZinvAnalysis.h, .C
 src/RA2bZinvAnalysis.cfi
 src/Ntuple.h
